@@ -705,21 +705,42 @@ async function processCalcula(file){
   const pi=setInterval(()=>{ prog=Math.min(prog+4,88); document.getElementById('calcula-prog').style.width=prog+'%'; },700);
   try {
     const base64=await fileToBase64(file);
-    const prompt=`### LIQUIDAÇÃO TÉCNICA PERICIAL — FAZ AI
-Liquide INTEGRAL e EXAUSTIVAMENTE todos os pedidos da petição inicial (cada alínea).
+    const prompt=`### PROTOCOLO DE PERÍCIA CONTÁBIL JUDICIAL — FAZ AI
+Você é um Perito Judicial Contábil nomeado pelo juízo. Liquide INTEGRAL e EXAUSTIVAMENTE todos os pedidos da petição inicial (cada alínea de a até o fim).
 
-REGRAS:
-1. CALCULE VOCÊ MESMO — proibido copiar valores da inicial.
-2. ADC 58: pré-judicial (IPCA-E + TR 0%), judicial (SELIC).
-3. INSS progressivo, IRRF método RRA.
-4. Para cada verba inclua metodologia resumida.
+### REGRA ABSOLUTA — PROIBIÇÃO DE CÓPIA:
+É TERMINANTEMENTE PROIBIDO copiar ou replicar qualquer valor numérico da petição inicial.
+A petição inicial é apenas o TETO LEGAL DO PEDIDO — não é fonte de dados para cálculo.
+Você DEVE realizar seus PRÓPRIOS cálculos matemáticos a partir dos dados do contrato: salário base, jornada de trabalho, período contratual.
+Laudo com valores copiados da inicial será considerado NULO E INVÁLIDO.
 
-INSS PATRONAL: ${inssP}%
-OBSERVAÇÕES: ${obs||'Nenhuma'}
-DATA: ${new Date().toLocaleDateString('pt-BR')}
+### METODOLOGIA OBRIGATÓRIA POR VERBA:
+Para cada rubrica você DEVE:
+1. Identificar na petição: salário base, jornada, horas extras, período trabalhado
+2. Calcular matematicamente do zero. Exemplos:
+   - Horas extras: (horas/dia × dias úteis/mês × salário-hora × adicional%) × meses do período
+   - DSR: (total horas extras no mês ÷ dias úteis) × domingos e feriados × meses
+   - Integração férias: total anual da verba ÷ 12 × 1,3333 (com 1/3)
+   - Integração 13º: total anual da verba ÷ 12
+   - FGTS: 8% × base salarial × meses + 40% multa
+3. Aplicar correção monetária ADC 58 STF
+4. Descrever a metodologia usada
+
+### ATUALIZAÇÃO MONETÁRIA (ADC 58 STF):
+- Fase pré-judicial (vencimento até véspera do ajuizamento): IPCA-E acumulado
+- Fase judicial (ajuizamento até hoje): SELIC acumulada (já engloba juros)
+- NÃO acumular juros de 1% a.m. com SELIC
+
+### TRIBUTAÇÃO:
+- INSS: tabela progressiva vigente sobre verbas salariais
+- IRRF: método RRA (base ÷ número de meses = média mensal → alíquota → imposto total)
+- INSS Patronal: ${inssP}% sobre base salarial
+
+OBSERVAÇÕES ADICIONAIS: ${obs||'Nenhuma'}
+DATA REFERÊNCIA: ${new Date().toLocaleDateString('pt-BR')}
 
 Retorne APENAS JSON válido sem markdown:
-{"reclamante":"","reclamada":"","numeroProcesso":"","periodoCalculoInicio":"","periodoCalculoFim":"","verbas":[{"descricao":"","metodologia":"","valor":0,"valorCorrigido":0,"juros":0,"total":0,"natureza":"salarial"}],"totalBruto":0,"inss":0,"irrf":0,"fgts":0,"totalLiquido":0,"valorFinalCorrigido":0,"honorariosPercentual":0,"valorHonorarios":0,"valorTotalGeral":0,"inssReclamada":0,"percentualInssReclamada":${inssP},"isCalculationPossible":true,"errorReason":"","observation":""}`;
+{"reclamante":"","reclamada":"","numeroProcesso":"","periodoCalculoInicio":"","periodoCalculoFim":"","verbas":[{"descricao":"","metodologia":"Salário: R$X | Horas: Y/dia | Período: Z meses | Cálculo: X×Y×fator×Z","baseCalculo":0,"quantidade":0,"valor":0,"valorCorrigido":0,"juros":0,"total":0,"natureza":"salarial"}],"totalBruto":0,"inss":0,"irrf":0,"fgts":0,"totalLiquido":0,"valorFinalCorrigido":0,"honorariosPercentual":0,"valorHonorarios":0,"valorTotalGeral":0,"inssReclamada":0,"baseCalculoInssReclamada":0,"percentualInssReclamada":${inssP},"isCalculationPossible":true,"errorReason":"","observation":""}`;
     const txt=await claudeAPI(prompt,base64,'application/pdf');
     clearInterval(pi);
     calculaResult=JSON.parse(txt.replace(/```json|```/g,'').trim());
