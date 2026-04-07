@@ -637,7 +637,7 @@ function setRes(btn,val){
 }
 
 async function processPonto(file){
-  if(!file||!apiKey){ if(!apiKey) alert('Configure sua chave de API Claude.'); return; }
+  if(!file){ return; }
   document.getElementById('ponto-status').style.display='block';
   document.getElementById('ponto-results').style.display='none';
   pontoResults=[];
@@ -695,7 +695,7 @@ function exportPontoCSV(){
 
 // ===================== CALCULA AI =====================
 async function processCalcula(file){
-  if(!file||!apiKey){ if(!apiKey) alert('Configure sua chave de API Claude.'); return; }
+  if(!file){ return; }
   document.getElementById('calcula-idle').style.display='none';
   document.getElementById('calcula-loading').style.display='block';
   document.getElementById('calcula-result').style.display='none';
