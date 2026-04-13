@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Faz AI — Inteligência Jurídica Trabalhista</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--or:#EA580C;--orl:#FB923C;--orp:#FFF7ED;--dk:#111827;--gy:#6B7280;--lt:#F9FAFB;--wh:#fff;--bd:#E5E7EB;--rd:12px;--rs:8px}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--lt);color:var(--dk);min-height:100vh}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit}
+a{color:var(--or);text-decoration:none}
+
+/* UTILS */
+.hide{display:none!important}
+.page{display:none}.page.active{display:block}
+#page-auth.active{display:block}
+#page-app.active{display:block}
+
+/* LOADING */
+#global-load{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#global-load.show{display:flex}
+.spin{display:inline-block;border:3px solid var(--bd);border-top-color:var(--or);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BUTTONS */
+.btn{padding:8px 18px;border-radius:var(--rs);border:none;font-size:14px;font-weight:500;transition:all .15s;cursor:pointer}
+.btn-primary{background:var(--or);color:#fff}.btn-primary:hover{background:#C2410C}
+.btn-ghost{background:transparent;color:var(--gy);border:1px solid var(--bd)}.btn-ghost:hover{background:var(--lt)}
+.btn-outline{background:transparent;color:var(--or);border:1.5px solid var(--or)}.btn-outline:hover{background:var(--orp)}
+.btn-danger{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA}.btn-danger:hover{background:#FEE2E2}
+.btn-green{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}.btn-green:hover{background:#DCFCE7}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-lg{padding:12px 28px;font-size:16px;font-weight:600}
+.btn-icon{width:34px;height:34px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--wh);display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer}
+.btn-icon:hover{background:#FEE2E2;border-color:#FECACA;color:#B91C1C}
+.btn-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+
+/* LOGO SVG */
+.logo{display:inline-flex;align-items:center}
+
+/* NAVBAR */
+.navbar{background:var(--wh);border-bottom:1px solid var(--bd);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+
+/* LANDING */
+.hero{padding:80px 2rem 60px;text-align:center;max-width:860px;margin:0 auto}
+.hero-badge{display:inline-block;background:var(--orp);color:var(--or);border:1px solid #FED7AA;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.05em;padding:5px 14px;margin-bottom:24px}
+.hero h1{font-size:clamp(36px,6vw,64px);font-weight:800;line-height:1.1;letter-spacing:-2px;margin-bottom:20px}
+.hero h1 span{color:var(--or)}
+.hero p{font-size:18px;color:var(--gy);max-width:560px;margin:0 auto 36px;line-height:1.6}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:60px auto;padding:0 2rem}
+.mod-card{background:var(--wh);border:1px solid var(--bd);border-radius:var(--rd);padding:28px;transition:all .2s}
+.mod-card:hover{border-color:var(--orl);box-shadow:0 4px 20px rgba(234,88,12,.08)}
+.mod-icon{width:44px;height:44px;border-radius:10px;background:var(--orp);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.mod-icon svg{width:22px;height:22px;color:var(--or);fill:none;stroke:currentColor;stroke-width:2}
+.mod-card h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.mod-card p{font-size:14px;color:var(--gy);line-height:1.5}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;max-width:1000px;margin:40px auto;padding:0 2rem}
+.price-card{background:var(--wh);border:1px solid var(--bd);border-radius:var(--rd);padding:24px;text-align:center}
+.price-card.featured{border:2px solid var(--or)}
+.price-card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.price-value{font-size:32px;font-weight:800;color:var(--or);margin:12px 0 4px}
+.price-period{font-size:12px;color:var(--gy);margin-bottom:16px}
+.price-features{text-align:left;font-size:13px;color:var(--gy);line-height:2}
+.section-title{text-align:center;font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
+.section-sub{text-align:center;color:var(--gy);margin-bottom:40px}
+.lp-section{padding:60px 2rem}
+.lp-footer{text-align:center;padding:40px 2rem;color:var(--gy);font-size:14px;border-top:1px solid var(--bd)}
+
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:var(--lt)}
+.auth-card{background:var(--wh);border:1px solid var(--bd);border-radius:var(--rd);padding:40px;width:100%;max-width:420px}
+.auth-card h2{font-size:22px;font-weight:700;margin-bottom:4px}
+.auth-sub{color:var(--gy);font-size:14px;margin-bottom:24px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.fg input{width:100%;padding:10px 13px;border:1px solid var(--bd);border-radius:var(--rs);font-size:14px;outline:none;transition:border .15s}
+.fg input:focus{border-color:var(--or)}
+.auth-switch{text-align:center;margin-top:16px;font-size:14px;color:var(--gy)}
+.auth-switch a{color:var(--or);font-weight:500;cursor:pointer}
+.auth-msg{border-radius:var(--rs);padding:10px 14px;font-size:13px;margin-bottom:14px}
+.auth-msg.err{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA}
+.auth-msg.ok{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+
+/* APP LAYOUT */
+.app-wrap{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow-y:auto}
+.sb-logo{padding:18px 20px 16px;border-bottom:1px solid var(--bd)}
+.sb-nav{flex:1;padding:8px 10px}
+.sb-section{font-size:10px;font-weight:700;color:var(--gy);text-transform:uppercase;letter-spacing:.08em;padding:12px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);font-size:13px;font-weight:500;color:var(--gy);cursor:pointer;transition:all .15s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2}
+.nav-item:hover{background:var(--lt);color:var(--dk)}
+.nav-item.active{background:var(--orp);color:var(--or)}
+.sb-footer{padding:14px 16px;border-top:1px solid var(--bd)}
+.user-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.u-avatar{width:34px;height:34px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.u-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-plan{font-size:11px;color:var(--gy)}
+.main{margin-left:240px;flex:1;padding:28px;min-height:100vh}
+.ph{margin-bottom:24px}
+.ph h1{font-size:22px;font-weight:700;letter-spacing:-.5px}
+.ph p{color:var(--gy);font-size:13px;margin-top:3px}
+
+/* PANELS */
+.panel{background:var(--wh);border:1px solid var(--bd);border-radius:var(--rd);padding:22px;margin-bottom:18px}
+.ptitle{font-size:10px;font-weight:700;color:var(--gy);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+
+/* FORMS */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-size:13px;outline:none;background:var(--wh);color:var(--dk);transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--or)}
+.field textarea{resize:vertical;min-height:80px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.mc{background:var(--lt);border-radius:var(--rs);padding:14px}
+.mc.hi{background:var(--orp)}
+.mc-label{font-size:11px;color:var(--gy);margin-bottom:3px}
+.mc-value{font-size:20px;font-weight:700}
+.mc.hi .mc-value{color:var(--or)}
+
+/* TABLES */
+.rtable{width:100%;border-collapse:collapse;font-size:13px}
+.rtable th{text-align:left;padding:9px 12px;font-size:10px;font-weight:700;color:var(--gy);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--bd)}
+.rtable td{padding:9px 12px;border-bottom:1px solid var(--bd)}
+.rtable td:last-child{text-align:right;font-weight:600}
+.rtable tr.tr-total td{font-weight:700;font-size:14px;color:var(--or);border-top:2px solid var(--bd);border-bottom:none}
+.rtable tr:hover td{background:var(--lt)}
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{background:var(--lt);padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--gy);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--bd)}
+.ptable td{padding:8px 10px;border-bottom:1px solid var(--bd)}
+.ptable td.mono{font-family:monospace;color:var(--gy);font-size:12px}
+.ptable td.obs{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--or)}
+.ptable tr:hover td{background:var(--orp)}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--bd);border-radius:var(--rd);padding:36px;text-align:center;cursor:pointer;transition:all .15s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--orl);background:var(--orp)}
+.upload-zone svg{width:36px;height:36px;color:var(--gy);fill:none;stroke:currentColor;stroke-width:1.5;display:block;margin:0 auto 10px}
+.upload-zone h3{font-size:14px;font-weight:600;margin-bottom:3px}
+.upload-zone p{font-size:12px;color:var(--gy)}
+
+/* PROGRESS */
+.prog-bar{height:5px;background:var(--bd);border-radius:3px;overflow:hidden;margin:8px 0}
+.prog-fill{height:100%;background:var(--or);border-radius:3px;transition:width .4s}
+.prog-label{font-size:12px;color:var(--gy)}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-or{background:var(--orp);color:var(--or)}
+.badge-green{background:#DCFCE7;color:#166534}
+.badge-red{background:#FEE2E2;color:#B91C1C}
+.badge-blue{background:#EFF6FF;color:#1D4ED8}
+.badge-gray{background:var(--lt);color:var(--gy)}
+
+/* ALERTS */
+.alert{border-radius:var(--rs);padding:11px 14px;font-size:13px;margin-bottom:14px}
+.alert-err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.alert-ok{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534}
+.alert-info{background:var(--orp);border:1px solid #FED7AA;color:#92400E}
+
+/* HISTORY */
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.hist-item:hover{border-color:var(--orl);background:var(--orp)}
+.hist-item-info{flex:1}
+.hist-item-name{font-size:13px;font-weight:600}
+.hist-item-meta{font-size:11px;color:var(--gy);margin-top:2px}
+.hist-item-value{font-size:13px;font-weight:700;color:var(--or);margin-right:10px}
+
+/* VERBA ROW */
+.vrow{display:grid;grid-template-columns:1fr 80px 130px 34px;gap:6px;align-items:center;margin-bottom:6px}
+.vrow input,.vrow select{padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;outline:none;width:100%}
+.vrow input:focus,.vrow select:focus{border-color:var(--or)}
+
+/* VERBA CARD (liquidaai) */
+.vcard{border:1px solid var(--bd);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;transition:all .15s}
+.vcard.contestada{border-color:#FECACA;background:#FEF2F2}
+.vcard.reconhecida{border-color:#BBF7D0;background:#F0FDF4}
+.vcard-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.vcard-desc{font-size:13px;font-weight:600;flex:1}
+.vcard-meta{font-size:11px;color:var(--gy);line-height:1.5;margin-bottom:6px}
+.vcard-values{display:flex;gap:16px;font-size:12px}
+.vcard-val-item{text-align:right}
+.vcard-val-label{color:var(--gy);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.vcard-val-num{font-weight:700;font-size:13px}
+.vcard-actions{display:flex;gap:6px;margin-top:8px}
+
+/* ADMIN */
+.admin-table{width:100%;border-collapse:collapse;font-size:13px}
+.admin-table th{background:var(--lt);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gy);text-transform:uppercase;border-bottom:2px solid var(--bd)}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--bd)}
+.admin-table tr:hover td{background:var(--lt)}
+
+/* DASHBOARD */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.dash-card{background:var(--wh);border:1px solid var(--bd);border-radius:var(--rd);padding:18px}
+.dash-card-icon{width:36px;height:36px;border-radius:8px;background:var(--orp);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.dash-card-icon svg{width:18px;height:18px;color:var(--or);fill:none;stroke:currentColor;stroke-width:2}
+.dash-card-label{font-size:12px;color:var(--gy);margin-bottom:2px}
+.dash-card-value{font-size:24px;font-weight:700}
+
+/* TABS */
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--bd);margin-bottom:20px}
+.tab-btn{padding:9px 16px;font-size:13px;font-weight:500;color:var(--gy);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab-btn.active{color:var(--or);border-bottom-color:var(--or)}
+.tab-btn:hover{color:var(--dk)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:var(--wh);border-radius:var(--rd);padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--gy);font-size:20px;line-height:1}
+
+/* PLAN GATE */
+.plan-gate{text-align:center;padding:60px 20px;color:var(--gy)}
+.plan-gate h3{font-size:18px;font-weight:700;color:var(--dk);margin-bottom:8px}
+.plan-gate p{font-size:14px;margin-bottom:20px}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:16px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .vrow{grid-template-columns:1fr 34px}
+}
+.btn-liquidar{background:var(--or);color:#fff;border:none;border-radius:var(--rs);padding:14px 32px;font-size:16px;font-weight:700;width:100%;cursor:pointer;transition:all .15s;margin-top:8px}
+.btn-liquidar:hover:not(:disabled){background:#C2410C}
+.btn-liquidar:disabled{background:#D1D5DB;cursor:not-allowed;color:#9CA3AF}
+.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.chk-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--or)}
+.chk-row label{font-size:13px;font-weight:500;cursor:pointer;line-height:1.4}
+.ptable tr.row-alert td{background:#FEF9C3}.ptable tr.row-falta td{background:#FEE2E2}.ptable tr.row-ferias td{background:#F0FDF4}
+.pc-trial{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--or);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div id="global-load"><div class="spin" style="width:28px;height:28px"></div><span style="font-size:14px;color:var(--gy)" id="load-label">Carregando...</span></div>
+
+<!-- ===== LANDING ===== -->
+<div id="page-landing" class="page active">
+  <nav class="navbar">
+    <svg width="150" height="36" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><circle cx="30" cy="9" r="3" fill="#EA580C" opacity=".35"/><circle cx="30" cy="20" r="3" fill="#EA580C" opacity=".35"/><line x1="27" y1="9" x2="14" y2="9" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><line x1="27" y1="20" x2="22" y2="20" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#111827" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('auth');showAuthMode('login')">Entrar</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('auth');showAuthMode('register')">Começar — 7 dias grátis</button>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-badge">Plataforma de Perícia Contábil Trabalhista</div>
+    <h1>Liquide, extraia e feche <span>acordos</span> com precisão pericial</h1>
+    <p>Três ferramentas especializadas para advogados e peritos trabalhistas. Cálculos independentes, laudos profissionais, histórico completo.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary btn-lg" onclick="showPage('auth');showAuthMode('register')">Começar — 7 dias grátis</button>
+      <button class="btn btn-ghost btn-lg" onclick="showPage('auth');showAuthMode('login')">Já tenho conta</button>
+    </div>
+  </div>
+  <div class="modules-grid">
+    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><h3>LiquidaAI — Liquidação Judicial</h3><p>Envie a petição inicial. A IA calcula cada verba do zero, aplica ADC 58, INSS/IRRF e gera laudo pericial profissional em PDF.</p></div>
+    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h3>PontoAI — Extrator de Ponto</h3><p>OCR inteligente de espelhos de ponto. Extrai todos os horários automaticamente e exporta CSV formatado para o PJe-Calc.</p></div>
+    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><h3>AcordAI — Calculadora de Acordos</h3><p>Calcule o valor bruto a partir do líquido desejado. INSS, IRRF, honorários, E-social mensal e custo total para a reclamada.</p></div>
+  </div>
+  <div class="lp-section" style="background:var(--wh)">
+    <div class="section-title">Planos e preços</div>
+    <div class="section-sub">7 dias grátis em qualquer plano · Cancele quando quiser</div>
+    <div class="pricing-grid">
+      <div class="price-card"><h3>Trial Gratuito</h3><div class="price-value">R$0</div><div class="price-period">7 dias · sem cartão</div><div class="price-features">✓ 5 liquidações<br>✓ 5 extrações de ponto<br>✓ 5 acordos<br>✓ Acesso completo</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Começar grátis</button></div>
+      <div class="price-card"><h3>Starter</h3><div class="price-value">R$197</div><div class="price-period">/mês · 1 usuário</div><div class="price-features">✓ 10 liquidações/mês<br>✓ PontoAI ilimitado<br>✓ AcordAI ilimitado<br>✓ Laudo PDF profissional<br>✓ Protocolo único</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
+      <div class="price-card featured"><h3>Profissional ⭐</h3><div class="price-value">R$397</div><div class="price-period">/mês · 3 usuários</div><div class="price-features">✓ 25 liquidações/mês<br>✓ Tudo do Starter<br>✓ Laudo padrão TRT<br>✓ Simulador de recursos<br>✓ Fila de processos</div><button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
+      <div class="price-card"><h3>Escritório</h3><div class="price-value">R$497</div><div class="price-period">/mês · ilimitado</div><div class="price-features">✓ Ilimitado<br>✓ Múltiplos usuários<br>✓ Tudo do Profissional<br>✓ Exportação em lote<br>✓ Suporte prioritário</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
+    </div>
+  </div>
+  <div class="lp-footer">Faz AI © 2025 · Plataforma de Perícia Contábil Trabalhista · Todos os direitos reservados</div>
+</div>
+
+<!-- ===== AUTH ===== -->
+<div id="page-auth" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div style="margin-bottom:20px"><svg width="130" height="30" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><circle cx="30" cy="9" r="3" fill="#EA580C" opacity=".35"/><circle cx="30" cy="20" r="3" fill="#EA580C" opacity=".35"/><line x1="27" y1="9" x2="14" y2="9" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><line x1="27" y1="20" x2="22" y2="20" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#111827" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg></div>
+      <div id="auth-msg" style="display:none"></div>
+      <div id="auth-login">
+        <h2>Bem-vindo de volta</h2><p class="auth-sub">Entre na sua conta para continuar</p>
+        <div class="fg"><label>E-mail</label><input type="email" id="li-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div class="fg"><label>Senha</label><input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn btn-primary" style="width:100%;padding:11px" onclick="doLogin()">Entrar</button>
+        <div class="auth-switch">Não tem conta? <a onclick="showAuthMode('register')">Criar grátis</a></div>
+        <div class="auth-switch" style="margin-top:6px"><a onclick="showPage('landing')" style="color:var(--gy);font-weight:400">← Voltar</a></div>
+      </div>
+      <div id="auth-register" style="display:none">
+        <h2>Criar conta grátis</h2><p class="auth-sub">Comece a usar o Faz AI agora</p>
+        <div class="fg"><label>Nome completo</label><input type="text" id="rg-name" placeholder="Seu nome"/></div>
+        <div class="fg"><label>E-mail</label><input type="email" id="rg-email" placeholder="seu@email.com"/></div>
+        <div class="fg"><label>Senha</label><input type="password" id="rg-pass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        <button class="btn btn-primary" style="width:100%;padding:11px" onclick="doRegister()">Criar conta</button>
+        <div class="auth-switch">Já tem conta? <a onclick="showAuthMode('login')">Entrar</a></div>
+        <div class="auth-switch" style="margin-top:6px"><a onclick="showPage('landing')" style="color:var(--gy);font-weight:400">← Voltar</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="page-app" class="page">
+  <div class="app-wrap">
+    <aside class="sidebar">
+      <div class="sb-logo"><svg width="110" height="26" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><circle cx="30" cy="9" r="3" fill="#EA580C" opacity=".35"/><circle cx="30" cy="20" r="3" fill="#EA580C" opacity=".35"/><line x1="27" y1="9" x2="14" y2="9" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><line x1="27" y1="20" x2="22" y2="20" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#111827" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg></div>
+      <nav class="sb-nav">
+        <div class="sb-section">Principal</div>
+        <button class="nav-item active" id="nav-dash" onclick="showMod('dash')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</button>
+        <div class="sb-section">Ferramentas</div>
+        <button class="nav-item" id="nav-liquida" onclick="showMod('liquida')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>LiquidaAI</button>
+        <button class="nav-item" id="nav-ponto" onclick="showMod('ponto')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PontoAI</button>
+        <button class="nav-item" id="nav-acordos" onclick="showMod('acordos')"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>AcordAI</button>
+        <div class="sb-section">Histórico</div>
+        <button class="nav-item" id="nav-hist" onclick="showMod('hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>Histórico</button>
+        <div id="nav-admin-wrap" style="display:none">
+          <div class="sb-section">Administração</div>
+          <button class="nav-item" id="nav-admin" onclick="showMod('admin')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários</button>
+        </div>
+      </nav>
+      <div class="sb-footer">
+        <div class="user-row"><div class="u-avatar" id="u-av">?</div><div><div class="u-name" id="u-name">—</div><div class="u-plan" id="u-plan">Carregando...</div></div></div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:10px" onclick="doLogout()">Sair</button>
+        <!-- Powered by LCA -->
+        <div style="border-top:0.5px solid var(--color-border-tertiary,#E5E7EB);padding-top:10px;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <span style="font-size:9px;color:#9CA3AF;letter-spacing:0.5px">powered by</span>
+            <div style="font-family:Arial Black,Arial,sans-serif;font-weight:900;font-size:13px;letter-spacing:-0.5px;display:inline-flex;align-items:center;line-height:1">
+              <span style="color:#111">LC</span>
+              <span style="position:relative;display:inline-block;width:12px;height:13px">
+                <svg style="position:absolute;inset:0" width="12" height="13" viewBox="0 0 12 13"><polygon points="6,1 11,12 1,12" fill="#EA580C"/><line x1="6" y1="1" x2="1" y2="12" stroke="#111" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="1" x2="11" y2="12" stroke="#111" stroke-width="2.2" stroke-linecap="round"/></svg>
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <a href="https://api.whatsapp.com/send?phone=5511973294795" target="_blank" title="WhatsApp (11) 97329-4795" style="width:28px;height:28px;border-radius:6px;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.122.558 4.116 1.529 5.843L.057 23.571l5.915-1.55A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.667-.516-5.186-1.415l-.371-.22-3.512.921.936-3.417-.242-.387A9.936 9.936 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></a>
+            <a href="https://api.whatsapp.com/send?phone=5511964496270" target="_blank" title="WhatsApp (11) 96449-6270" style="width:28px;height:28px;border-radius:6px;background:#128C7E;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.122.558 4.116 1.529 5.843L.057 23.571l5.915-1.55A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.667-.516-5.186-1.415l-.371-.22-3.512.921.936-3.417-.242-.387A9.936 9.936 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></a>
+            <a href="https://www.linkedin.com/in/lca-legal-calculation-associate-b83081402/" target="_blank" title="LinkedIn LCA" style="width:28px;height:28px;border-radius:6px;background:#0A66C2;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <div id="mod-dash" class="mod-content">
+        <div class="ph"><h1>Dashboard</h1><p>Visão geral da sua atividade</p></div>
+        <div class="dash-grid">
+          <div class="dash-card"><div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div class="dash-card-label">Liquidações</div><div class="dash-card-value" id="dc-liq">0</div></div>
+          <div class="dash-card"><div class="dash-card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="dash-card-label">Pontos extraídos</div><div class="dash-card-value" id="dc-pt">0</div></div>
+          <div class="dash-card"><div class="dash-card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div><div class="dash-card-label">Acordos calculados</div><div class="dash-card-value" id="dc-ac">0</div></div>
+          <div class="dash-card"><div class="dash-card-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="dash-card-label">Valor total apurado</div><div class="dash-card-value" id="dc-val" style="font-size:16px">R$ 0</div></div>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Atividade recente</div>
+          <div id="dash-recent"><p style="color:var(--gy);font-size:13px">Nenhuma atividade ainda. Use as ferramentas para começar!</p></div>
+        </div>
+      </div>
+
+      <!-- LIQUIDA AI -->
+      <div id="mod-liquida" class="mod-content hide">
+        <div class="ph"><h1>LiquidaAI — Liquidação Judicial</h1></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('liq','novo',this)">Novo cálculo</button>
+          <button class="tab-btn" onclick="switchTab('liq','hist',this)">Histórico</button>
+        </div>
+        <div id="liq-tab-novo" class="tab-content active">
+          <div class="panel">
+            <div class="ptitle">Parâmetros periciais</div>
+            <div class="g3">
+              <div class="field"><label>INSS Patronal (%)</label><input type="number" id="liq-inss" value="23" min="0" max="40"/></div>
+              <div class="field"><label>Honorários sucumbência (%)</label><input type="number" id="liq-hon" value="0" min="0" max="30"/></div>
+              <div class="field"><label>Data de ajuizamento</label><input type="date" id="liq-ajuiz"/></div>
+            </div>
+            <div style="background:var(--lt);border-radius:var(--rs);padding:14px;margin-bottom:12px">
+                <div class="ptitle" style="margin-bottom:10px">Correção monetária e juros</div>
+                <div class="chk-row"><input type="checkbox" id="liq-cm" checked/><label for="liq-cm">Aplicar correção monetária — ADC 58 STF + Lei 14.905/2024 (IPCA-E pré-judicial + SELIC judicial)</label></div>
+                <div class="chk-row"><input type="checkbox" id="liq-jur" checked/><label for="liq-jur">Aplicar juros de mora (SELIC acumulada pós-ajuizamento)</label></div>
+              </div>
+              <div class="field"><label>Diretrizes periciais (opcional)</label><textarea id="liq-obs" placeholder="Ex: Aplicar norma coletiva de 2022, considerar adicional de insalubridade grau médio..."></textarea></div>
+            <div class="field"><label>Observações adicionais</label><textarea id="liq-obs2" placeholder="Informações complementares para o laudo..."></textarea></div>
+          </div>
+          <input type="file" id="liq-file" accept=".pdf" style="display:none" onchange="onLiqFileSelect(this.files[0])"/>
+          <div class="upload-zone" id="liq-upload" onclick="document.getElementById('liq-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="event.preventDefault();this.classList.remove('drag');onLiqFileSelect(event.dataTransfer.files[0])">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+            <h3>Enviar Petição Inicial (PDF)</h3>
+            <p>Clique ou arraste o arquivo aqui</p>
+          </div>
+          <div id="liq-file-ok" class="alert alert-ok" style="display:none;margin-top:10px"></div>
+          <button class="btn-liquidar" id="liq-btn" disabled onclick="processLiquida()">LIQUIDAR</button>
+          <div id="liq-loading" style="display:none">
+            <div class="panel" style="text-align:center;padding:48px">
+              <div class="spin" style="width:22px;height:22px;margin:0 auto 12px"></div>
+              <div id="liq-load-lbl" style="font-size:14px;color:var(--gy)">Realizando perícia contábil...</div>
+              <div class="prog-bar" style="max-width:360px;margin:12px auto 0"><div class="prog-fill" id="liq-prog" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div id="liq-result" style="display:none">
+            <div class="metrics">
+              <div class="mc"><div class="mc-label">Reclamante</div><div class="mc-value" id="lr-rec" style="font-size:13px">—</div></div>
+              <div class="mc"><div class="mc-label">Reclamada</div><div class="mc-value" id="lr-recld" style="font-size:13px">—</div></div>
+              <div class="mc"><div class="mc-label">Processo</div><div class="mc-value" id="lr-proc" style="font-size:13px">—</div></div>
+              <div class="mc"><div class="mc-label">Período</div><div class="mc-value" id="lr-per" style="font-size:13px">—</div></div>
+              <div class="mc"><div class="mc-label">Salário base identificado</div><div class="mc-value" id="lr-sal" style="font-size:12px;color:var(--or)">—</div></div>
+              <div class="mc"><div class="mc-label">Total bruto</div><div class="mc-value" id="lr-bruto">R$ 0</div></div>
+              <div class="mc hi"><div class="mc-label">Total líquido</div><div class="mc-value" id="lr-liq">R$ 0</div></div>
+            </div>
+            <div class="panel">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div class="ptitle" style="margin:0">Verbas liquidadas</div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo</button>
+                  <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSX()">XLSX</button>
+                  <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Laudo PDF</button>
+                </div>
+              </div>
+              <div id="liq-verbas-list"></div>
+            </div>
+            <div class="panel">
+              <div class="ptitle">Resumo tributário</div>
+              <table class="rtable"><tbody id="liq-tax"></tbody></table>
+            </div>
+            <div class="panel" id="liq-obs-panel" style="display:none">
+              <div class="ptitle">Memória de cálculo — metodologia geral</div>
+              <div id="liq-obs-text" style="font-size:13px;line-height:1.7;color:var(--gy)"></div>
+            </div>
+          </div>
+        </div>
+        <div id="liq-tab-hist" class="tab-content">
+          <div id="liq-hist-list"><p style="color:var(--gy);font-size:13px">Nenhum cálculo no histórico ainda.</p></div>
+        </div>
+      </div>
+
+      <!-- PONTO AI -->
+      <div id="mod-ponto" class="mod-content hide">
+        <div class="ph"><h1>PontoAI — Extrator de Espelhos de Ponto</h1><p>Leitura inteligente de cartões e espelhos de ponto por IA</p></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('pt','novo',this)">Nova extração</button>
+          <button class="tab-btn" onclick="switchTab('pt','hist',this)">Histórico</button>
+        </div>
+
+        <div id="pt-tab-novo" class="tab-content active">
+          <!-- Config -->
+          <div class="panel">
+            <div class="ptitle">Qualidade de leitura</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm res-btn active" onclick="setRes(this,2.0)">Normal</button>
+              <button class="btn btn-ghost btn-sm res-btn" onclick="setRes(this,3.0)">Alta</button>
+              <button class="btn btn-ghost btn-sm res-btn" onclick="setRes(this,4.0)">Máxima</button>
+              <span style="font-size:12px;color:var(--gy);margin-left:4px">— use Alta ou Máxima para documentos manuscritos ou de baixa resolução</span>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <input type="file" id="pt-file" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none" onchange="processPontoFiles(this.files)"/>
+          <div class="upload-zone" id="pt-upload-zone"
+            onclick="document.getElementById('pt-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="event.preventDefault();this.classList.remove('drag');processPontoFiles(event.dataTransfer.files)">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h3>Enviar Espelhos de Ponto</h3>
+            <p>PDF ou imagem (JPG/PNG) · Aceita múltiplos arquivos · Arraste e solte</p>
+          </div>
+
+          <!-- Progress -->
+          <div id="pt-status" style="display:none;margin-top:16px">
+            <div class="panel">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-size:13px;font-weight:600" id="pt-lbl">Iniciando leitura...</span>
+                <span style="font-size:12px;color:var(--gy)" id="pt-pct">0%</span>
+              </div>
+              <div class="prog-bar"><div class="prog-fill" id="pt-prog" style="width:0%"></div></div>
+              <div style="font-size:11px;color:var(--gy);margin-top:6px" id="pt-sub-lbl">Preparando arquivos...</div>
+            </div>
+          </div>
+
+          <!-- Alerts -->
+          <div id="pt-alerts" style="margin-top:8px"></div>
+
+          <!-- Result -->
+          <div id="pt-result" style="display:none;margin-top:16px">
+
+            <!-- Header info + actions -->
+            <div class="panel">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+                <div>
+                  <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="pt-emp">—</div>
+                  <div style="font-size:12px;color:var(--gy);margin-bottom:2px" id="pt-period">—</div>
+                  <div style="font-size:12px;color:var(--gy)" id="pt-total-dias">—</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="clearPonto()">Limpar</button>
+                  <button class="btn btn-ghost btn-sm" onclick="exportPontoXLSX()">XLSX</button>
+                  <button class="btn btn-primary btn-sm" onclick="exportPontoCSV()">CSV PJe-Calc</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats cards -->
+            <div id="pt-stats-row" class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:16px"></div>
+
+            <!-- Table -->
+            <div class="panel" style="padding:0;overflow:hidden">
+              <div style="overflow-x:auto">
+                <table class="ptable" id="pt-table">
+                  <thead>
+                    <tr>
+                      <th style="width:100px">Data</th>
+                      <th>Entrada</th>
+                      <th>Saída Int.</th>
+                      <th>Retorno Int.</th>
+                      <th>Saída</th>
+                      <th>Total</th>
+                      <th>Observação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pt-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="pt-tab-hist" class="tab-content">
+          <div id="pt-hist-list"><p style="color:var(--gy);font-size:13px">Nenhuma extração no histórico ainda.</p></div>
+        </div>
+      </div>
+
+      <!-- ACORD AI -->
+      <div id="mod-acordos" class="mod-content hide">
+        <div class="ph"><h1>AcordAI — Calculadora de Acordo</h1></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('ac','calc',this)">Calcular</button>
+          <button class="tab-btn" onclick="switchTab('ac','hist',this)">Histórico</button>
+        </div>
+        <div id="ac-tab-calc" class="tab-content active">
+          <div class="g2" style="gap:20px;align-items:start">
+            <div>
+              <div class="panel">
+                <div class="ptitle">Ponto de partida</div>
+                <div class="field"><label>Valor líquido desejado (R$)</label><input type="number" id="ac-liq" placeholder="30000"/></div>
+              </div>
+              <div class="panel">
+                <div class="ptitle">Dados do processo</div>
+                <div class="field"><label>Nº do processo</label><input type="text" id="ac-proc"/></div>
+                <div class="g2">
+                  <div class="field"><label>Reclamante</label><input type="text" id="ac-recl"/></div>
+                  <div class="field"><label>Reclamada</label><input type="text" id="ac-recld"/></div>
+                </div>
+                <div class="g3">
+                  <div class="field"><label>Admissão</label><input type="date" id="ac-adm"/></div>
+                  <div class="field"><label>Demissão</label><input type="date" id="ac-dem"/></div>
+                  <div class="field"><label>Ajuizamento</label><input type="date" id="ac-dist"/></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="ptitle">Verbas — proporção</div>
+                <div id="ac-vlist"></div>
+                <button class="btn btn-ghost btn-sm" onclick="addVrb()" style="margin-top:6px">+ Adicionar verba</button>
+              </div>
+              <div class="panel">
+                <div class="ptitle">Configurações</div>
+                <div class="g2">
+                  <div class="field"><label>Honorários sucumbência (R$)</label><input type="number" id="ac-suc" value="0"/></div>
+                  <div class="field"><label>Dependentes IRRF</label><input type="number" id="ac-dep" value="0"/></div>
+                  <div class="field"><label>INSS patronal (%)</label><input type="number" id="ac-patron" value="20"/></div>
+                  <div class="field"><label>INSS SAT/RAT (%)</label><input type="number" id="ac-sat" value="2"/></div>
+                </div>
+                <div class="chk-row" style="margin-top:6px"><input type="checkbox" id="ac-inss-teto"/><label for="ac-inss-teto">Reclamante recolhia INSS pelo teto — isentar desconto do reclamante</label></div>
+              </div>
+              <div id="ac-err" class="alert alert-err" style="display:none"></div>
+              <button class="btn btn-primary btn-lg" style="width:100%" onclick="calcAcordo()">Calcular acordo</button>
+            </div>
+            <div>
+              <div id="ac-empty" style="text-align:center;padding:80px 20px;color:var(--gy)"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Preencha e calcule</div>
+              <div id="ac-result" style="display:none">
+                <div class="metrics" style="grid-template-columns:1fr 1fr">
+                  <div class="mc"><div class="mc-label">Valor bruto</div><div class="mc-value" id="ar-bruto">—</div></div>
+                  <div class="mc hi"><div class="mc-label">Líquido reclamante</div><div class="mc-value" id="ar-liq">—</div></div>
+                  <div class="mc"><div class="mc-label">Meses apurados</div><div class="mc-value" id="ar-meses">—</div></div>
+                  <div class="mc"><div class="mc-label">Custo total reclamada</div><div class="mc-value" id="ar-custo" style="font-size:15px">—</div></div>
+                </div>
+                <div class="panel">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <div class="ptitle" style="margin:0">Detalhamento</div>
+                    <div style="display:flex;gap:6px">
+                      <button class="btn btn-ghost btn-sm" onclick="exportAcXLSX()">XLSX</button>
+                      <button class="btn btn-primary btn-sm" onclick="exportAcPDF()">PDF</button>
+                    </div>
+                  </div>
+                  <table class="rtable" id="ar-detail"></table>
+                </div>
+                <div class="panel">
+                  <div class="ptitle">Verbas discriminadas</div>
+                  <table class="rtable" id="ar-verbas"></table>
+                </div>
+                <div class="panel"><div class="ptitle">FGTS</div><table class="rtable" id="ar-fgts"></table></div>
+                <div class="panel">
+                  <div class="ptitle">Memória de cálculo — IRRF (RRA)</div>
+                  <table class="rtable" id="ar-irrf"></table>
+                </div>
+                <div class="panel">
+                  <div class="ptitle">Apuração mensal INSS — E-Social</div>
+                  <div style="overflow-x:auto"><table class="rtable" id="ar-esocial"></table></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="ac-tab-hist" class="tab-content">
+          <div id="ac-hist-list"><p style="color:var(--gy);font-size:13px">Nenhum acordo no histórico ainda.</p></div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO GERAL -->
+      <div id="mod-hist" class="mod-content hide">
+        <div class="ph"><h1>Histórico</h1><p>Todos os seus trabalhos salvos</p></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('gh','liq',this)">Liquidações</button>
+          <button class="tab-btn" onclick="switchTab('gh','pt',this)">Pontos</button>
+          <button class="tab-btn" onclick="switchTab('gh','ac',this)">AcordAI</button>
+        </div>
+        <div id="gh-tab-liq" class="tab-content active"><div id="gh-liq-list"><p style="color:var(--gy);font-size:13px">Nenhum registro.</p></div></div>
+        <div id="gh-tab-pt" class="tab-content"><div id="gh-pt-list"><p style="color:var(--gy);font-size:13px">Nenhum registro.</p></div></div>
+        <div id="gh-tab-ac" class="tab-content"><div id="gh-ac-list"><p style="color:var(--gy);font-size:13px">Nenhum registro.</p></div></div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="mod-admin" class="mod-content hide">
+        <div class="ph"><h1>Painel Administrativo</h1><p>Gerencie usuários e acessos</p></div>
+        <div class="panel">
+          <div class="ptitle">Usuários cadastrados</div>
+          <div id="admin-users"><p style="color:var(--gy);font-size:13px">Carregando usuários...</p></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — CREDENCIAIS FIXAS (usuários não precisam configurar)
+// ============================================================
+const SB_URL = 'https://oohdanesmqwmgdsnpvrk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaGRhbmVzbXF3bWdkc25wdnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTM0MzcsImV4cCI6MjA5MTE2OTQzN30.RjW-9ZNJUIvhSviq4AEllE-B75av9-xE5yEErngNU8Y';
+const ADMIN_EMAIL = 'g.lazzarote@hotmail.com';
+const PLAN_LIMITS={free:{liq:5,pt:5,ac:5},starter:{liq:10,pt:9999,ac:9999},pro:{liq:25,pt:9999,ac:9999},office:{liq:9999,pt:9999,ac:9999}};
+const PLAN_NAMES={free:'Gratuito',starter:'Starter',pro:'Profissional',office:'Escritório'};
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ============================================================
+// STATE
+// ============================================================
+let sb = null;
+let currentUser = null;
+let pontoResults = [];
+let renderScale = 2.5;
+let liquidaResult = null;
+let acordoResult = null;
+let aVerbas = [{id:1,name:'Horas extras',val:1,type:'remuneratoria'}];
+
+// HISTORY (localStorage)
+const HS = {
+  get: (k) => JSON.parse(localStorage.getItem('fazai_'+k)||'[]'),
+  set: (k,v) => localStorage.setItem('fazai_'+k, JSON.stringify(v)),
+  add: (k,item) => { const arr = HS.get(k); arr.unshift(item); if(arr.length>50) arr.pop(); HS.set(k,arr); }
+};
+
+// INSS / IRRF TABLES
+const INSS_T=[{l:1412,r:.075,d:0},{l:2666.68,r:.09,d:21.18},{l:4000.03,r:.12,d:101.18},{l:7786.02,r:.14,d:181.18}];
+const IRRF_T=[{l:2259.20,r:0,d:0},{l:2826.65,r:.075,d:182.16},{l:3751.05,r:.15,d:394.16},{l:4664.68,r:.225,d:675.49},{l:Infinity,r:.275,d:908.73}];
+const INSS_CEIL=7786.02, INSS_CEIL_C=908.86, DEP_DED=189.59;
+
+// FORMAT
+const fmtBRL = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('pt-BR') : '';
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  document.getElementById('ac-dist').value = new Date().toISOString().split('T')[0];
+  renderAVerbas();
+  showLoad('Inicializando...');
+  sb = supabase.createClient(SB_URL, SB_KEY);
+  const {data:{session}} = await sb.auth.getSession();
+  hideLoad();
+  if(session) { currentUser = session.user; showApp(); }
+  else showPage('landing');
+  sb.auth.onAuthStateChange((_,sess) => {
+    if(sess) { currentUser = sess.user; showApp(); }
+    else { currentUser = null; showPage('landing'); }
+  });
+}
+
+// ============================================================
+// PAGES & NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+}
+function showLoad(msg) {
+  document.getElementById('load-label').textContent = msg||'Carregando...';
+  document.getElementById('global-load').classList.add('show');
+}
+function hideLoad() { document.getElementById('global-load').classList.remove('show'); }
+function showAuthMode(m) {
+  document.getElementById('auth-login').style.display = m==='login'?'block':'none';
+  document.getElementById('auth-register').style.display = m==='register'?'block':'none';
+  document.getElementById('auth-msg').style.display = 'none';
+}
+function showAuthMsg(msg, type) {
+  const el = document.getElementById('auth-msg');
+  el.className = 'auth-msg '+(type==='err'?'err':'ok');
+  el.textContent = msg; el.style.display = 'block';
+}
+function getActivePlan(){
+  if(!userProfile) return 'free';
+  // Admin sempre office
+  if(currentUser?.email === ADMIN_EMAIL) return 'office';
+  const plan = userProfile.plan || 'free';
+  if(plan === 'free') return 'free';
+  // Verifica vencimento
+  if(userProfile.plan_expires_at){
+    const expires = new Date(userProfile.plan_expires_at);
+    if(expires < new Date()){
+      return 'free'; // Plano vencido — trata como free
+    }
+  }
+  return plan;
+}
+
+function checkPlanLimit(tipo){
+  const plan = getActivePlan();
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+  const thisMonth = HS.get(tipo).filter(i =>
+    new Date(i.ts).getMonth() === new Date().getMonth() &&
+    new Date(i.ts).getFullYear() === new Date().getFullYear()
+  ).length;
+  return thisMonth < (limits[tipo] || 5);
+}
+
+function showApp() {
+  showPage('app');
+  const email = currentUser?.email||'';
+  const name = currentUser?.user_metadata?.name || email.split('@')[0];
+  document.getElementById('u-name').textContent = name;
+  document.getElementById('u-av').textContent = name[0].toUpperCase();
+  const plan = getActivePlan();
+  const planLabel = currentUser?.email === ADMIN_EMAIL ? 'Administrador' : PLAN_NAMES[plan] || 'Gratuito';
+  // Aviso de vencimento
+  let planDisplay = planLabel;
+  if(userProfile?.plan_expires_at && plan !== 'free' && currentUser?.email !== ADMIN_EMAIL){
+    const expires = new Date(userProfile.plan_expires_at);
+    const hoje = new Date();
+    const diasRestantes = Math.ceil((expires - hoje) / (1000*60*60*24));
+    if(diasRestantes <= 5 && diasRestantes > 0){
+      planDisplay = planLabel + ' — vence em ' + diasRestantes + 'd';
+    } else if(diasRestantes <= 0){
+      planDisplay = 'Plano vencido';
+    }
+  }
+  document.getElementById('u-plan').textContent = planDisplay;
+  if(email === ADMIN_EMAIL) document.getElementById('nav-admin-wrap').style.display = 'block';
+  updateDashboard();
+}
+function showMod(m) {
+  document.querySelectorAll('.mod-content').forEach(el => el.classList.add('hide'));
+  document.getElementById('mod-'+m).classList.remove('hide');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-'+m).classList.add('active');
+  if(m==='admin') loadAdminUsers();
+  if(m==='hist') renderGlobalHist();
+}
+function switchTab(prefix, tab, btn) {
+  document.querySelectorAll(`[id^="${prefix}-tab-"]`).forEach(el => el.classList.remove('active'));
+  document.getElementById(`${prefix}-tab-${tab}`).classList.add('active');
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if(prefix==='liq'&&tab==='hist') renderLiqHist();
+  if(prefix==='pt'&&tab==='hist') renderPtHist('pt-hist-list');
+  if(prefix==='ac'&&tab==='hist') renderAcHist();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  if(!email||!pass) { showAuthMsg('Preencha e-mail e senha.','err'); return; }
+  showLoad('Entrando...');
+  const {error} = await sb.auth.signInWithPassword({email, password:pass});
+  hideLoad();
+  if(error) showAuthMsg(error.message.includes('Invalid')?'E-mail ou senha incorretos.':error.message,'err');
+}
+async function doRegister() {
+  const name = document.getElementById('rg-name').value.trim();
+  const email = document.getElementById('rg-email').value.trim();
+  const pass = document.getElementById('rg-pass').value;
+  if(!name||!email||!pass) { showAuthMsg('Preencha todos os campos.','err'); return; }
+  if(pass.length<6) { showAuthMsg('Senha mínimo 6 caracteres.','err'); return; }
+  showLoad('Criando conta...');
+  const {error} = await sb.auth.signUp({email, password:pass, options:{data:{name}}});
+  hideLoad();
+  if(error) showAuthMsg(error.message,'err');
+  else showAuthMsg('Conta criada! Verifique seu e-mail se necessário.','ok');
+}
+async function doLogout() {
+  showLoad('Saindo...');
+  await sb.auth.signOut();
+  hideLoad();
+  showPage('landing');
+}
+
+// ============================================================
+// CLAUDE API (via proxy seguro)
+// ============================================================
+async function claudeAPI(messages, maxTokens=8000) {
+  // Accepts either: messages array, or (prompt, b64, mime) legacy
+  let msgs = messages;
+  if(typeof messages === 'string') {
+    const [prompt, b64, mime] = arguments;
+    const content = b64
+      ? [{type:'document',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:prompt}]
+      : [{type:'text',text:prompt}];
+    msgs = [{role:'user',content}];
+  }
+  const res = await fetch('/api/claude', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:msgs})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data.content[0].text;
+}
+async function fileToB64(file) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function updateDashboard() {
+  const liqs = HS.get('liq');
+  const pts = HS.get('pt');
+  const acs = HS.get('ac');
+  document.getElementById('dc-liq').textContent = liqs.length;
+  document.getElementById('dc-pt').textContent = pts.length;
+  document.getElementById('dc-ac').textContent = acs.length;
+  const totalVal = liqs.reduce((s,i) => s+(i.totalBruto||0), 0);
+  document.getElementById('dc-val').textContent = fmtBRL(totalVal);
+
+  // Plano e aviso de vencimento
+  const plan = getActivePlan();
+  const limit = PLAN_LIMITS[plan]?.liq ?? 5;
+  const used = liqs.filter(i => new Date(i.ts).getMonth()===new Date().getMonth() && new Date(i.ts).getFullYear()===new Date().getFullYear()).length;
+  const planInfoEl = document.getElementById('dash-plan-info');
+  if(planInfoEl){
+    let msg = `<strong>Plano ${PLAN_NAMES[plan]||'Gratuito'}</strong> &middot; Liquidações este mês: ${used}/${limit===9999?'∞':limit}`;
+    if(userProfile?.plan_expires_at && plan !== 'free' && currentUser?.email !== ADMIN_EMAIL){
+      const expires = new Date(userProfile.plan_expires_at);
+      const dias = Math.ceil((expires - new Date())/(1000*60*60*24));
+      if(dias <= 5 && dias > 0){
+        msg += ` &middot; <span style="color:#B91C1C;font-weight:600">⚠ Vence em ${dias} dia${dias>1?'s':''}!</span>`;
+      } else if(dias <= 0){
+        msg += ` &middot; <span style="color:#B91C1C;font-weight:600">⚠ Plano vencido — renove para continuar</span>`;
+      } else {
+        msg += ` &middot; Válido até ${expires.toLocaleDateString('pt-BR')}`;
+      }
+    }
+    msg += ` &middot; <a href="javascript:showPage('landing')" style="color:var(--or)">Ver planos</a>`;
+    planInfoEl.innerHTML = msg;
+  }
+
+  const recent = [...liqs.slice(0,2).map(i=>({...i,tipo:'Liquidação'})), ...pts.slice(0,2).map(i=>({...i,tipo:'Ponto'})), ...acs.slice(0,2).map(i=>({...i,tipo:'Acordo'}))].sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const el = document.getElementById('dash-recent');
+  if(!recent.length) { el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhuma atividade ainda.</p>'; return; }
+  el.innerHTML = recent.map(i=>`<div class="hist-item"><div class="hist-item-info"><div class="hist-item-name">${i.tipo} — ${i.label||'Sem título'}</div><div class="hist-item-meta">${new Date(i.ts).toLocaleString('pt-BR')}</div></div><span class="badge badge-or">${i.tipo}</span></div>`).join('');
+}
+
+// ============================================================
+// LIQUIDA AI
+// ============================================================
+function onLiqFileSelect(file){
+  if(!file) return;
+  liqFileB64=null; liqFileMime=null;
+  const el=document.getElementById('liq-file-ok');
+  el.style.display='block';
+  el.textContent='✓ Arquivo selecionado: '+file.name;
+  fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';document.getElementById('liq-btn').disabled=false;});
+  document.getElementById('liq-upload').style.display='none';
+}
+
+async function processLiquida() {
+  if(!liqFileB64) return;
+  document.getElementById('liq-upload').style.display='none';
+  document.getElementById('liq-loading').style.display='block';
+  document.getElementById('liq-result').style.display='none';
+  const obs = document.getElementById('liq-obs').value;
+  const obs2 = document.getElementById('liq-obs2').value;
+  const inssP = document.getElementById('liq-inss').value||'23';
+  const hon = document.getElementById('liq-hon').value||'0';
+  const ajuiz = document.getElementById('liq-ajuiz').value;
+  const sal = document.getElementById('liq-sal')?.value||'';
+  const usarCM = document.getElementById('liq-cm') ? document.getElementById('liq-cm').checked : true;
+  const usarJur = document.getElementById('liq-jur') ? document.getElementById('liq-jur').checked : true;
+  const valIni = parseFloat(document.getElementById('liq-val-ini')?.value)||0;
+  let prog=5;
+  const pi = setInterval(()=>{ prog=Math.min(prog+3,88); document.getElementById('liq-prog').style.width=prog+'%'; },800);
+  document.getElementById('liq-load-lbl').textContent = 'Lendo petição inicial...';
+  try {
+    const b64 = liqFileB64;
+    setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Calculando verbas...'; },5000);
+    setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Aplicando ADC 58...'; },15000);
+    setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Calculando INSS e IRRF...'; },25000);
+    const prompt = `### PROTOCOLO DE PERÍCIA CONTÁBIL JUDICIAL — FAZ AI
+Você é um Perito Judicial Contábil nomeado pelo juízo. Liquide INTEGRAL e EXAUSTIVAMENTE todos os pedidos da petição inicial (TODAS as alíneas, de "a" até o final, sem pular nenhuma).
+
+### REGRA ABSOLUTA — PROIBIÇÃO DE CÓPIA:
+É TERMINANTEMENTE PROIBIDO copiar, transcrever ou usar qualquer valor numérico da petição inicial como resultado.
+A petição inicial serve APENAS para identificar: salário base, jornada de trabalho, período contratual e as rubricas pleiteadas.
+Os valores da inicial são o TETO LEGAL — nunca a fonte de cálculo.
+CALCULE TUDO DO ZERO como perito independente. Laudo com valores copiados = NULO E INVÁLIDO.
+
+### METODOLOGIA OBRIGATÓRIA:
+Para CADA verba:
+1. Identifique na petição: salário base, jornada, horas por dia/semana, período (admissão→demissão)
+2. Calcule matematicamente. Exemplos:
+   - Horas extras 50%: (horas_extras_dia × dias_úteis_mês × salário_hora × 1,5) × meses_período
+   - DSR sobre HE: (total_HE_mês ÷ dias_úteis) × domingos_feriados × meses
+   - Integração férias: (verba_anual ÷ 12) × 1,3333
+   - Integração 13º: verba_anual ÷ 12
+   - FGTS+40%: base_FGTS × 8% × meses × 1,4
+   - Intervalo: (valor_hora × tempo_suprimido × dias_mês) × meses
+3. Apure TODOS os reflexos em separado (DSR, férias, 13º, FGTS, aviso prévio)
+4. Aplique correção monetária ADC 58 STF
+5. Descreva a metodologia detalhada no campo "metodologia"
+
+### CORREÇÃO MONETÁRIA (ADC 58 STF + LEI 14.905/2024):
+Aplicar correção: ${usarCM ? 'SIM' : 'NÃO — usuário optou por não aplicar'}
+Aplicar juros: ${usarJur ? 'SIM (SELIC acumulada pós-ajuizamento)' : 'NÃO'}
+- Pré-judicial (do vencimento até véspera do ajuizamento): IPCA-E acumulado
+- Judicial (do ajuizamento até hoje): SELIC acumulada  
+- Lei 14.905/2024: IPCA como índice oficial + juros legais (SELIC)
+- NÃO acumular juros 1%a.m. com SELIC
+${ajuiz ? '- Data de ajuizamento: ' + ajuiz : ''}
+
+### METODOLOGIA OBRIGATÓRIA DE CÁLCULO:
+PROIBIÇÃO ABSOLUTA: JAMAIS copie valores da inicial como resultado final. Calcule tudo do zero.
+
+### IDENTIFICAÇÃO DO SALÁRIO BASE (OBRIGATÓRIO):
+1. Localize na petição inicial o ÚLTIMO salário recebido pelo reclamante (geralmente mencionado como "último salário", "salário contratual" ou na descrição do contrato)
+2. Se houver adicionais habituais (insalubridade, periculosidade, adicional noturno, etc.), identifique-os e inclua na remuneração base para fins de cálculo dos reflexos
+3. Se houver reajustes salariais no período, use o salário de cada época para calcular as verbas correspondentes
+4. Informe o salário identificado no campo "salarioBaseIdentificado" do JSON
+
+FGTS — MÉTODO CORRETO:
+- Base FGTS = soma de TODAS as verbas salariais apuradas
+- FGTS 8% = base_FGTS × 8%
+- Multa 40% = FGTS_8% × 40%  
+- NUNCA multiplicar base pelo número de meses
+
+HORAS EXTRAS:
+- Normais (seg-sex): +50% sobre salário base
+- Domingos e feriados: +100% (DOBRO) sobre salário base
+- Intervalares (intra/inter): sempre +50%
+
+DSR: apuração mensal → total_HE_mês ÷ dias_úteis × domingos_feriados = DSR_mensal × meses
+
+AVISO PRÉVIO: sempre indenizado, 30 dias + 3 dias/ano trabalhado (máx 90 dias)
+
+FÉRIAS e 13º: apuração anual → multiplicar pelos anos trabalhados
+
+OBSERVAÇÕES PERICIAIS: ${obs||'Nenhuma'}
+OBSERVAÇÕES ADICIONAIS: ${obs2||'Nenhuma'}
+
+Retorne APENAS JSON válido sem markdown, sem comentários:
+{"reclamante":"","reclamada":"","numeroProcesso":"","salarioBaseIdentificado":0,"adicionaisIdentificados":"","periodoCalculoInicio":"","periodoCalculoFim":"","verbas":[{"descricao":"a) Nome da verba conforme alínea","metodologia":"Salário: R$X | H.extras: Y/dia | Período: Z meses | Cálculo: X×Y×1,5×Z = R$W","baseCalculo":0,"quantidade":0,"valor":0,"valorCorrigido":0,"juros":0,"total":0,"natureza":"salarial","status":"normal"}],"totalBruto":0,"inss":0,"irrf":0,"fgts":0,"totalLiquido":0,"valorFinalCorrigido":0,"honorariosPercentual":${hon},"valorHonorarios":0,"valorTotalGeral":0,"inssReclamada":0,"baseCalculoInssReclamada":0,"percentualInssReclamada":${inssP},"isCalculationPossible":true,"errorReason":"","observation":"Descreva aqui a metodologia geral, índices e tabelas utilizadas"}`;
+    const txt = await claudeAPI([{role:'user',content:[
+      {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},
+      {type:'text',text:prompt}
+    ]}]);
+    clearInterval(pi);
+    document.getElementById('liq-prog').style.width='100%';
+    liquidaResult = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    // Save to history
+    HS.add('liq', { ts:Date.now(), label:liquidaResult.reclamante||'Liquidação', totalBruto:liquidaResult.totalBruto, totalLiquido:liquidaResult.totalLiquido, data:liquidaResult });
+    renderLiquidaResult();
+    updateDashboard();
+  } catch(e) {
+    clearInterval(pi);
+    alert('Erro na liquidação: '+e.message);
+    clearLiquida();
+  }
+}
+
+function renderLiquidaResult() {
+  const r = liquidaResult;
+  document.getElementById('liq-loading').style.display='none';
+  document.getElementById('liq-result').style.display='block';
+  document.getElementById('lr-rec').textContent = r.reclamante||'—';
+  // Mostrar salário identificado se disponível
+  const salEl = document.getElementById('lr-sal');
+  if(salEl) salEl.textContent = r.salarioBaseIdentificado ? fmtBRL(r.salarioBaseIdentificado)+(r.adicionaisIdentificados?' + '+r.adicionaisIdentificados:'') : '—';
+  document.getElementById('lr-recld').textContent = r.reclamada||'—';
+  document.getElementById('lr-proc').textContent = r.numeroProcesso||'—';
+  document.getElementById('lr-per').textContent = r.periodoCalculoInicio && r.periodoCalculoFim ? r.periodoCalculoInicio+' a '+r.periodoCalculoFim : '—';
+  document.getElementById('lr-bruto').textContent = fmtBRL(r.totalBruto);
+  document.getElementById('lr-liq').textContent = fmtBRL(r.totalLiquido);
+
+  // Render verbas as cards
+  const vl = document.getElementById('liq-verbas-list');
+  vl.innerHTML = (r.verbas||[]).map((v,i) => `
+    <div class="vcard ${v.status==='contestada'?'contestada':v.status==='reconhecida'?'reconhecida':''}" id="vc-${i}">
+      <div class="vcard-header">
+        <span class="vcard-desc">${v.descricao}</span>
+        <span class="badge ${v.natureza==='salarial'?'badge-or':'badge-green'}">${v.natureza}</span>
+      </div>
+      <div class="vcard-meta">${v.metodologia||''}</div>
+      <div class="vcard-values">
+        <div class="vcard-val-item"><div class="vcard-val-label">Principal</div><div class="vcard-val-num">${fmtBRL(v.valor)}</div></div>
+        <div class="vcard-val-item"><div class="vcard-val-label">Corrigido</div><div class="vcard-val-num">${fmtBRL(v.valorCorrigido)}</div></div>
+        <div class="vcard-val-item"><div class="vcard-val-label">Juros</div><div class="vcard-val-num">${fmtBRL(v.juros)}</div></div>
+        <div class="vcard-val-item"><div class="vcard-val-label">Total</div><div class="vcard-val-num" style="color:var(--or)">${fmtBRL(v.total)}</div></div>
+      </div>
+      <div class="vcard-actions">
+        <button class="btn btn-green btn-sm" onclick="setVerbaStatus(${i},'reconhecida')">✓ Reconhecida</button>
+        <button class="btn btn-danger btn-sm" onclick="setVerbaStatus(${i},'contestada')">✗ Contestada</button>
+        <button class="btn btn-ghost btn-sm" onclick="setVerbaStatus(${i},'normal')">Limpar</button>
+      </div>
+    </div>`).join('');
+
+  // Tax summary
+  document.getElementById('liq-tax').innerHTML = [
+    ['Total bruto',r.totalBruto],['(-) INSS empregado',r.inss],['(-) IRRF',r.irrf],
+    ['FGTS',r.fgts||0],['(=) Líquido reclamante',r.totalLiquido],
+    ['Honorários sucumbência (' + (r.honorariosPercentual||0)+'%)',r.valorHonorarios],
+    ['INSS reclamada ('+r.percentualInssReclamada+'%)',r.inssReclamada],
+    ['Total geral (custo reclamada)',r.valorTotalGeral]
+  ].map(([k,v])=>`<tr><td>${k}</td><td>${fmtBRL(v)}</td></tr>`).join('');
+
+  // Observation/methodology
+  if(r.observation) {
+    document.getElementById('liq-obs-panel').style.display='block';
+    document.getElementById('liq-obs-text').textContent = r.observation;
+  }
+}
+
+function setVerbaStatus(i, status) {
+  if(!liquidaResult) return;
+  liquidaResult.verbas[i].status = status;
+  const card = document.getElementById('vc-'+i);
+  card.className = 'vcard'+(status==='contestada'?' contestada':status==='reconhecida'?' reconhecida':'');
+}
+
+function clearLiquida() {
+  liquidaResult = null; liqFileB64 = null; liqFileMime = null;
+  document.getElementById('liq-upload').style.display='block';
+  document.getElementById('liq-loading').style.display='none';
+  document.getElementById('liq-result').style.display='none';
+  document.getElementById('liq-file').value='';
+  document.getElementById('liq-file-ok').style.display='none';
+  const btn=document.getElementById('liq-btn');if(btn){btn.disabled=true;btn.style.display='block';}
+  document.getElementById('liq-obs-panel').style.display='none';
+}
+
+function exportLiquidaXLSX() {
+  if(!liquidaResult) return;
+  const r = liquidaResult;
+  const wb = XLSX.utils.book_new();
+  const rows = [
+    ['LAUDO PERICIAL TRABALHISTA — FAZ AI'],[''],
+    ['Reclamante',r.reclamante],['Reclamada',r.reclamada],['Processo',r.numeroProcesso],
+    ['Período',r.periodoCalculoInicio+' a '+r.periodoCalculoFim],[''],
+    ['VERBAS LIQUIDADAS'],
+    ['Alínea','Metodologia','Natureza','Principal','Principal Corrigido','Juros','Total','Status'],
+    ...(r.verbas||[]).map(v=>[v.descricao,v.metodologia,v.natureza,v.valor,v.valorCorrigido,v.juros,v.total,v.status||'normal']),
+    [''],['RESUMO TRIBUTÁRIO'],
+    ['Total Bruto',r.totalBruto],['INSS Empregado',r.inss],['IRRF',r.irrf],
+    ['FGTS',r.fgts||0],['Líquido Reclamante',r.totalLiquido],
+    ['Honorários',r.valorHonorarios],['INSS Reclamada',r.inssReclamada],['Total Geral',r.valorTotalGeral],
+    [''],['METODOLOGIA'],['',r.observation]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:50},{wch:60},{wch:15},{wch:18},{wch:18},{wch:18},{wch:18},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Liquidação');
+  XLSX.writeFile(wb, `Liquidacao_${(r.reclamante||'proc').replace(/\s/g,'_')}.xlsx`);
+}
+
+function exportLiquidaPDF() {
+  if(!liquidaResult) return;
+  const r = liquidaResult;
+  const {jsPDF} = jspdf;
+  const doc = new jsPDF();
+  const orange = [234,88,12];
+
+  // Cabeçalho branco + linha laranja
+  doc.setFillColor(255,255,255);doc.rect(0,0,210,28,'F');
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,28,210,28);
+  doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
+  doc.text('Faz AI',14,12);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+  doc.text('LC',189,12);doc.setTextColor(234,88,12);doc.text('A',193,12);
+  doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+  doc.text('LCA — Legal Calculation Associate',196,18,{align:'right'});
+  doc.setTextColor(17,24,39);doc.setFontSize(12);doc.setFont(undefined,'bold');
+  doc.text('LAUDO PERICIAL TRABALHISTA',105,38,{align:'center'});
+
+  // Process info
+  doc.setTextColor(0,0,0);
+  doc.autoTable({startY:42,head:[['Dados do Processo','']],
+    body:[['Reclamante',r.reclamante],['Reclamada',r.reclamada],['Processo',r.numeroProcesso],['Período apurado',r.periodoCalculoInicio+' a '+r.periodoCalculoFim]],
+    theme:'grid',headStyles:{fillColor:orange},columnStyles:{0:{fontStyle:'bold',cellWidth:50}}});
+
+  // Verbas
+  doc.autoTable({startY:doc.lastAutoTable.finalY+6,
+    head:[['Alínea / Verba','Metodologia','Nat.','Principal Corrigido','Juros','Total']],
+    body:(r.verbas||[]).map(v=>[v.descricao,v.metodologia||'',v.natureza==='salarial'?'SAL':'INDEN',fmtBRL(v.valorCorrigido),fmtBRL(v.juros),fmtBRL(v.total)]),
+    theme:'striped',headStyles:{fillColor:orange},
+    columnStyles:{0:{cellWidth:45},1:{cellWidth:60,fontSize:8},2:{cellWidth:12},3:{cellWidth:25},4:{cellWidth:20},5:{cellWidth:25}},
+    styles:{fontSize:8}});
+
+  // Summary
+  doc.autoTable({startY:doc.lastAutoTable.finalY+6,
+    head:[['Resumo Tributário','Valor']],
+    body:[['Total Bruto',fmtBRL(r.totalBruto)],['(-) INSS Empregado',fmtBRL(r.inss)],['(-) IRRF',fmtBRL(r.irrf)],['(=) Líquido Reclamante',fmtBRL(r.totalLiquido)],['Honorários Sucumbência ('+r.honorariosPercentual+'%)',fmtBRL(r.valorHonorarios)],['INSS Reclamada ('+r.percentualInssReclamada+'%)',fmtBRL(r.inssReclamada)],['TOTAL GERAL (Custo Reclamada)',fmtBRL(r.valorTotalGeral)]],
+    theme:'grid',headStyles:{fillColor:orange}});
+
+  // Methodology
+  if(r.observation) {
+    doc.autoTable({startY:doc.lastAutoTable.finalY+6,
+      head:[['Metodologia Geral e Índices Utilizados']],
+      body:[[r.observation]],
+      theme:'plain',headStyles:{fillColor:orange,textColor:255},styles:{fontSize:8,cellPadding:4}});
+  }
+
+  // Footer
+  const pages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++) {
+    doc.setPage(i);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
+    doc.setFontSize(7);doc.setTextColor(107,114,128);
+    doc.text('LCA — Legal Calculation Associate  ·  (11) 97329-4795  ·  (11) 96449-6270  ·  linkedin.com/in/lca-legal-calculation-associate  ·  Pág. '+i+'/'+pages,105,288,{align:'center'});
+  }
+
+  doc.save(`Laudo_${(r.reclamante||'proc').replace(/\s/g,'_')}.pdf`);
+}
+
+// Liquida History
+function renderLiqHist() {
+  const items = HS.get('liq');
+  const el = document.getElementById('liq-hist-list');
+  if(!items.length) { el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhum cálculo no histórico.</p>'; return; }
+  el.innerHTML = items.map((it,i)=>`
+    <div class="hist-item" onclick="loadLiqHist(${i})">
+      <div class="hist-item-info">
+        <div class="hist-item-name">${it.label||it.fileName}</div>
+        <div class="hist-item-meta">${new Date(it.ts).toLocaleString('pt-BR')} · ${it.totalBruto ? fmtBRL(it.totalBruto)+' bruto' : ''}</div>
+      </div>
+      <span class="hist-item-value">${fmtBRL(it.totalLiquido)}</span>
+      <span class="badge badge-or">Liq.</span>
+    </div>`).join('');
+}
+function loadLiqHist(i) {
+  liquidaResult = HS.get('liq')[i].data;
+  showMod('liquida');
+  switchTab('liq','novo', document.querySelector('#mod-liquida .tab-btn'));
+  document.getElementById('liq-upload').style.display='none';
+  renderLiquidaResult();
+}
+
+// ============================================================
+// PONTO AI — PDF.js página a página + Claude Vision
+// ============================================================
+function setRes(btn,val){
+  renderScale=val;
+  document.querySelectorAll('.res-btn').forEach(b=>{b.className='btn btn-ghost btn-sm res-btn';});
+  btn.className='btn btn-outline btn-sm res-btn active';
+}
+
+async function processPontoFiles(files){
+  if(!files||!files.length) return;
+  document.getElementById('pt-status').style.display='block';
+  document.getElementById('pt-result').style.display='none';
+  document.getElementById('pt-alerts').innerHTML='';
+  if(document.getElementById('pt-upload-zone')) document.getElementById('pt-upload-zone').style.display='none';
+  pontoResults=[];
+  let empName='', period='';
+
+  // Fase 1: renderizar todas as páginas
+  let totalPages=0, processedPages=0;
+  const fileData=[];
+  for(let fi=0;fi<files.length;fi++){
+    const file=files[fi];
+    const mime=file.type||'application/pdf';
+    setPtProg(0,1,'Carregando '+file.name,'Preparando...');
+    if(mime.startsWith('image/')){
+      const b64=await fileToB64(file);
+      fileData.push({pages:[{b64,mime}],name:file.name});
+      totalPages++;
+    } else {
+      try{
+        const ab=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+        const pages=[];
+        for(let p=1;p<=pdf.numPages;p++){
+          setPtProg(p-1,pdf.numPages,'Renderizando '+file.name,'Página '+p+'/'+pdf.numPages+'...');
+          const page=await pdf.getPage(p);
+          const vp=page.getViewport({scale:renderScale});
+          const canvas=document.createElement('canvas');
+          canvas.width=vp.width; canvas.height=vp.height;
+          const ctx=canvas.getContext('2d');
+          ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          await page.render({canvasContext:ctx,viewport:vp}).promise;
+          pages.push({b64:canvas.toDataURL('image/jpeg',0.92).split(',')[1],mime:'image/jpeg'});
+        }
+        fileData.push({pages,name:file.name});
+        totalPages+=pages.length;
+      }catch(e){ console.warn('Erro PDF:',e); }
+    }
+  }
+
+  // Fase 2: enviar cada página para Claude
+  const PROMPT=`Você é um sistema especializado de OCR para espelhos de ponto trabalhistas brasileiros. Sua tarefa é extrair APENAS as batidas/marcações reais de horário — nunca valores calculados.
+
+════════════════════════════════════════════════════
+REGRA FUNDAMENTAL — LEIA COM ATENÇÃO
+════════════════════════════════════════════════════
+Espelhos de ponto têm dois tipos de colunas:
+  ✅ BATIDAS REAIS: horários registrados pelo funcionário no relógio (entrada, saída, intervalos)
+  ❌ COLUNAS DE CÁLCULO: totais computados pelo sistema — NUNCA use como batidas
+
+Colunas de CÁLCULO que NÃO são batidas (ignore para entrada/saída):
+  HT, H.TRAB, TRAB., TOTAL, HORAS TRABALHADAS, HN, H.NOT, HORA NOTURNA, HE, H.EXTRA,
+  SALDO, BANCO, DB BH, CRED BH, ATRASO, DIFERENÇA, CH, CHS, CARGA HORÁRIA,
+  ADIC NOT, FALTAS, HE/ESP, COMPL. ENTRADA, COMPL. SAÍDA
+
+════════════════════════════════════════════════════
+CATÁLOGO DE FORMATOS — LEIA TODOS ANTES DE EXTRAIR
+════════════════════════════════════════════════════
+
+──────────────────────────────────────
+FORMATO 1 — Coluna única "Jornada realizada" / "Marcações" / "Batidas"
+Horários em sequência separados por espaço
+──────────────────────────────────────
+  Dia      | CH  | Jornada realizada        | HT    | HN
+  01/03/23 | 014 | 23:37 06:02              | 06:25 | 05:23
+  → entrada=23:37  saida=06:02  (HT e HN são TOTAIS, ignorar)
+
+  02/03/23 | 014 | 21:41 00:09 01:09 06:00  | 07:19 | 06:00
+  → entrada=21:41  saidaIntervalo=00:09  retornoIntervalo=01:09  saida=06:00
+
+  06/03/23 | 001 |                           |       |       | N/T
+  → entrada=""  saida=""  observacao="N/T"
+
+──────────────────────────────────────
+FORMATO 2 — Colunas separadas (sistemas digitais padrão)
+──────────────────────────────────────
+  DATA       | ENTRADA | SAÍDA INT. | RETORNO | SAÍDA  | TOTAL
+  01/03/2023 | 08:00   | 12:00      | 13:00   | 17:00  | 08:00
+  → entrada=08:00  saidaIntervalo=12:00  retornoIntervalo=13:00  saida=17:00
+
+──────────────────────────────────────
+FORMATO 3 — Espelho de Cartão de Ponto com coluna "Intervalo" como intervalo HH:MM–HH:MM
+(Segurança patrimonial, vigilantes, Dimep/Henry)
+──────────────────────────────────────
+  Data            | Posto          | Entrada | Intervalo       | Saída
+  02/02/2020-Dom  | CPTM ESCOLTA   | 17:02   | 23:00 – 23:56   | 05:04
+  → entrada=17:02  saidaIntervalo=23:00  retornoIntervalo=23:56  saida=05:04
+
+  Linha com "Folga" na coluna Posto e sem horários:
+  → entrada=""  saida=""  observacao="FOLGA"
+
+  Coluna "Saída posterior" presente: use como saida final se a coluna Saída estiver vazia.
+  Coluna "Entrada antecipada": use como entrada se a coluna Entrada estiver vazia.
+  Asterisco (*) ao lado do horário = marcação eletrônica válida, remova o asterisco.
+    Ex: 07:26* → 07:26
+
+──────────────────────────────────────
+FORMATO 4 — TOTVS/Senior/Telefônica — observação em sub-linha, datas com ponto (DD.MM.AAAA)
+──────────────────────────────────────
+  Dia         | Marcações ponto eletrônico | Jornada Realizada (Ent|Saí|Ent|Saí) | CH  | Motivo
+  06.04.2022  |                            |                                      | 3000| Treinamento
+              |   Treinamento   06:00      |                                      |     |
+  → data=06/04/2022  entrada=""  saida=""  observacao="Treinamento"
+  → A sub-linha com texto e horário é observação/ocorrência, NÃO são batidas
+
+  15.04.2022  |                            |                                      | FERI|
+  → data=15/04/2022  observacao="FERIADO"
+
+  Datas com ponto (DD.MM.AAAA) → converter para DD/MM/AAAA
+  CH=FERI → FERIADO. Motivo="Folga por liberalidade" → observacao="FOLGA"
+  Motivo="Treinamento" → observacao="Treinamento"
+  Quando há marcações reais na coluna "Jornada Realizada", extraia normalmente.
+
+──────────────────────────────────────
+FORMATO 4B — TOTVS/Senior com 6 colunas "Jornada Realizada" (3 pares Entrada/Saída) e overflow em 2 linhas
+──────────────────────────────────────
+  Dia        | Marcações ponto eletrônico | Ent   | Saí   | Ent   | Saí   | Ent   | Saí   | CH
+  07.05.2023 |                            | 07:00 | 08:46 | 08:55 | 09:40 | 10:01 | 11:35 | 3000
+             |                            | 11:45 | 13:22 |       |       |       |       |
+  → Juntar todas as batidas das linhas do mesmo dia em sequência:
+    07:00, 08:46, 08:55, 09:40, 10:01, 11:35, 11:45, 13:22
+  → entrada=07:00  saidaIntervalo=08:46  retornoIntervalo=08:55  saida=13:22
+  → Batidas intermediárias (09:40, 10:01, 11:35, 11:45) → registrar na observacao como "batidas: 09:40 10:01 11:35 11:45"
+
+  11.05.2023 |                            | 07:00 |       |       |       |       | 13:20 | 3000
+  → entrada=07:00  saida=13:20  (sem intervalo)
+
+  13.05.2023 |                            |       |       |       |       |       |       | FOLG
+  → observacao="FOLGA"  (CH=FOLG = FOLGA)
+
+  Sub-linha com "Saldo de Hrs Flexível (+)  00:15" = cálculo interno, IGNORAR completamente
+  Textos de cálculo a ignorar: "Saldo de Hrs Flexível", "Banco de Horas", "Crédito/Débito"
+
+FORMATO 5 — Cartão manual com colunas MANHÃ / TARDE / NOITE
+(Indústria têxtil, alimentícia — dias como número simples 1 a 31)
+──────────────────────────────────────
+  DIA | MANHÃ Entrada | MANHÃ Saída | TARDE Entrada | TARDE Saída | NOITE Entrada | NOITE Saída
+   1  |     06:05     |    09:50    |     10:35     |    14:40    |               |
+  → entrada=06:05  saidaIntervalo=09:50  retornoIntervalo=10:35  saida=14:40
+
+   6  |  (escrito "Folga" ou traço)
+  → observacao="FOLGA"
+
+  Dias são números 1–31: construa a data completa usando mês/ano do cabeçalho.
+  Se NOITE Entrada/Saída preenchidos com turno cruzando meia-noite, registre normalmente.
+
+──────────────────────────────────────
+FORMATO 6 — Escala 12x36 / Segurança — coluna SITUAÇÃO
+──────────────────────────────────────
+  DATA           | ESCALA | SITUAÇÃO | TURNO  | ENTRADA | INTERVALO | SAÍDA
+  14/02/2022 SEG | 12X36  | TRABALHO | DIURNO | 07:26*  |     *     | 19:30*
+  15/02/2022 TER | 12X36  | FOLGA    | DIURNO |         |           |
+  → SITUAÇÃO=TRABALHO: extraia entrada e saída (remover asterisco)
+  → SITUAÇÃO=FOLGA: observacao="FOLGA", sem horários
+  → INTERVALO com apenas "*" = sem intervalo registrado, deixar vazio
+
+──────────────────────────────────────
+FORMATO 7 — Cartão de ponto hospitalar — 2 batidas por linha + nota de ocorrência
+(coluna "Marcações" com entrada, saída e texto de ocorrência juntos)
+──────────────────────────────────────
+  Dia  | Sem | Hor  | Marcações                         | Trab. | Db BH | Cred BH
+  03/02| SEG | 0141 | 07:00 17:40  Crédito Banco Horas  | 06:00 |       | 04:40
+  04/02| TER | 0141 | 07:01 12:32  Débito Banco Horas   | 05:31 | 00:29 |
+  09/02| DOM | 9999 | DSR                               |       |       |
+  → Extrair apenas os 2 horários antes do texto: entrada=07:00 saida=17:40
+  → Texto após os horários = ocorrência interna, ignorar para batidas
+  → "Crédito/Débito Banco Horas" NÃO são horários, ignorar
+  → Hor=9999 + "DSR" → observacao="DSR", sem horários
+  → Trab., Db BH, Cred BH = CÁLCULOS, nunca usar como batidas
+  → Datas sem ano: inferir do período do documento
+
+──────────────────────────────────────
+FORMATO 8 — Ficha individual Art. 74 CLT / Horário de trabalho externo
+(colunas INTERVALO DAS / AS separadas — manuscrita)
+──────────────────────────────────────
+  DIAS | ENTRADA | INTERVALO DAS | INTERVALO AS | SAÍDA | POSTO
+   10  |  08:01  |               |              | 17:49 | Ag 0375
+   11  |  07:59  |               |              | 17:50 | Ag 0375
+   13  |  07:58  |               |              | 17:49 | Ag 0375
+  → entrada=08:01  saidaIntervalo=""  retornoIntervalo=""  saida=17:49
+  → Dias em branco (sem entrada e saída) → pular ou observacao="" conforme contexto
+  → Construir data completa com período do cabeçalho (ex: PERÍODO 30/10/2022 a 31/10/2022)
+
+──────────────────────────────────────
+FORMATO 9 — Ficha manual com coluna "Refeição Início / Término" para intervalo
+(obras, construção civil — dias numerados)
+──────────────────────────────────────
+  Dia | Entrada | Refeição Início | Refeição Término | Saída | Horas Extras
+   16 |  07:01  |      12:04      |       13:05      | 19:02 |
+   18 |  06:59  |      12:02      |       13:02      | 19:04 |
+  → entrada=07:01  saidaIntervalo=12:04  retornoIntervalo=13:05  saida=19:02
+  → Dias ímpares têm dados, pares em branco (folga/DSR implícita) → deixar observacao=""
+  → Horário de trabalho indicado no cabeçalho (ex: 07:00 as 19:00) é referência, não batida
+
+════════════════════════════════════════════════════
+SEQUÊNCIA DE HORÁRIOS EM COLUNA ÚNICA
+════════════════════════════════════════════════════
+  2 horários → entrada + saída
+  3 horários → entrada + saída-intervalo + saída  (retornoIntervalo="")
+  4 horários → entrada + saída-intervalo + retorno-intervalo + saída
+  6 horários → entrada + saidaInt + retornoInt + saída (2º intervalo na observacao)
+
+════════════════════════════════════════════════════
+TURNO NOTURNO — CRUZAMENTO DE MEIA-NOITE
+════════════════════════════════════════════════════
+  Entrada >= 18:00 e saída <= 12:00 = turno noturno válido, não é erro.
+  Ex: entrada=21:41 saida=06:00 → correto, registre normalmente.
+  Ex: entrada=17:02 intervalo=23:00–23:56 saida=05:04 → correto.
+
+════════════════════════════════════════════════════
+DATAS — FORMATOS ACEITOS E CONVERSÃO
+════════════════════════════════════════════════════
+  DD/MM/AAAA → usar diretamente
+  DD.MM.AAAA → converter para DD/MM/AAAA
+  DD/MM/AA   → inferir século (ex: 23 → 2023)
+  Dia número (1–31) → construir DD/MM/AAAA usando mês/ano do cabeçalho
+  Data com dia da semana (ex: "14/02/2022 SEG") → usar apenas 14/02/2022
+
+════════════════════════════════════════════════════
+OBSERVAÇÕES E AUSÊNCIAS — MAPEAMENTO
+════════════════════════════════════════════════════
+  N/T, NT, NÃO TRABALHOU                         → "N/T"
+  DSR, DESCANSO SEMANAL REMUNERADO               → "DSR"
+  FOLGA, FOLGA POR LIBERALIDADE, DIA DE FOLGA    → "FOLGA"
+  FERIADO, FERI, FERIADO NACIONAL/MUNICIPAL      → "FERIADO"
+  FÉRIAS                                          → "FÉRIAS"
+  FALTA, AUSENTE, AUSÊNCIA, FALTA INJUSTIFICADA  → "FALTA"
+  ATESTADO, AFASTAMENTO, CID                     → "ATESTADO"
+  TREINAMENTO, CURSO                             → "Treinamento"
+  BANCO DE HORAS, COMPENSAÇÃO, DÉBITO BH         → registrar batidas normalmente se houver
+  Linha em branco sem qualquer texto             → observacao=""
+
+════════════════════════════════════════════════════
+REGRAS GERAIS
+════════════════════════════════════════════════════
+  - Leia TODAS as linhas — não pule nenhum dia
+  - Horários: sempre HH:MM em 24h. Remover asteriscos, traços, pontos extras
+  - Campo sem marcação = string vazia ""
+  - NÃO invente horários. Se ilegível, deixe vazio e ponha observacao="ilegível"
+  - Identifique nome do funcionário e período se visíveis no cabeçalho
+
+Retorne APENAS JSON válido sem markdown:
+{"employeeName":"","period":"","records":[{"data":"DD/MM/AAAA","entrada":"","saidaIntervalo":"","retornoIntervalo":"","saida":"","observacao":""}]}`;
+
+  for(const fd of fileData){
+    for(let pi=0;pi<fd.pages.length;pi++){
+      const pg=fd.pages[pi];
+      processedPages++;
+      setPtProg(processedPages,totalPages,
+        'Extraindo: '+fd.name+(fd.pages.length>1?' pág.'+(pi+1)+'/'+fd.pages.length:''),
+        pontoResults.length+' registros extraídos...'
+      );
+      let parsed=null;
+      for(let attempt=0;attempt<2;attempt++){
+        try{
+          const txt=await claudeAPI([{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:pg.mime,data:pg.b64}},
+            {type:'text',text:PROMPT}
+          ]}],4000);
+          parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+          break;
+        }catch(e){
+          if(attempt===0) await new Promise(r=>setTimeout(r,2000));
+          else console.warn('Falha pág '+(pi+1)+' de '+fd.name+':',e);
+        }
+      }
+      if(parsed){
+        if(parsed.records&&Array.isArray(parsed.records)){
+          pontoResults.push(...parsed.records.filter(r=>r.data&&/\d{2}\/\d{2}\/\d{4}/.test(r.data)));
+        }
+        if(parsed.employeeName&&!empName) empName=parsed.employeeName;
+        if(parsed.period&&!period) period=parsed.period;
+      }
+    }
+  }
+
+  // Deduplicar por data (mantém registro com mais campos)
+  const byDate={};
+  for(const r of pontoResults){
+    const score=x=>['entrada','saidaIntervalo','retornoIntervalo','saida'].filter(f=>x[f]).length;
+    if(!byDate[r.data]||score(r)>score(byDate[r.data])) byDate[r.data]=r;
+  }
+  pontoResults=Object.values(byDate);
+
+  // Ordenar por data
+  pontoResults.sort((a,b)=>{
+    try{const toISO=d=>{const[dd,mm,yy]=d.split('/');return yy+'-'+mm+'-'+dd;};return toISO(a.data).localeCompare(toISO(b.data));}catch{return 0;}
+  });
+
+  // Calcular horas trabalhadas
+  pontoResults=pontoResults.map(r=>({...r,totalHoras:calcHorasDia(r)}));
+
+  // Detectar inconsistências
+  const alerts=[];
+  pontoResults.forEach(r=>{
+    if(r.entrada&&!r.saida&&!r.observacao) alerts.push('⚠ '+r.data+': Entrada ('+r.entrada+') sem saída');
+    if(!r.entrada&&r.saida&&!r.observacao) alerts.push('⚠ '+r.data+': Saída ('+r.saida+') sem entrada');
+    if(r.saidaIntervalo&&!r.retornoIntervalo&&!r.observacao) alerts.push('⚠ '+r.data+': Saída p/ intervalo sem retorno');
+    if(r.entrada&&r.saida&&horaParaMin(r.saida)<horaParaMin(r.entrada)) alerts.push('⚠ '+r.data+': Horários invertidos');
+  });
+
+  HS.add('pt',{ts:Date.now(),label:empName||files[0].name,period,totalDias:pontoResults.length,data:pontoResults});
+  renderPontoTable(empName,period);
+  renderPontoAlerts(alerts);
+  updateDashboard();
+  document.getElementById('pt-status').style.display='none';
+  if(document.getElementById('pt-upload-zone')) document.getElementById('pt-upload-zone').style.display='block';
+}
+
+function setPtProg(cur,total,label,sub){
+  const pct=total>0?Math.round(cur/total*100):0;
+  const pb=document.getElementById('pt-prog');if(pb)pb.style.width=pct+'%';
+  const pc=document.getElementById('pt-pct');if(pc)pc.textContent=pct+'%';
+  const lb=document.getElementById('pt-lbl');if(lb)lb.textContent=label;
+  const sl=document.getElementById('pt-sub-lbl');if(sl)sl.textContent=sub||'';
+}
+function horaParaMin(h){if(!h||!h.includes(':'))return 0;const[hh,mm]=h.split(':').map(Number);return hh*60+(mm||0);}
+function calcHorasDia(r){
+  if(!r.entrada||!r.saida)return '';
+  try{
+    let min=horaParaMin(r.saida)-horaParaMin(r.entrada);
+    if(r.saidaIntervalo&&r.retornoIntervalo) min-=(horaParaMin(r.retornoIntervalo)-horaParaMin(r.saidaIntervalo));
+    if(min<=0)return '';
+    const h=Math.floor(min/60),m=min%60;
+    return h+'h'+(m>0?m.toString().padStart(2,'0')+'m':'');
+  }catch{return '';}
+}
+
+function renderPontoTable(empName,period){
+  document.getElementById('pt-emp').textContent=empName||'Funcionário não identificado';
+  document.getElementById('pt-period').textContent=period||'Período não identificado';
+  const total=pontoResults.length;
+  const completos=pontoResults.filter(r=>r.entrada&&r.saida&&!r.observacao).length;
+  const faltas=pontoResults.filter(r=>r.observacao&&/falta/i.test(r.observacao)).length;
+  const ferias=pontoResults.filter(r=>r.observacao&&/férias|ferias|folga/i.test(r.observacao)).length;
+  const incons=pontoResults.filter(r=>(r.entrada&&!r.saida&&!r.observacao)||(r.saidaIntervalo&&!r.retornoIntervalo&&!r.observacao)).length;
+  document.getElementById('pt-total-dias').textContent=total+' registros encontrados';
+  const sr=document.getElementById('pt-stats-row');
+  if(sr) sr.innerHTML=`
+    <div class="mcard"><div class="mc-label">Total dias</div><div class="mc-value">${total}</div></div>
+    <div class="mcard" style="background:#F0FDF4"><div class="mc-label">Dias completos</div><div class="mc-value" style="color:#166534">${completos}</div></div>
+    <div class="mcard" style="background:#FEF2F2"><div class="mc-label">Faltas</div><div class="mc-value" style="color:#B91C1C">${faltas}</div></div>
+    <div class="mcard" style="background:#FFF7ED"><div class="mc-label">Férias/Folgas</div><div class="mc-value" style="color:#EA580C">${ferias}</div></div>
+    <div class="mcard" style="background:#FEF9C3"><div class="mc-label">Inconsistências</div><div class="mc-value" style="color:#854D0E">${incons}</div></div>`;
+  document.getElementById('pt-tbody').innerHTML=pontoResults.map(r=>{
+    const alert=r.entrada&&!r.saida&&!r.observacao||r.saidaIntervalo&&!r.retornoIntervalo&&!r.observacao;
+    const falta=r.observacao&&/falta/i.test(r.observacao);
+    return '<tr class="'+(alert?'row-alert':falta?'row-falta':'')+'"><td><strong>'+(r.data||'')+'</strong></td>'
+      +'<td class="mono">'+(r.entrada||'—')+'</td><td class="mono">'+(r.saidaIntervalo||'—')+'</td>'
+      +'<td class="mono">'+(r.retornoIntervalo||'—')+'</td><td class="mono">'+(r.saida||'—')+'</td>'
+      +'<td class="mono" style="color:var(--or);font-weight:600">'+(r.totalHoras||'—')+'</td>'
+      +'<td class="obs-cell">'+(r.observacao||'')+'</td></tr>';
+  }).join('');
+  document.getElementById('pt-result').style.display='block';
+}
+
+function renderPontoAlerts(alerts){
+  const el=document.getElementById('pt-alerts');
+  if(!alerts||!alerts.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="alert alert-warn"><strong>Inconsistências ('+alerts.length+'):</strong><br>'+alerts.slice(0,15).join('<br>')+(alerts.length>15?'<br><em>... e mais '+(alerts.length-15)+'</em>':'')+'</div>';
+}
+function clearPonto(){
+  pontoResults=[];
+  document.getElementById('pt-result').style.display='none';
+  document.getElementById('pt-alerts').innerHTML='';
+  document.getElementById('pt-file').value='';
+  if(document.getElementById('pt-upload-zone')) document.getElementById('pt-upload-zone').style.display='block';
+}
+function exportPontoCSV(){
+  if(!pontoResults.length){alert('Nenhum registro para exportar.');return;}
+  const head='Data;Entrada;Saida Intervalo;Retorno Intervalo;Saida;Observacao';
+  const body=pontoResults.map(r=>[r.data,r.entrada||'',r.saidaIntervalo||'',r.retornoIntervalo||'',r.saida||'',r.observacao||''].join(';')).join('\n');
+  const blob=new Blob(['\uFEFF'+head+'\n'+body],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ponto_pje_calc.csv';a.click();
+}
+function exportPontoXLSX(){
+  if(!pontoResults.length){alert('Nenhum registro para exportar.');return;}
+  const wb=XLSX.utils.book_new();
+  const emp=document.getElementById('pt-emp').textContent;
+  const per=document.getElementById('pt-period').textContent;
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['ESPELHO DE PONTO — FAZ AI by LCA'],['Funcionário: '+emp],['Período: '+per],[''],
+    ['Data','Entrada','Saída Int.','Retorno Int.','Saída','Total Horas','Observação'],
+    ...pontoResults.map(r=>[r.data,r.entrada||'',r.saidaIntervalo||'',r.retornoIntervalo||'',r.saida||'',r.totalHoras||'',r.observacao||''])
+  ]);
+  ws['!cols']=[{wch:12},{wch:10},{wch:12},{wch:12},{wch:10},{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Espelho de Ponto');
+  const incons=pontoResults.filter(r=>(r.entrada&&!r.saida&&!r.observacao)||(r.saidaIntervalo&&!r.retornoIntervalo&&!r.observacao));
+  if(incons.length){
+    const ws2=XLSX.utils.aoa_to_sheet([['INCONSISTÊNCIAS'],[''],['Data','Problema'],
+      ...incons.map(r=>[r.data,r.entrada&&!r.saida?'Entrada sem saída':'Intervalo sem retorno'])
+    ]);
+    XLSX.utils.book_append_sheet(wb,ws2,'Inconsistências');
+  }
+  XLSX.writeFile(wb,'ponto_'+Date.now()+'.xlsx');
+}
+function renderPtHist(elId){
+  const items=HS.get('pt');const el=document.getElementById(elId);
+  if(!items.length){el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhuma extração no histórico.</p>';return;}
+  el.innerHTML=items.map((it,i)=>'<div class="hist-item" onclick="loadPtHist('+i+')"><div><div class="hist-item-name">'+it.label+'</div><div class="hist-item-meta">'+new Date(it.ts).toLocaleString('pt-BR')+' · '+(it.period||'')+' · '+it.totalDias+' registros</div></div><span class="badge badge-blue">Ponto</span></div>').join('');
+}
+function loadPtHist(i){const it=HS.get('pt')[i];pontoResults=it.data||[];showMod('ponto');switchTab('pt','novo',document.querySelector('#mod-ponto .tab-btn'));renderPontoTable(it.label,it.period);}
+// ============================================================
+// ACORDOS
+// ============================================================
+function renderAVerbas() {
+  document.getElementById('ac-vlist').innerHTML = aVerbas.map((v,i)=>`
+    <div class="vrow">
+      <input type="text" placeholder="Nome da verba" value="${v.name}" oninput="aVerbas[${i}].name=this.value"/>
+      <input type="number" placeholder="Prop." value="${v.val}" oninput="aVerbas[${i}].val=parseFloat(this.value)||0"/>
+      <select onchange="aVerbas[${i}].type=this.value">
+        <option value="remuneratoria" ${v.type==='remuneratoria'?'selected':''}>Remuneratória</option>
+        <option value="indenizatoria" ${v.type==='indenizatoria'?'selected':''}>Indenizatória</option>
+      </select>
+      <button class="btn-icon" onclick="rmVrb(${i})" ${aVerbas.length===1?'disabled':''}><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+    </div>`).join('');
+}
+function addVrb() { aVerbas.push({id:Date.now(),name:'',val:1,type:'remuneratoria'}); renderAVerbas(); }
+function rmVrb(i) { if(aVerbas.length>1){aVerbas.splice(i,1);renderAVerbas();} }
+
+function mDiff(d1,d2) { return Math.max(0,(d2.getFullYear()-d1.getFullYear())*12-d1.getMonth()+d2.getMonth()+1); }
+
+function fwdCalc(gross, adm, dem, dist, nDep, patronPct, satPct, sucVal, inssTeto=false) {
+  const aD=new Date(adm+'T00:00:00'), dD=new Date(dem+'T00:00:00'), diD=new Date(dist+'T00:00:00');
+  const pres=new Date(diD); pres.setFullYear(pres.getFullYear()-5);
+  const cS=aD>pres?aD:pres;
+  const meses=cS>dD?0:mDiff(cS,dD);
+  const totP=aVerbas.reduce((s,v)=>s+v.val,0);
+  const vCalc=aVerbas.map(v=>({...v,valor:totP>0?(v.val/totP)*gross:0}));
+  const totRem=vCalc.filter(v=>v.type==='remuneratoria').reduce((s,v)=>s+v.valor,0);
+  const mBase=meses>0?totRem/meses:0;
+  // Monthly INSS
+  const monthlyINSS=[];
+  let inssRec=0;
+  for(let i=0;i<meses;i++){
+    const base=Math.min(mBase,INSS_CEIL);
+    let br=INSS_T[INSS_T.length-1];
+    for(const b of INSS_T){if(base<=b.l){br=b;break;}}
+    const contrib = inssTeto ? 0 : Math.max(0,Math.min(base*br.r-br.d,INSS_CEIL_C));
+    inssRec+=contrib;
+    const d=new Date(cS); d.setMonth(d.getMonth()+i);
+    const mon=(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
+    monthlyINSS.push({month:mon, base:mBase, reclamante:contrib, patronal:mBase*patronPct, sat:mBase*satPct});
+  }
+  const inssPatronal=monthlyINSS.reduce((s,m)=>s+m.patronal+m.sat,0);
+  // IRRF RRA
+  const irrfBase=Math.max(0,totRem-inssRec-DEP_DED*nDep*meses);
+  let irrf=0;
+  const irrfBD={totalRem:totRem,inssRec,base:irrfBase,meses,avg:0,aliq:0,ded:0,bruto:0,dedTotal:0,final:0};
+  if(irrfBase>0&&meses>0){
+    const avg=irrfBase/meses; irrfBD.avg=avg;
+    let br=IRRF_T[IRRF_T.length-1];
+    for(const b of IRRF_T){if(avg<=b.l){br=b;break;}}
+    irrfBD.aliq=br.r; irrfBD.ded=br.d;
+    irrfBD.bruto=irrfBase*br.r; irrfBD.dedTotal=br.d*meses;
+    irrf=Math.max(0,irrfBD.bruto-irrfBD.dedTotal);
+    irrfBD.final=irrf;
+  }
+  const intM=mDiff(diD,new Date());
+  const intVal=gross*.01*intM;
+  const totalGross=gross+intVal+sucVal;
+  const netVal=gross+intVal-inssRec-irrf;
+  return {gross,totalGross,netVal,inssRec,inssPatronal,irrf,intVal,sucVal,totalCost:totalGross+inssPatronal,meses,vCalc,totRem,monthlyINSS,irrfBD,calcStart:cS.toISOString().split('T')[0]};
+}
+
+function calcAcordo() {
+  const err=document.getElementById('ac-err');
+  err.style.display='none';
+  const targetNet=parseFloat(document.getElementById('ac-liq').value)||0;
+  const adm=document.getElementById('ac-adm').value;
+  const dem=document.getElementById('ac-dem').value;
+  const dist=document.getElementById('ac-dist').value;
+  if(!targetNet||targetNet<=0){err.textContent='Informe o valor líquido.';err.style.display='block';return;}
+  if(!adm||!dem||!dist){err.textContent='Preencha todas as datas.';err.style.display='block';return;}
+  const nDep=parseInt(document.getElementById('ac-dep').value)||0;
+  const pPct=(parseFloat(document.getElementById('ac-patron').value)||20)/100;
+  const sPct=(parseFloat(document.getElementById('ac-sat').value)||2)/100;
+  const suc=parseFloat(document.getElementById('ac-suc').value)||0;
+  const inssTeto = document.getElementById('ac-inss-teto') ? document.getElementById('ac-inss-teto').checked : false;
+  const fc=g=>fwdCalc(g,adm,dem,dist,nDep,pPct,sPct,suc,inssTeto);
+  let lo=0,hi=targetNet*3,it=0;
+  while(fc(hi).netVal<targetNet&&it++<20) hi*=1.5;
+  for(let i=0;i<100;i++){if(hi-lo<0.01)break;const m=(lo+hi)/2;if(fc(m).netVal<targetNet)lo=m;else hi=m;}
+  acordoResult=fc((lo+hi)/2);
+  HS.add('ac',{ts:Date.now(),label:document.getElementById('ac-recl').value||'Acordo',proc:document.getElementById('ac-proc').value,gross:acordoResult.gross,netVal:acordoResult.netVal,data:acordoResult});
+  renderAcordoResult();
+  updateDashboard();
+}
+
+function renderAcordoResult() {
+  const r=acordoResult;
+  document.getElementById('ac-empty').style.display='none';
+  document.getElementById('ac-result').style.display='block';
+  document.getElementById('ar-bruto').textContent=fmtBRL(r.gross);
+  document.getElementById('ar-liq').textContent=fmtBRL(r.netVal);
+  document.getElementById('ar-meses').textContent=r.meses;
+  document.getElementById('ar-custo').textContent=fmtBRL(r.totalCost);
+
+  document.getElementById('ar-detail').innerHTML=`<thead><tr><th>Descrição</th><th>Valor</th></tr></thead><tbody>${
+    [['Valor bruto do acordo',r.gross],['Juros indenizatórios (1%a.m.)',r.intVal],['Honorários sucumbência',r.sucVal],
+     ['(=) Valor bruto total',r.totalGross],['(-) INSS reclamante',r.inssRec],['(-) IRRF',r.irrf],
+     ['(=) Líquido reclamante',r.netVal],['INSS reclamada (patronal+SAT)',r.inssPatronal],['Custo total reclamada',r.totalCost]]
+    .map(([k,v])=>`<tr><td>${k}</td><td>${fmtBRL(v)}</td></tr>`).join('')}</tbody>`;
+
+  document.getElementById('ar-verbas').innerHTML=`<thead><tr><th>Verba</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${
+    r.vCalc.map(v=>`<tr><td>${v.name}</td><td><span class="badge ${v.type==='remuneratoria'?'badge-or':'badge-green'}">${v.type}</span></td><td>${fmtBRL(v.valor)}</td></tr>`).join('')}</tbody>`;
+
+  // IRRF RRA breakdown
+  const ib=r.irrfBD;
+  document.getElementById('ar-irrf').innerHTML=`<thead><tr><th>Etapa</th><th>Valor</th></tr></thead><tbody>${
+    [['Total remuneratório',ib.totalRem],['(-) INSS reclamante',ib.inssRec],['(=) Base IRRF',ib.base],
+     ['(÷) Nº de meses',ib.meses],['(=) Média mensal',ib.avg],
+     ['Alíquota aplicada',(ib.aliq*100).toFixed(2)+'%'],['(-) Parcela dedução mensal',ib.ded],
+     ['Base × Alíquota',ib.bruto],['(-) Parcela dedução total',ib.dedTotal],['(=) IRRF devido',ib.final]]
+    .map(([k,v])=>`<tr><td>${k}</td><td>${typeof v==='number'&&k!=='(÷) Nº de meses'&&!k.includes('Alíquota')?fmtBRL(v):v}</td></tr>`).join('')}</tbody>`;
+
+  // E-Social monthly
+  document.getElementById('ar-fgts').innerHTML=`<thead><tr><th>FGTS</th><th>Valor</th></tr></thead><tbody><tr><td>Base FGTS (verbas remuneratórias)</td><td>${fmtBRL(r.totRem)}</td></tr><tr><td>FGTS 8%</td><td>${fmtBRL(r.totRem*0.08)}</td></tr><tr><td>Multa rescisória 40% sobre FGTS</td><td>${fmtBRL(r.totRem*0.08*0.40)}</td></tr><tr><td>Total FGTS + Multa</td><td>${fmtBRL(r.totRem*0.08*1.40)}</td></tr></tbody>`;
+  document.getElementById('ar-esocial').innerHTML=`<thead><tr><th>Competência</th><th>Base cálculo</th><th>INSS reclamante</th><th>INSS patronal</th><th>INSS SAT</th></tr></thead><tbody>${
+    r.monthlyINSS.map(m=>`<tr><td>${m.month}</td><td>${fmtBRL(m.base)}</td><td>${fmtBRL(m.reclamante)}</td><td>${fmtBRL(m.patronal)}</td><td>${fmtBRL(m.sat)}</td></tr>`).join('')}</tbody>`;
+}
+
+function exportAcXLSX() {
+  if(!acordoResult) return;
+  const r=acordoResult, name=document.getElementById('ac-recl').value||'reclamante';
+  const wb=XLSX.utils.book_new();
+  // Sheet 1: Resumo
+  const ws1=XLSX.utils.aoa_to_sheet([['CÁLCULO DE ACORDO — FAZ AI'],[''],
+    ['Processo',document.getElementById('ac-proc').value],['Reclamante',name],['Reclamada',document.getElementById('ac-recld').value],
+    ['Meses apurados',r.meses],[''],['RESUMO'],['Descrição','Valor'],
+    ['Valor bruto',r.gross],['Juros',r.intVal],['Honorários',r.sucVal],['Bruto total',r.totalGross],
+    ['(-) INSS reclamante',r.inssRec],['(-) IRRF',r.irrf],['(=) Líquido reclamante',r.netVal],
+    ['INSS reclamada',r.inssPatronal],['Custo total reclamada',r.totalCost]]);
+  ws1['!cols']=[{wch:40},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Resumo');
+  // Sheet 2: E-Social
+  const ws2=XLSX.utils.aoa_to_sheet([['APURAÇÃO MENSAL — E-SOCIAL'],[''],
+    ['Competência','Base cálculo','INSS Reclamante','INSS Patronal','INSS SAT'],
+    ...r.monthlyINSS.map(m=>[m.month,m.base,m.reclamante,m.patronal,m.sat])]);
+  ws2['!cols']=[{wch:15},{wch:18},{wch:18},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,ws2,'E-Social');
+  // Sheet 3: IRRF RRA
+  const ib=r.irrfBD;
+  const ws3=XLSX.utils.aoa_to_sheet([['MEMÓRIA DE CÁLCULO — IRRF (RRA)'],[''],
+    ['Total remuneratório',ib.totalRem],['(-) INSS reclamante',ib.inssRec],['(=) Base IRRF',ib.base],
+    ['(÷) Nº de meses',ib.meses],['(=) Média mensal',ib.avg],['Alíquota',(ib.aliq*100).toFixed(2)+'%'],
+    ['Parcela dedução mensal',ib.ded],['Base × Alíquota',ib.bruto],['(-) Dedução total',ib.dedTotal],['(=) IRRF devido',ib.final]]);
+  ws3['!cols']=[{wch:35},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws3,'IRRF RRA');
+  XLSX.writeFile(wb,`Acordo_${name.replace(/\s/g,'_')}.xlsx`);
+}
+
+function exportAcPDF() {
+  if(!acordoResult) return;
+  const r=acordoResult, name=document.getElementById('ac-recl').value||'Reclamante';
+  const {jsPDF}=jspdf;
+  const doc=new jsPDF();
+  const orange=[234,88,12];
+  // Cabeçalho branco + linha laranja
+  doc.setFillColor(255,255,255);doc.rect(0,0,210,28,'F');
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,28,210,28);
+  doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
+  doc.text('Faz AI',14,12);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+  doc.text('LC',189,12);doc.setTextColor(234,88,12);doc.text('A',193,12);
+  doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+  doc.text('LCA — Legal Calculation Associate',196,18,{align:'right'});
+  doc.setTextColor(17,24,39);doc.setFontSize(12);doc.setFont(undefined,'bold');
+  doc.text('CÁLCULO DE ACORDO TRABALHISTA — AcordAI',105,38,{align:'center'});
+  doc.setFontSize(8); doc.setFont(undefined,'normal');
+  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.setTextColor(0,0,0);
+  doc.autoTable({startY:44,head:[['Dados','']],
+    body:[['Processo',document.getElementById('ac-proc').value],['Reclamante',name],['Reclamada',document.getElementById('ac-recld').value],['Meses apurados',r.meses]],
+    theme:'grid',headStyles:{fillColor:orange}});
+  doc.autoTable({startY:doc.lastAutoTable.finalY+5,head:[['Resumo do Acordo','Valor']],
+    body:[['Valor bruto',fmtBRL(r.gross)],['Juros',fmtBRL(r.intVal)],['Honorários',fmtBRL(r.sucVal)],
+      ['(=) Bruto total',fmtBRL(r.totalGross)],['(-) INSS reclamante',fmtBRL(r.inssRec)],['(-) IRRF',fmtBRL(r.irrf)],
+      ['(=) Líquido reclamante',fmtBRL(r.netVal)],['INSS reclamada',fmtBRL(r.inssPatronal)],['Custo total reclamada',fmtBRL(r.totalCost)]],
+    theme:'striped',headStyles:{fillColor:orange}});
+  const ib=r.irrfBD;
+  doc.autoTable({startY:doc.lastAutoTable.finalY+5,head:[['Memória IRRF (RRA)','Valor']],
+    body:[['Total remuneratório',fmtBRL(ib.totalRem)],['(-) INSS',fmtBRL(ib.inssRec)],['Base IRRF',fmtBRL(ib.base)],
+      ['÷ Meses',ib.meses],['Média mensal',fmtBRL(ib.avg)],['Alíquota',(ib.aliq*100).toFixed(2)+'%'],
+      ['IRRF devido',fmtBRL(ib.final)]],
+    theme:'striped',headStyles:{fillColor:orange}});
+  doc.autoTable({startY:doc.lastAutoTable.finalY+5,head:[['Competência','Base','INSS Reclamante','INSS Patronal','SAT']],
+    body:r.monthlyINSS.map(m=>[m.month,fmtBRL(m.base),fmtBRL(m.reclamante),fmtBRL(m.patronal),fmtBRL(m.sat)]),
+    theme:'striped',headStyles:{fillColor:orange},styles:{fontSize:8}});
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
+    doc.setFontSize(7);doc.setTextColor(107,114,128);
+    doc.text('LCA — Legal Calculation Associate  ·  (11) 97329-4795  ·  (11) 96449-6270  ·  linkedin.com/in/lca-legal-calculation-associate  ·  Pág. '+i+'/'+pages,105,288,{align:'center'});
+  }
+  doc.save(`Acordo_${name.replace(/\s/g,'_')}.pdf`);
+}
+
+// Acordo History
+function renderAcHist() {
+  const items=HS.get('ac');
+  const el=document.getElementById('ac-hist-list');
+  if(!items.length){el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhum acordo no histórico.</p>';return;}
+  el.innerHTML=items.map((it,i)=>`
+    <div class="hist-item" onclick="loadAcHist(${i})">
+      <div class="hist-item-info">
+        <div class="hist-item-name">${it.label} ${it.proc?'— '+it.proc:''}</div>
+        <div class="hist-item-meta">${new Date(it.ts).toLocaleString('pt-BR')} · Bruto: ${fmtBRL(it.gross)}</div>
+      </div>
+      <span class="hist-item-value">${fmtBRL(it.netVal)}</span>
+      <span class="badge badge-green">Acordo</span>
+    </div>`).join('');
+}
+function loadAcHist(i) {
+  acordoResult=HS.get('ac')[i].data;
+  showMod('acordos');
+  switchTab('ac','calc',document.querySelector('#mod-acordos .tab-btn'));
+  renderAcordoResult();
+}
+
+// GLOBAL HISTORY
+function renderGlobalHist() {
+  renderLiqHistTo('gh-liq-list');
+  renderPtHistTo('gh-pt-list');
+  renderAcHistTo('gh-ac-list');
+}
+function renderLiqHistTo(elId) {
+  const items=HS.get('liq');
+  const el=document.getElementById(elId);
+  if(!items.length){el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhum registro.</p>';return;}
+  el.innerHTML=items.map((it,i)=>`
+    <div class="hist-item" onclick="loadLiqHist(${i})">
+      <div class="hist-item-info"><div class="hist-item-name">${it.label}</div><div class="hist-item-meta">${new Date(it.ts).toLocaleString('pt-BR')}</div></div>
+      <span class="hist-item-value">${fmtBRL(it.totalLiquido)}</span><span class="badge badge-or">Liq.</span>
+    </div>`).join('');
+}
+function renderPtHistTo(elId) {
+  const items=HS.get('pt');
+  const el=document.getElementById(elId);
+  if(!items.length){el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhum registro.</p>';return;}
+  el.innerHTML=items.map((it,i)=>`
+    <div class="hist-item" onclick="loadPtHist(${i})">
+      <div class="hist-item-info"><div class="hist-item-name">${it.label}</div><div class="hist-item-meta">${new Date(it.ts).toLocaleString('pt-BR')} · ${it.totalDias} dias</div></div>
+      <span class="badge badge-blue">Ponto</span>
+    </div>`).join('');
+}
+function renderAcHistTo(elId) {
+  const items=HS.get('ac');
+  const el=document.getElementById(elId);
+  if(!items.length){el.innerHTML='<p style="color:var(--gy);font-size:13px">Nenhum registro.</p>';return;}
+  el.innerHTML=items.map((it,i)=>`
+    <div class="hist-item" onclick="loadAcHist(${i})">
+      <div class="hist-item-info"><div class="hist-item-name">${it.label}</div><div class="hist-item-meta">${new Date(it.ts).toLocaleString('pt-BR')}</div></div>
+      <span class="hist-item-value">${fmtBRL(it.netVal)}</span><span class="badge badge-green">Acordo</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+async function loadAdminUsers() {
+  if(!currentUser||currentUser.email!==ADMIN_EMAIL) return;
+  document.getElementById('admin-users').innerHTML='<p style="color:var(--gy);font-size:13px">Carregando...</p>';
+  try {
+    const {data, error} = await sb.auth.admin?.listUsers?.() || {data:null};
+    if(error||!data) {
+      document.getElementById('admin-users').innerHTML=`
+        <div class="alert alert-info">Para ver usuários, acesse o painel do Supabase diretamente: <a href="https://supabase.com/dashboard/project/oohdanesmqwmgdsnpvrk/auth/users" target="_blank">Authentication → Users</a></div>`;
+      return;
+    }
+    document.getElementById('admin-users').innerHTML=`
+      <table class="admin-table">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Cadastro</th><th>Último login</th></tr></thead>
+        <tbody>${data.users.map(u=>`<tr>
+          <td>${u.user_metadata?.name||'—'}</td>
+          <td>${u.email}</td>
+          <td>${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
+          <td>${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleDateString('pt-BR'):'—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  } catch {
+    document.getElementById('admin-users').innerHTML=`
+      <div class="alert alert-info">Gerencie usuários diretamente no Supabase: <a href="https://supabase.com/dashboard/project/oohdanesmqwmgdsnpvrk/auth/users" target="_blank" style="color:var(--or);font-weight:600">Abrir painel de usuários →</a></div>`;
+  }
+}
+
+// ============================================================
+// HISTLIST RENDERING FOR LIQUIDA TAB
+// ============================================================
+function renderLiqHist() { renderLiqHistTo('liq-hist-list'); }
+function renderPtHist() { renderPtHistTo('pt-hist-list'); }
+function renderAcHist() { renderAcHistTo('ac-hist-list'); }
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+</body>
+</html>
