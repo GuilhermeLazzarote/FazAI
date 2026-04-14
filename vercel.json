@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "functions": {
+    "api/claude.js":  { "maxDuration": 60 },
+    "api/kirvano.js": { "maxDuration": 10 }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)",     "dest": "/index.html" }
+  ]
+}
+
+// ================================================================
+// VARIÁVEIS DE AMBIENTE — adicionar no painel Vercel
+// Settings → Environment Variables
+// ================================================================
+//
+// CLAUDE_API_KEY          = sk-ant-...  (já existe)
+// SUPABASE_URL            = https://oohdanesmqwmgdsnpvrk.supabase.co
+// SUPABASE_SERVICE_KEY    = eyJ...  (service_role key — NÃO a anon key)
+// KIRVANO_TOKEN           = (token secreto gerado no Kirvano → Webhooks)
+// KIRVANO_PRODUCT_STARTER = (ID do produto Starter no Kirvano)
+// KIRVANO_PRODUCT_PRO     = (ID do produto Profissional no Kirvano)
+// KIRVANO_PRODUCT_OFFICE  = (ID do produto Escritório no Kirvano)
