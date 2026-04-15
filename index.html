@@ -1345,32 +1345,31 @@ function exportLiquidaPDF() {
 
   function addHeader(doc, title) {
     const pw=doc.internal.pageSize.getWidth();
-    // Logo — F geométrico pequeno
+    // Logo — F geométrico
     doc.setFillColor(234,88,12);
-    doc.rect(10,9,2,12,'F');
-    doc.rect(10,9,8,2,'F');
-    doc.rect(10,13,6,2,'F');
-    // Texto 'az AI' bem separado do F
-    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('az',22,17);
+    doc.rect(10,10,2,11,'F');
+    doc.rect(10,10,8,2,'F');
+    doc.rect(10,14,6,2,'F');
+    doc.setFontSize(11);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('az',22,18);
     doc.setTextColor(234,88,12);
-    doc.text('AI',29.5,17);
-    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('Plataforma de Perícia Contábil Trabalhista',22,22);
-    // LCA lado direito
-    doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('LC',184,14);doc.setTextColor(234,88,12);doc.text('A',191,14);
+    doc.text('AI',29,18);
     doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
+    doc.text('Plataforma de Perícia Contábil Trabalhista',22,23);
+    // LCA lado direito
+    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('LC',185,15);doc.setTextColor(234,88,12);doc.text('A',191,15);
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.text('LCA — Legal Calculation Associate',196,20,{align:'right'});
     // Linha laranja
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
-    // Título centralizado
-    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
-    doc.text(title,105,34,{align:'center'});
-    // Info do processo em linha
-    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,27,pw,27);
+    // Título
+    doc.setTextColor(17,24,39);doc.setFontSize(10.5);doc.setFont(undefined,'bold');
+    doc.text(title,105,36,{align:'center'});
+    // Info processo
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
     const info='Reclamante: '+(r.reclamante||'—')+'   |   Reclamada: '+(r.reclamada||'—')+'   |   Período: '+(r.periodoCalculoInicio||'')+' a '+(r.periodoCalculoFim||'—');
-    doc.text(info,105,39,{align:'center',maxWidth:182});
+    doc.text(info,105,41,{align:'center',maxWidth:182});
   }
 
   // ══════════════════════════════════
@@ -1380,9 +1379,9 @@ function exportLiquidaPDF() {
 
   // Dados do processo completos
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text('DADOS DO PROCESSO',ml,48);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,49,ml+45,49);
-  doc.autoTable({startY:51,margin:{left:ml,right:14},
+  doc.text('DADOS DO PROCESSO',ml,50);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,51,ml+45,51);
+  doc.autoTable({startY:53,margin:{left:ml,right:14},
     body:[
       ['Reclamante',r.reclamante||'—','Reclamada',r.reclamada||'—'],
       ['Período apurado',(r.periodoCalculoInicio||'')+' a '+(r.periodoCalculoFim||'—'),'Salário base',fmtBRL(r.salarioBaseIdentificado)]
@@ -1420,7 +1419,7 @@ function exportLiquidaPDF() {
     theme:'striped',
     headStyles:{fillColor:orange,fontSize:7.5,fontStyle:'bold',textColor:255,cellPadding:{top:3,bottom:3,left:2,right:2}},
     footStyles:{fillColor:[255,247,237],textColor:[234,88,12],fontStyle:'bold',fontSize:8},
-    styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:2,right:2}},
+    styles:{fontSize:7,cellPadding:{top:2,bottom:2,left:2,right:2}},
     alternateRowStyles:{fillColor:[249,250,251]},
     columnStyles:{
       0:{cellWidth:'auto'},
@@ -1437,7 +1436,7 @@ function exportLiquidaPDF() {
   doc.addPage();
   addHeader(doc, 'LAUDO PERICIAL TRABALHISTA — MEMÓRIA DE CÁLCULO');
 
-  const y2=46;
+  const y2=50;
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
   doc.text('MEMÓRIA DE CÁLCULO',ml,y2);
   doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y2+1,ml+50,y2+1);
