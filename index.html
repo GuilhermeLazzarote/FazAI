@@ -1342,9 +1342,9 @@ function exportLiquidaPDF() {
   const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const orange = [234,88,12];
   const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
-  const ml=14, mr=pw-14, cw=pw-28;
+  const ml=14, mr=pw-14;
 
-  // ── CABEÇALHO ──
+  // Cabeçalho
   doc.setDrawColor(234,88,12);doc.setLineWidth(1);doc.line(ml,14,mr,14);
   doc.setTextColor(17,24,39);doc.setFontSize(14);doc.setFont(undefined,'bold');
   doc.text('Faz AI',ml,11);
@@ -1354,83 +1354,89 @@ function exportLiquidaPDF() {
   doc.text('LC',mr-7,11);doc.setTextColor(234,88,12);doc.text('A',mr-3,11);
   doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
   doc.text('LCA — Legal Calculation Associate',mr,17,{align:'right'});
-
-  // Título
   doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
   doc.text('LAUDO PERICIAL TRABALHISTA',pw/2,25,{align:'center'});
 
-  // ── DADOS DO PROCESSO ──
+  // Dados do processo — 2 colunas
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
   doc.text('DADOS DO PROCESSO',ml,32);
   doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,33,ml+50,33);
-  const dados=[['Reclamante',r.reclamante||'—'],['Reclamada',r.reclamada||'—'],['Processo',r.numeroProcesso||'Não informado'],['Período apurado',(r.periodoCalculoInicio||'')+(r.periodoCalculoFim?' a '+r.periodoCalculoFim:'')],['Salário base',fmtBRL(r.salarioBaseIdentificado)]];
   doc.autoTable({startY:35,margin:{left:ml,right:14},
-    body:dados,theme:'plain',
-    columnStyles:{0:{fontStyle:'bold',cellWidth:38,fontSize:8,textColor:[107,114,128]},1:{fontSize:8,textColor:[17,24,39]}},
+    body:[
+      ['Reclamante',r.reclamante||'—','Reclamada',r.reclamada||'—'],
+      ['Período apurado',(r.periodoCalculoInicio||'')+(r.periodoCalculoFim?' a '+r.periodoCalculoFim:''),'Salário base',fmtBRL(r.salarioBaseIdentificado)]
+    ],
+    theme:'plain',
+    columnStyles:{
+      0:{fontStyle:'bold',cellWidth:28,fontSize:8,textColor:[107,114,128]},
+      1:{fontSize:8,textColor:[17,24,39],cellWidth:pw/2-42},
+      2:{fontStyle:'bold',cellWidth:28,fontSize:8,textColor:[107,114,128]},
+      3:{fontSize:8,textColor:[17,24,39]}
+    },
     styles:{cellPadding:{top:1.5,bottom:1.5,left:0,right:4}}});
 
-  // ── TABELA RESUMO DAS VERBAS ──
-  const y1=doc.lastAutoTable.finalY+6;
+  // Resumo das verbas
+  const y1=doc.lastAutoTable.finalY+5;
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
   doc.text('RESUMO DAS VERBAS APURADAS',ml,y1);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y1+1,ml+68,y1+1);
-
-  doc.autoTable({startY:y1+4,margin:{left:ml,right:14},
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y1+1,ml+70,y1+1);
+  doc.autoTable({startY:y1+3,margin:{left:ml,right:14},
     head:[['Alínea / Verba','Nat.','Principal','Corrigido','Juros','Total']],
     body:(r.verbas||[]).map(v=>[
       v.descricao||'',
       v.natureza==='salarial'?'SAL':'IND',
-      fmtBRL(v.baseCalculo||v.valor),
+      fmtBRL(v.valor||v.baseCalculo),
       fmtBRL(v.valorCorrigido),
       fmtBRL(v.juros),
       fmtBRL(v.total)
     ]),
+    foot:[['Total geral','',
+      fmtBRL((r.verbas||[]).reduce((s,v)=>s+(v.valor||0),0)),
+      fmtBRL((r.verbas||[]).reduce((s,v)=>s+(v.valorCorrigido||0),0)),
+      fmtBRL((r.verbas||[]).reduce((s,v)=>s+(v.juros||0),0)),
+      fmtBRL((r.verbas||[]).reduce((s,v)=>s+(v.total||0),0))
+    ]],
     theme:'striped',
-    headStyles:{fillColor:orange,fontSize:7.5,fontStyle:'bold',textColor:255,cellPadding:{top:3,bottom:3,left:3,right:3}},
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255,cellPadding:{top:3,bottom:3,left:3,right:3}},
+    footStyles:{fillColor:[255,247,237],textColor:[234,88,12],fontStyle:'bold',fontSize:8},
     styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
     alternateRowStyles:{fillColor:[249,250,251]},
     columnStyles:{
       0:{cellWidth:'auto'},
-      1:{cellWidth:10,halign:'center',fontStyle:'bold'},
+      1:{cellWidth:12,halign:'center',fontStyle:'bold'},
       2:{cellWidth:28,halign:'right'},
       3:{cellWidth:28,halign:'right'},
       4:{cellWidth:24,halign:'right'},
       5:{cellWidth:30,halign:'right',fontStyle:'bold'}
     }});
 
-  // ── MEMÓRIA DE CÁLCULO ──
-  const y2=doc.lastAutoTable.finalY+6;
+  // Memória de cálculo
+  const y2=doc.lastAutoTable.finalY+5;
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
   doc.text('MEMÓRIA DE CÁLCULO',ml,y2);
   doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y2+1,ml+52,y2+1);
-
-  doc.autoTable({startY:y2+4,margin:{left:ml,right:14},
+  doc.autoTable({startY:y2+3,margin:{left:ml,right:14},
     body:(r.verbas||[]).filter(v=>v.metodologia).map(v=>[v.descricao,v.metodologia]),
     theme:'plain',
     columnStyles:{0:{cellWidth:55,fontStyle:'bold',fontSize:7.5,textColor:[17,24,39]},1:{fontSize:7.5,textColor:[80,80,80]}},
     styles:{cellPadding:{top:2,bottom:2,left:0,right:4}},
     didDrawRow:function(data){
-      if(data.row.index%1===0){
-        doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);
-        doc.line(ml,data.row.y,ml,data.row.y+data.row.height);
-      }
+      doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);
+      doc.line(ml,data.row.y,ml,data.row.y+data.row.height);
     }});
 
-  // ── RESUMO TRIBUTÁRIO COMPLETO ──
-  const y3=doc.lastAutoTable.finalY+6;
+  // Resumo tributário
+  const y3=doc.lastAutoTable.finalY+5;
   const totalCorr=(r.verbas||[]).reduce((s,v)=>s+(v.total||0),0)||r.totalBruto;
   const liqCorr=totalCorr-(r.inss||0)-(r.irrf||0);
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
   doc.text('RESUMO TRIBUTÁRIO',ml,y3);
   doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y3+1,ml+48,y3+1);
-
-  // Tabela completa de apuração
-  doc.autoTable({startY:y3+4,margin:{left:ml,right:pw/2},
-    head:[['Descrição','Valor']],
+  doc.autoTable({startY:y3+3,margin:{left:ml,right:pw/2+5},
     body:[
       ['Total bruto principal',fmtBRL(r.totalBruto)],
-      ['(+) Correção monetária (IPCA-E + SELIC)',fmtBRL(totalCorr-r.totalBruto)],
-      ['(=) Total bruto corrigido',fmtBRL(totalCorr)],
+      ['(+) Correção e juros',fmtBRL(totalCorr-r.totalBruto)],
+      ['(=) Bruto corrigido total',fmtBRL(totalCorr)],
       ['(-) INSS reclamante',fmtBRL(r.inss)],
       ['(-) IRRF (RRA)',fmtBRL(r.irrf)],
       ['(=) Líquido reclamante',fmtBRL(liqCorr)],
@@ -1441,9 +1447,9 @@ function exportLiquidaPDF() {
     ],
     theme:'striped',
     headStyles:{fillColor:orange,fontSize:7.5,fontStyle:'bold',textColor:255},
-    columnStyles:{0:{fontSize:8,textColor:[17,24,39]},1:{fontSize:8,fontStyle:'bold',halign:'right',cellWidth:35}},
+    columnStyles:{0:{fontSize:7.5,textColor:[17,24,39]},1:{fontSize:7.5,fontStyle:'bold',halign:'right',cellWidth:32}},
     alternateRowStyles:{fillColor:[249,250,251]},
-    styles:{cellPadding:{top:2.5,bottom:2.5,left:4,right:4}},
+    styles:{cellPadding:{top:2,bottom:2,left:3,right:3}},
     didParseCell:function(data){
       if(data.row.index===2||data.row.index===5||data.row.index===9){
         data.cell.styles.textColor=[234,88,12];
@@ -1451,19 +1457,19 @@ function exportLiquidaPDF() {
       }
     }});
 
-  // Observação metodológica
+  // Observação metodológica lado direito
   if(r.observation){
-    const y4=doc.lastAutoTable.finalY+6;
+    const midX=pw/2+8;
     doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-    doc.text('OBSERVAÇÃO METODOLÓGICA',ml,y4);
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y4+1,ml+62,y4+1);
-    doc.autoTable({startY:y4+4,margin:{left:ml,right:14},
+    doc.text('OBSERVAÇÃO METODOLÓGICA',midX,y3);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(midX,y3+1,midX+62,y3+1);
+    doc.autoTable({startY:y3+3,margin:{left:midX,right:14},
       body:[[r.observation]],
       theme:'plain',
       styles:{fontSize:7.5,cellPadding:{top:2,bottom:2,left:0,right:0},textColor:[80,80,80]}});
   }
 
-  // ── RODAPÉ ──
+  // Rodapé
   const pages=doc.internal.getNumberOfPages();
   for(let i=1;i<=pages;i++){
     doc.setPage(i);
