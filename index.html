@@ -446,8 +446,10 @@ a{color:var(--or);text-decoration:none}
               <div class="mc"><div class="mc-label">Processo</div><div class="mc-value" id="lr-proc" style="font-size:13px">—</div></div>
               <div class="mc"><div class="mc-label">Período</div><div class="mc-value" id="lr-per" style="font-size:13px">—</div></div>
               <div class="mc"><div class="mc-label">Salário base identificado</div><div class="mc-value" id="lr-sal" style="font-size:12px;color:var(--or)">—</div></div>
-              <div class="mc"><div class="mc-label">Total bruto</div><div class="mc-value" id="lr-bruto">R$ 0</div></div>
-              <div class="mc hi"><div class="mc-label">Total líquido</div><div class="mc-value" id="lr-liq">R$ 0</div></div>
+              <div class="mc"><div class="mc-label">Bruto total (c/ correção)</div><div class="mc-value" id="lr-bruto">R$ 0</div></div>
+              <div class="mc"><div class="mc-label">INSS reclamante</div><div class="mc-value" id="lr-inss" style="font-size:13px">R$ 0</div></div>
+              <div class="mc"><div class="mc-label">Honorários</div><div class="mc-value" id="lr-hon" style="font-size:13px">R$ 0</div></div>
+              <div class="mc hi"><div class="mc-label">Líquido reclamante (c/ correção)</div><div class="mc-value" id="lr-liq">R$ 0</div></div>
             </div>
             <div class="panel">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -1223,7 +1225,14 @@ Retorne APENAS JSON válido sem markdown, sem comentários:
     updateDashboard();
   } catch(e) {
     clearInterval(pi);
-    alert('Erro na liquidação: '+e.message);
+    const msg = e.message||'';
+    if(msg.includes('Request En') || msg.includes('413') || msg.includes('too large') || msg.includes('Entity')){
+      alert('PDF muito grande para processar.\n\nSolução: comprima o PDF antes de enviar.\n\nUse: ilovepdf.com → Comprimir PDF → tente novamente.');
+    } else if(msg.includes('token') || msg.includes('JSON')){
+      alert('Erro de comunicação com a IA. Tente novamente em alguns segundos.');
+    } else {
+      alert('Erro na liquidação: '+msg);
+    }
     clearLiquida();
   }
 }
@@ -1239,8 +1248,13 @@ function renderLiquidaResult() {
   document.getElementById('lr-recld').textContent = r.reclamada||'—';
   document.getElementById('lr-proc').textContent = r.numeroProcesso||'—';
   document.getElementById('lr-per').textContent = r.periodoCalculoInicio && r.periodoCalculoFim ? r.periodoCalculoInicio+' a '+r.periodoCalculoFim : '—';
-  document.getElementById('lr-bruto').textContent = fmtBRL(r.totalBruto);
-  document.getElementById('lr-liq').textContent = fmtBRL(r.totalLiquido);
+  // Calcular totais com correção monetária e juros (soma dos totais de cada verba)
+  const totalCorrigido = (r.verbas||[]).reduce((s,v)=>s+(v.total||0),0);
+  const totalLiqCorrigido = totalCorrigido - (r.inss||0) - (r.irrf||0);
+  document.getElementById('lr-bruto').textContent = fmtBRL(totalCorrigido||r.totalBruto);
+  document.getElementById('lr-liq').textContent = fmtBRL(totalLiqCorrigido||r.totalLiquido);
+  const inssEl=document.getElementById('lr-inss'); if(inssEl) inssEl.textContent=fmtBRL(r.inss||0);
+  const honEl=document.getElementById('lr-hon'); if(honEl) honEl.textContent=fmtBRL(r.valorHonorarios||0);
 
   // Render verbas as cards
   const vl = document.getElementById('liq-verbas-list');
@@ -1327,61 +1341,139 @@ function exportLiquidaPDF() {
   const {jsPDF} = jspdf;
   const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const orange = [234,88,12];
-
-  // Cabeçalho branco + linha laranja
   const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
-  doc.setFillColor(255,255,255);doc.rect(0,0,pw,28,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,28,pw,28);
-  doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
-  doc.text('Faz AI',14,12);
+  const ml=14, mr=pw-14, cw=pw-28;
+
+  // ── CABEÇALHO ──
+  doc.setDrawColor(234,88,12);doc.setLineWidth(1);doc.line(ml,14,mr,14);
+  doc.setTextColor(17,24,39);doc.setFontSize(14);doc.setFont(undefined,'bold');
+  doc.text('Faz AI',ml,11);
   doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.text('Plataforma de Perícia Contábil Trabalhista',ml,17);
   doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-  doc.text('LC',pw-21,12);doc.setTextColor(234,88,12);doc.text('A',pw-17,12);
+  doc.text('LC',mr-7,11);doc.setTextColor(234,88,12);doc.text('A',mr-3,11);
   doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-  doc.text('LCA — Legal Calculation Associate',pw-14,18,{align:'right'});
-  doc.setTextColor(17,24,39);doc.setFontSize(12);doc.setFont(undefined,'bold');
-  doc.text('LAUDO PERICIAL TRABALHISTA',pw/2,38,{align:'center'});
+  doc.text('LCA — Legal Calculation Associate',mr,17,{align:'right'});
 
-  // Process info
-  doc.setTextColor(0,0,0);
-  doc.autoTable({startY:42,head:[['Dados do Processo','']],
-    body:[['Reclamante',r.reclamante],['Reclamada',r.reclamada],['Processo',r.numeroProcesso],['Período apurado',r.periodoCalculoInicio+' a '+r.periodoCalculoFim]],
-    theme:'grid',headStyles:{fillColor:orange},columnStyles:{0:{fontStyle:'bold',cellWidth:50}}});
+  // Título
+  doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
+  doc.text('LAUDO PERICIAL TRABALHISTA',pw/2,25,{align:'center'});
 
-  // Verbas
-  doc.autoTable({startY:doc.lastAutoTable.finalY+6,
-    head:[['Alínea / Verba','Metodologia','Nat.','Principal Corrigido','Juros','Total']],
-    body:(r.verbas||[]).map(v=>[v.descricao,v.metodologia||'',v.natureza==='salarial'?'SAL':'INDEN',fmtBRL(v.valorCorrigido),fmtBRL(v.juros),fmtBRL(v.total)]),
-    theme:'striped',headStyles:{fillColor:orange},
-    columnStyles:{0:{cellWidth:45},1:{cellWidth:60,fontSize:8},2:{cellWidth:12},3:{cellWidth:25},4:{cellWidth:20},5:{cellWidth:25}},
-    styles:{fontSize:8}});
+  // ── DADOS DO PROCESSO ──
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('DADOS DO PROCESSO',ml,32);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,33,ml+50,33);
+  const dados=[['Reclamante',r.reclamante||'—'],['Reclamada',r.reclamada||'—'],['Processo',r.numeroProcesso||'Não informado'],['Período apurado',(r.periodoCalculoInicio||'')+(r.periodoCalculoFim?' a '+r.periodoCalculoFim:'')],['Salário base',fmtBRL(r.salarioBaseIdentificado)]];
+  doc.autoTable({startY:35,margin:{left:ml,right:14},
+    body:dados,theme:'plain',
+    columnStyles:{0:{fontStyle:'bold',cellWidth:38,fontSize:8,textColor:[107,114,128]},1:{fontSize:8,textColor:[17,24,39]}},
+    styles:{cellPadding:{top:1.5,bottom:1.5,left:0,right:4}}});
 
-  // Summary
-  doc.autoTable({startY:doc.lastAutoTable.finalY+6,
-    head:[['Resumo Tributário','Valor']],
-    body:[['Total Bruto',fmtBRL(r.totalBruto)],['(-) INSS Empregado',fmtBRL(r.inss)],['(-) IRRF',fmtBRL(r.irrf)],['(=) Líquido Reclamante',fmtBRL(r.totalLiquido)],['Honorários Sucumbência ('+r.honorariosPercentual+'%)',fmtBRL(r.valorHonorarios)],['INSS Reclamada ('+r.percentualInssReclamada+'%)',fmtBRL(r.inssReclamada)],['TOTAL GERAL (Custo Reclamada)',fmtBRL(r.valorTotalGeral)]],
-    theme:'grid',headStyles:{fillColor:orange}});
+  // ── TABELA RESUMO DAS VERBAS ──
+  const y1=doc.lastAutoTable.finalY+6;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('RESUMO DAS VERBAS APURADAS',ml,y1);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y1+1,ml+68,y1+1);
 
-  // Methodology
-  if(r.observation) {
-    doc.autoTable({startY:doc.lastAutoTable.finalY+6,
-      head:[['Metodologia Geral e Índices Utilizados']],
+  doc.autoTable({startY:y1+4,margin:{left:ml,right:14},
+    head:[['Alínea / Verba','Nat.','Principal','Corrigido','Juros','Total']],
+    body:(r.verbas||[]).map(v=>[
+      v.descricao||'',
+      v.natureza==='salarial'?'SAL':'IND',
+      fmtBRL(v.baseCalculo||v.valor),
+      fmtBRL(v.valorCorrigido),
+      fmtBRL(v.juros),
+      fmtBRL(v.total)
+    ]),
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:7.5,fontStyle:'bold',textColor:255,cellPadding:{top:3,bottom:3,left:3,right:3}},
+    styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    columnStyles:{
+      0:{cellWidth:'auto'},
+      1:{cellWidth:10,halign:'center',fontStyle:'bold'},
+      2:{cellWidth:28,halign:'right'},
+      3:{cellWidth:28,halign:'right'},
+      4:{cellWidth:24,halign:'right'},
+      5:{cellWidth:30,halign:'right',fontStyle:'bold'}
+    }});
+
+  // ── MEMÓRIA DE CÁLCULO ──
+  const y2=doc.lastAutoTable.finalY+6;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('MEMÓRIA DE CÁLCULO',ml,y2);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y2+1,ml+52,y2+1);
+
+  doc.autoTable({startY:y2+4,margin:{left:ml,right:14},
+    body:(r.verbas||[]).filter(v=>v.metodologia).map(v=>[v.descricao,v.metodologia]),
+    theme:'plain',
+    columnStyles:{0:{cellWidth:55,fontStyle:'bold',fontSize:7.5,textColor:[17,24,39]},1:{fontSize:7.5,textColor:[80,80,80]}},
+    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}},
+    didDrawRow:function(data){
+      if(data.row.index%1===0){
+        doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);
+        doc.line(ml,data.row.y,ml,data.row.y+data.row.height);
+      }
+    }});
+
+  // ── RESUMO TRIBUTÁRIO COMPLETO ──
+  const y3=doc.lastAutoTable.finalY+6;
+  const totalCorr=(r.verbas||[]).reduce((s,v)=>s+(v.total||0),0)||r.totalBruto;
+  const liqCorr=totalCorr-(r.inss||0)-(r.irrf||0);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('RESUMO TRIBUTÁRIO',ml,y3);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y3+1,ml+48,y3+1);
+
+  // Tabela completa de apuração
+  doc.autoTable({startY:y3+4,margin:{left:ml,right:pw/2},
+    head:[['Descrição','Valor']],
+    body:[
+      ['Total bruto principal',fmtBRL(r.totalBruto)],
+      ['(+) Correção monetária (IPCA-E + SELIC)',fmtBRL(totalCorr-r.totalBruto)],
+      ['(=) Total bruto corrigido',fmtBRL(totalCorr)],
+      ['(-) INSS reclamante',fmtBRL(r.inss)],
+      ['(-) IRRF (RRA)',fmtBRL(r.irrf)],
+      ['(=) Líquido reclamante',fmtBRL(liqCorr)],
+      ['Honorários sucumbência ('+r.honorariosPercentual+'%)',fmtBRL(r.valorHonorarios)],
+      ['INSS patronal reclamada ('+r.percentualInssReclamada+'%)',fmtBRL(r.inssReclamada)],
+      ['FGTS + multa 40%',fmtBRL(r.fgts||0)],
+      ['TOTAL CUSTO RECLAMADA',fmtBRL(r.valorTotalGeral)]
+    ],
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:7.5,fontStyle:'bold',textColor:255},
+    columnStyles:{0:{fontSize:8,textColor:[17,24,39]},1:{fontSize:8,fontStyle:'bold',halign:'right',cellWidth:35}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    styles:{cellPadding:{top:2.5,bottom:2.5,left:4,right:4}},
+    didParseCell:function(data){
+      if(data.row.index===2||data.row.index===5||data.row.index===9){
+        data.cell.styles.textColor=[234,88,12];
+        data.cell.styles.fontStyle='bold';
+      }
+    }});
+
+  // Observação metodológica
+  if(r.observation){
+    const y4=doc.lastAutoTable.finalY+6;
+    doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+    doc.text('OBSERVAÇÃO METODOLÓGICA',ml,y4);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,y4+1,ml+62,y4+1);
+    doc.autoTable({startY:y4+4,margin:{left:ml,right:14},
       body:[[r.observation]],
-      theme:'plain',headStyles:{fillColor:orange,textColor:255},styles:{fontSize:8,cellPadding:4}});
+      theme:'plain',
+      styles:{fontSize:7.5,cellPadding:{top:2,bottom:2,left:0,right:0},textColor:[80,80,80]}});
   }
 
-  // Footer
-  const pages = doc.internal.getNumberOfPages();
-  for(let i=1;i<=pages;i++) {
+  // ── RODAPÉ ──
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
     doc.setPage(i);
     const pw2=doc.internal.pageSize.getWidth(),ph2=doc.internal.pageSize.getHeight();
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,ph2-8,pw2-14,ph2-8);
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,ph2-8,pw2-14,ph2-8);
     doc.setFontSize(7);doc.setTextColor(107,114,128);
     doc.text('LCA — Legal Calculation Associate  ·  (11) 97329-4795  ·  (11) 96449-6270  ·  linkedin.com/in/lca-legal-calculation-associate  ·  Pág. '+i+'/'+pages,pw2/2,ph2-4,{align:'center'});
   }
 
-  doc.save(`Laudo_${(r.reclamante||'proc').replace(/\s/g,'_')}.pdf`);
+  doc.save('Laudo_'+(r.reclamante||'proc').replace(/\s/g,'_')+'.pdf');
 }
 
 // Liquida History
