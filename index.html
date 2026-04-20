@@ -252,6 +252,84 @@ a{color:var(--or);text-decoration:none}
 .chk-row label{font-size:13px;font-weight:500;cursor:pointer;line-height:1.4}
 .ptable tr.row-alert td{background:#FEF9C3}.ptable tr.row-falta td{background:#FEE2E2}.ptable tr.row-ferias td{background:#F0FDF4}
 .pc-trial{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--or);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+
+/* =============================================
+   PACTO AI EUROPA — INTERFACE PREMIUM
+   ============================================= */
+.pacto-hero{background:#0A0A0A;padding:0;position:relative;overflow:hidden;border-bottom:1px solid rgba(234,88,12,.2)}
+.pacto-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 80% 50%,rgba(234,88,12,.12) 0%,transparent 70%)}
+.pacto-hero-content{position:relative;z-index:2;padding:36px 40px 32px}
+.pacto-logo{font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px;display:flex;align-items:center;gap:8px;margin-bottom:16px;font-family:Georgia,serif}
+.pacto-logo-p{color:#EA580C}
+.pacto-logo-ai{color:#EA580C}
+.pacto-badge{font-size:10px;font-weight:700;letter-spacing:.15em;background:rgba(234,88,12,.15);border:1px solid rgba(234,88,12,.3);color:#EA580C;padding:3px 10px;border-radius:20px;align-self:center}
+.pacto-hero-title{font-size:22px;font-weight:600;color:#fff;margin-bottom:6px;letter-spacing:-.5px}
+.pacto-hero-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:24px;letter-spacing:.02em}
+.pacto-country-switch{display:flex;gap:10px}
+.pacto-country-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);font-size:14px;font-weight:500;padding:8px 20px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:inherit}
+.pacto-country-btn.active{background:rgba(234,88,12,.15);border-color:rgba(234,88,12,.5);color:#fff}
+.pacto-country-btn:hover:not(.active){background:rgba(255,255,255,.1);color:#fff}
+.pacto-body{background:#111;min-height:calc(100vh - 200px);padding:0}
+.pacto-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.08);background:#0d0d0d;padding:0 24px}
+.pacto-tab{background:transparent;border:none;color:rgba(255,255,255,.4);font-size:13px;font-weight:500;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-family:inherit}
+.pacto-tab.active{color:#fff;border-bottom-color:#EA580C}
+.pacto-tab-content{display:none;padding:24px}
+.pacto-tab-content.active{display:block}
+.pacto-grid{display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start}
+.pacto-col-left{}
+.pacto-col-right{}
+.pacto-panel{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px;margin-bottom:16px}
+.pacto-panel .field label{color:rgba(255,255,255,.5);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.pacto-panel .field input,.pacto-panel .field select,.pacto-panel .field textarea{background:#111;border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;width:100%;font-family:inherit;outline:none;transition:border .2s}
+.pacto-panel .field input::placeholder,.pacto-panel .field textarea::placeholder{color:rgba(255,255,255,.2)}
+.pacto-panel .field input:focus,.pacto-panel .field select:focus,.pacto-panel .field textarea:focus{border-color:rgba(234,88,12,.5)}
+.pacto-panel .field select option{background:#1a1a1a;color:#fff}
+.pacto-panel-title{font-size:12px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;border-left:3px solid #EA580C;padding-left:10px}
+.pacto-btn-primary{width:100%;padding:12px;background:#EA580C;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;letter-spacing:.03em}
+.pacto-btn-primary:hover{background:#C2410C}
+/* checklist no tema escuro */
+#pa-checklist .chk-row label{color:rgba(255,255,255,.7)}
+#pa-checklist .chk-row{border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:6px;margin-bottom:6px}
+/* score card */
+.pacto-score-card{background:linear-gradient(135deg,#1a0f00,#1a1a1a);border:1px solid rgba(234,88,12,.3);border-radius:12px;padding:24px}
+.pacto-score-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.pacto-score-label{font-size:15px;font-weight:600;color:#fff;margin-bottom:4px}
+.pacto-score-prob{font-size:12px;color:rgba(255,255,255,.5)}
+.pacto-score-num{font-size:64px;font-weight:900;color:#EA580C;line-height:1;font-family:Georgia,serif}
+.pacto-score-bar-wrap{display:flex;flex-direction:column;gap:4px}
+.pacto-score-bar-track{height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+.pacto-score-bar-fill{height:100%;background:#EA580C;border-radius:4px;transition:width .6s ease;width:0%}
+.pacto-score-bar-wrap>span{font-size:10px;color:rgba(255,255,255,.3);display:inline-block}
+.pacto-score-bar-wrap>span:nth-child(3){float:right;margin-top:-14px}
+/* métricas */
+.pacto-metrics-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pacto-metric{background:rgba(255,255,255,.04);border-radius:8px;padding:12px;text-align:center}
+.pacto-metric.accent{background:rgba(234,88,12,.1);border:1px solid rgba(234,88,12,.2)}
+.pacto-metric-label{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.pacto-metric-value{font-size:16px;font-weight:700;color:#fff}
+.pacto-metric.accent .pacto-metric-value{color:#EA580C}
+/* cenários */
+.pacto-scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.pacto-scenario{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;text-align:center;transition:border .2s}
+.pacto-scenario.prov{background:rgba(234,88,12,.08);border-color:rgba(234,88,12,.3)}
+.sc-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.pacto-scenario.prov .sc-label{color:#EA580C}
+.sc-value{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.sc-pct{font-size:11px;color:rgba(255,255,255,.35)}
+.pacto-scenario.prov .sc-pct{color:rgba(234,88,12,.7)}
+/* IA e rec */
+.pacto-ia-box{background:#0d0d0d;border:1px solid rgba(234,88,12,.15);border-radius:10px;padding:16px;margin-top:14px}
+.pacto-ia-title{font-size:11px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.pacto-ia-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7}
+.pacto-rec-box{background:#0d1a00;border:1px solid rgba(100,200,50,.15);border-radius:10px;padding:16px;margin-top:12px}
+.pacto-rec-title{font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.pacto-rec-text{font-size:13px;color:rgba(255,255,255,.7);line-height:1.7}
+.pacto-disclaimer{font-size:11px;color:rgba(255,255,255,.25);margin-bottom:12px}
+/* empty state */
+.pacto-empty{text-align:center;padding:80px 20px;color:rgba(255,255,255,.3)}
+.pacto-empty-icon{font-size:48px;margin-bottom:16px;opacity:.3}
+.pacto-empty-title{font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:8px}
+.pacto-empty-sub{font-size:13px;color:rgba(255,255,255,.25)}
 </style>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-14375893340"></script>
@@ -728,109 +806,168 @@ a{color:var(--or);text-decoration:none}
 
       <!-- PACTO AI EUROPA -->
       <div id="mod-pacto" class="mod-content hide">
-        <div class="ph"><h1>PactoAI Europa</h1><p>Simulador inteligente de acordos laborais — España &amp; Portugal</p></div>
-        <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab('pacto','sim',this)">Simulador</button>
-          <button class="tab-btn" onclick="switchTab('pacto','hist',this)">Histórico</button>
-        </div>
-        <div id="pacto-tab-sim" class="tab-content active">
-          <div class="panel">
-            <div class="ptitle">País e dados do trabalhador</div>
-            <div class="g2">
-              <div class="field"><label>País</label>
-                <select id="pa-pais" onchange="updatePactoChecklist()">
-                  <option value="es">🇪🇸 España</option>
-                  <option value="pt">🇵🇹 Portugal</option>
-                </select>
-              </div>
-              <div class="field"><label>Salário mensal bruto</label><input type="number" id="pa-salario" placeholder="Ex: 1800" oninput="calcPacto()"/></div>
+        <!-- Interface premium escura -->
+        <div class="pacto-hero">
+          <div class="pacto-hero-bg"></div>
+          <div class="pacto-hero-content">
+            <div class="pacto-logo">
+              <span class="pacto-logo-p">P</span>acto<span class="pacto-logo-ai">AI</span>
+              <span class="pacto-badge">EUROPA</span>
             </div>
-            <div class="g2">
-              <div class="field"><label>Data de início</label><input type="date" id="pa-inicio" oninput="calcPacto()"/></div>
-              <div class="field"><label>Data de término</label><input type="date" id="pa-fim" oninput="calcPacto()"/></div>
-            </div>
-            <div class="g2">
-              <div class="field"><label>Tipo de contrato</label>
-                <select id="pa-contrato" onchange="calcPacto()">
-                  <option value="indefinido">Indefinido / Sem termo</option>
-                  <option value="temporal">Temporal / A termo</option>
-                </select>
-              </div>
-              <div class="field"><label>Tipo de despedimento</label>
-                <select id="pa-tipo" onchange="calcPacto()">
-                  <option value="improcedente">Improcedente / Ilícito</option>
-                  <option value="procedente">Procedente / Lícito</option>
-                  <option value="nula">Nula / Discriminatório</option>
-                </select>
-              </div>
-            </div>
-            <div class="field"><label>Descrição do caso (IA analisa risco jurídico)</label>
-              <textarea id="pa-desc" placeholder="Descreva a situação: motivo da demissão, condições de trabalho, conflitos, etc..." rows="3"></textarea>
-            </div>
-            <button class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" onclick="simularPacto()">Simular acordo</button>
-          </div>
-          <div class="panel">
-            <div class="ptitle">Checklist probatório</div>
-            <div id="pa-checklist"></div>
-          </div>
-          <div id="pa-resultado" style="display:none">
-            <div class="panel" style="border:2px solid var(--or)">
-              <div class="ptitle">Score do caso</div>
-              <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px">
-                <div style="font-size:56px;font-weight:800;color:var(--or)" id="pa-score-num">0</div>
-                <div>
-                  <div style="font-size:14px;font-weight:600" id="pa-score-label">—</div>
-                  <div style="font-size:13px;color:var(--gy);margin-top:4px">Probabilidade de êxito: <strong id="pa-prob">—</strong></div>
-                </div>
-                <div style="flex:1;height:12px;background:var(--bd);border-radius:6px;overflow:hidden">
-                  <div id="pa-score-bar" style="height:100%;background:var(--or);border-radius:6px;transition:width .5s;width:0%"></div>
-                </div>
-              </div>
-            </div>
-            <div class="panel">
-              <div class="ptitle">Indenização base calculada</div>
-              <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
-                <div class="mc"><div class="mc-label">Anos trabalhados</div><div class="mc-value" id="pa-anos">—</div></div>
-                <div class="mc"><div class="mc-label">Salário diário</div><div class="mc-value" id="pa-diario" style="font-size:15px">—</div></div>
-                <div class="mc hi"><div class="mc-label">Indenização base</div><div class="mc-value" id="pa-base" style="font-size:15px">—</div></div>
-              </div>
-            </div>
-            <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
-              <div class="mc">
-                <div class="mc-label">Conservador</div>
-                <div class="mc-value" id="pa-cen-cons" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="pa-pct-cons">—</div>
-              </div>
-              <div class="mc hi">
-                <div class="mc-label">Provável ✓</div>
-                <div class="mc-value" id="pa-cen-prov" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="pa-pct-prov">—</div>
-              </div>
-              <div class="mc">
-                <div class="mc-label">Agressivo</div>
-                <div class="mc-value" id="pa-cen-agr" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="pa-pct-agr">—</div>
-              </div>
-            </div>
-            <div class="panel" style="background:var(--orp);border-color:#FED7AA">
-              <div class="ptitle" style="color:var(--or)">Análise de IA — Risco jurídico</div>
-              <div id="pa-ia-analise" style="font-size:13px;line-height:1.6;color:var(--dk)">—</div>
-            </div>
-            <div class="panel" style="background:var(--orp);border-color:#FED7AA">
-              <div class="ptitle" style="color:var(--or)">Recomendação de negociação</div>
-              <div id="pa-recomendacao" style="font-size:14px;line-height:1.6"></div>
-            </div>
-            <div style="text-align:center;margin-top:8px">
-              <p style="font-size:11px;color:var(--gy);margin-bottom:12px">⚠ Valores de referência para negociação. Não constituem garantia de resultado judicial.</p>
-              <button class="btn btn-primary" onclick="exportPactoPDF()">Exportar relatório PDF</button>
+            <div class="pacto-hero-title" id="pacto-hero-title">El simulador inteligente de acuerdos laborales</div>
+            <div class="pacto-hero-sub" id="pacto-hero-sub">España · Portugal · Legislación actualizada 2025</div>
+            <div class="pacto-country-switch">
+              <button class="pacto-country-btn active" id="btn-es" onclick="setPactoCountry('es')">🇪🇸 España</button>
+              <button class="pacto-country-btn" id="btn-pt" onclick="setPactoCountry('pt')">🇵🇹 Portugal</button>
             </div>
           </div>
         </div>
-        <div id="pacto-tab-hist" class="tab-content">
-          <div id="pacto-hist-list"><p style="color:var(--gy);font-size:13px">Nenhum simulação no histórico.</p></div>
+        <div class="pacto-body">
+          <div class="pacto-tabs">
+            <button class="pacto-tab active" onclick="switchPactoTab('sim',this)" id="ptab-sim">
+              <span id="ptab-sim-label">Simulador</span>
+            </button>
+            <button class="pacto-tab" onclick="switchPactoTab('hist',this)" id="ptab-hist">
+              <span id="ptab-hist-label">Historial</span>
+            </button>
+          </div>
+          <div id="pacto-tab-sim" class="pacto-tab-content active">
+            <div class="pacto-grid">
+              <!-- Coluna esquerda — inputs -->
+              <div class="pacto-col-left">
+                <div class="pacto-panel">
+                  <div class="pacto-panel-title" id="pp-title-dados">Datos del trabajador</div>
+                  <div class="g2">
+                    <div class="field">
+                      <label id="lbl-salario">Salario mensual bruto (€)</label>
+                      <input type="number" id="pa-salario" placeholder="Ej: 1.800" oninput="calcPacto()"/>
+                    </div>
+                    <div class="field">
+                      <label id="lbl-contrato">Tipo de contrato</label>
+                      <select id="pa-contrato" onchange="calcPacto()">
+                        <option value="indefinido" id="opt-indefinido">Indefinido</option>
+                        <option value="temporal" id="opt-temporal">Temporal</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="g2">
+                    <div class="field">
+                      <label id="lbl-inicio">Fecha de inicio</label>
+                      <input type="date" id="pa-inicio" oninput="calcPacto()"/>
+                    </div>
+                    <div class="field">
+                      <label id="lbl-fim">Fecha de baja</label>
+                      <input type="date" id="pa-fim" oninput="calcPacto()"/>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label id="lbl-tipo">Tipo de despido</label>
+                    <select id="pa-tipo" onchange="calcPacto()">
+                      <option value="improcedente" id="opt-improcedente">Improcedente</option>
+                      <option value="procedente" id="opt-procedente">Procedente</option>
+                      <option value="nula" id="opt-nulo">Nulo / Discriminatorio</option>
+                      <option value="objetivo" id="opt-objetivo">Objetivo (causas ETOP)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="pacto-panel">
+                  <div class="pacto-panel-title" id="pp-title-desc">Descripción del caso</div>
+                  <div class="field" style="margin-bottom:0">
+                    <label id="lbl-desc">La IA analizará el riesgo jurídico del caso</label>
+                    <textarea id="pa-desc" rows="4" id="lbl-desc-area" placeholder="Describa la situación: motivo del despido, condiciones laborales, conflictos previos, documentación existente..."></textarea>
+                  </div>
+                  <button class="pacto-btn-primary" onclick="simularPacto()" id="btn-simular" style="margin-top:12px">
+                    Simular acuerdo →
+                  </button>
+                </div>
+                <div class="pacto-panel">
+                  <div class="pacto-panel-title" id="pp-title-check">Checklist probatorio</div>
+                  <div id="pa-checklist"></div>
+                </div>
+              </div>
+              <!-- Coluna direita — resultado -->
+              <div class="pacto-col-right">
+                <div id="pa-empty-state" class="pacto-empty">
+                  <div class="pacto-empty-icon">⚖</div>
+                  <div class="pacto-empty-title" id="empty-title">Complete los datos</div>
+                  <div class="pacto-empty-sub" id="empty-sub">El simulador calculará los escenarios de acuerdo en tiempo real</div>
+                </div>
+                <div id="pa-resultado" style="display:none">
+                  <!-- Score -->
+                  <div class="pacto-score-card">
+                    <div class="pacto-score-header">
+                      <div>
+                        <div class="pacto-score-label" id="pa-score-label">—</div>
+                        <div class="pacto-score-prob" id="pa-prob-label">Probabilidad de éxito: <strong id="pa-prob">—</strong></div>
+                      </div>
+                      <div class="pacto-score-num" id="pa-score-num">0</div>
+                    </div>
+                    <div class="pacto-score-bar-wrap">
+                      <div class="pacto-score-bar-track">
+                        <div class="pacto-score-bar-fill" id="pa-score-bar"></div>
+                      </div>
+                      <span>0</span><span>50</span><span>100</span>
+                    </div>
+                  </div>
+                  <!-- Base -->
+                  <div class="pacto-panel" style="margin-top:16px">
+                    <div class="pacto-panel-title" id="pp-title-base">Indemnización base calculada</div>
+                    <div class="pacto-metrics-3">
+                      <div class="pacto-metric">
+                        <div class="pacto-metric-label" id="lbl-anos">Años trabajados</div>
+                        <div class="pacto-metric-value" id="pa-anos">—</div>
+                      </div>
+                      <div class="pacto-metric">
+                        <div class="pacto-metric-label" id="lbl-diario">Salario diario</div>
+                        <div class="pacto-metric-value" id="pa-diario">—</div>
+                      </div>
+                      <div class="pacto-metric accent">
+                        <div class="pacto-metric-label" id="lbl-base">Base legal</div>
+                        <div class="pacto-metric-value" id="pa-base">—</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Cenários -->
+                  <div class="pacto-scenarios">
+                    <div class="pacto-scenario cons">
+                      <div class="sc-label" id="sc-label-cons">Conservador</div>
+                      <div class="sc-value" id="pa-cen-cons">—</div>
+                      <div class="sc-pct" id="pa-pct-cons">—</div>
+                    </div>
+                    <div class="pacto-scenario prov">
+                      <div class="sc-label" id="sc-label-prov">Probable ✓</div>
+                      <div class="sc-value" id="pa-cen-prov">—</div>
+                      <div class="sc-pct" id="pa-pct-prov">— recomendado</div>
+                    </div>
+                    <div class="pacto-scenario agr">
+                      <div class="sc-label" id="sc-label-agr">Agresivo</div>
+                      <div class="sc-value" id="pa-cen-agr">—</div>
+                      <div class="sc-pct" id="pa-pct-agr">—</div>
+                    </div>
+                  </div>
+                  <!-- IA -->
+                  <div class="pacto-ia-box">
+                    <div class="pacto-ia-title" id="ia-title">Análisis de IA — Riesgo jurídico</div>
+                    <div class="pacto-ia-text" id="pa-ia-analise">—</div>
+                  </div>
+                  <!-- Recomendação -->
+                  <div class="pacto-rec-box">
+                    <div class="pacto-rec-title" id="rec-title">Recomendación de negociación</div>
+                    <div class="pacto-rec-text" id="pa-recomendacao">—</div>
+                  </div>
+                  <div style="text-align:center;margin-top:16px">
+                    <p class="pacto-disclaimer" id="pa-disclaimer">⚠ Valores de referencia para negociación. No constituyen garantía de resultado judicial.</p>
+                    <button class="pacto-btn-primary" onclick="exportPactoPDF()" id="btn-export">Exportar informe PDF</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="pacto-tab-hist" class="pacto-tab-content">
+            <div id="pacto-hist-list" class="pacto-panel"><p style="color:rgba(255,255,255,.4);font-size:13px">Sin simulaciones en el historial.</p></div>
+          </div>
         </div>
       </div>
-
       <!-- HISTÓRICO GERAL -->
       <div id="mod-hist" class="mod-content hide">
         <div class="ph"><h1>Histórico</h1><p>Todos os seus trabalhos salvos</p></div>
@@ -1075,7 +1212,7 @@ function showMod(m) {
   if(m==='hist') renderGlobalHist();
   if(m==='planos') renderPlanos();
   if(m==='acordos') renderChecklistBR();
-  if(m==='pacto'){ renderPactoChecklist(document.getElementById('pa-pais')?.value||'es'); }
+  if(m==='pacto'){ applyPactoI18n(pactoCountry); renderPactoChecklist(pactoCountry); }
 }
 function renderPlanos() {
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
@@ -2616,64 +2753,258 @@ function calcScore() {
 }
 
 // ============================================================
-// PACTO AI EUROPA — SIMULADOR
+// PACTO AI EUROPA — I18N + CHECKLISTS EXPANDIDOS
 // ============================================================
 
+const PACTO_I18N = {
+  es: {
+    hero_title: 'El simulador inteligente de acuerdos laborales',
+    hero_sub: 'España · Estatuto de los Trabajadores 2025',
+    tab_sim: 'Simulador', tab_hist: 'Historial',
+    panel_dados: 'Datos del trabajador',
+    panel_desc: 'Descripción del caso',
+    panel_check: 'Checklist probatorio',
+    panel_base: 'Indemnización base calculada',
+    lbl_salario: 'Salario mensual bruto (€)',
+    lbl_contrato: 'Tipo de contrato',
+    lbl_inicio: 'Fecha de inicio',
+    lbl_fim: 'Fecha de baja',
+    lbl_tipo: 'Tipo de despido',
+    lbl_desc: 'La IA analizará el riesgo jurídico del caso',
+    lbl_anos: 'Años trabajados', lbl_diario: 'Salario diario', lbl_base: 'Base legal',
+    opt_indefinido: 'Indefinido', opt_temporal: 'Temporal',
+    opt_improcedente: 'Improcedente (art. 56 ET)',
+    opt_procedente: 'Procedente (art. 55.7 ET)',
+    opt_nulo: 'Nulo — discriminatorio (art. 55.5 ET)',
+    opt_objetivo: 'Objetivo — causas ETOP (art. 52 ET)',
+    btn_simular: 'Simular acuerdo →',
+    btn_export: 'Exportar informe PDF',
+    sc_cons: 'Conservador', sc_prov: 'Probable ✓', sc_agr: 'Agresivo',
+    prov_rec: '— recomendado',
+    ia_title: 'Análisis de IA — Riesgo jurídico',
+    rec_title: 'Recomendación de negociación',
+    disclaimer: '⚠ Valores de referencia para negociación. No constituyen garantía de resultado judicial.',
+    empty_title: 'Complete los datos', empty_sub: 'El simulador calculará los escenarios de acuerdo en tiempo real',
+    hist_empty: 'Sin simulaciones en el historial.',
+    prob_label: 'Probabilidad de éxito: ',
+    score_labels: ['Caso débil','Caso moderado','Caso favorable','Caso sólido','Caso muy sólido']
+  },
+  pt: {
+    hero_title: 'O simulador inteligente de acordos laborais',
+    hero_sub: 'Portugal · Código do Trabalho 2025',
+    tab_sim: 'Simulador', tab_hist: 'Histórico',
+    panel_dados: 'Dados do trabalhador',
+    panel_desc: 'Descrição do caso',
+    panel_check: 'Checklist probatório',
+    panel_base: 'Compensação base calculada',
+    lbl_salario: 'Salário mensal bruto (€)',
+    lbl_contrato: 'Tipo de contrato',
+    lbl_inicio: 'Data de início',
+    lbl_fim: 'Data de cessação',
+    lbl_tipo: 'Tipo de despedimento',
+    lbl_desc: 'A IA analisará o risco jurídico do caso',
+    lbl_anos: 'Anos trabalhados', lbl_diario: 'Retribuição diária', lbl_base: 'Compensação base',
+    opt_indefinido: 'Sem termo', opt_temporal: 'A termo certo / incerto',
+    opt_improcedente: 'Despedimento ilícito (art. 389.º CT)',
+    opt_procedente: 'Despedimento lícito',
+    opt_nulo: 'Despedimento nulo — discriminatório',
+    opt_objetivo: 'Despedimento colectivo (art. 359.º CT)',
+    btn_simular: 'Simular acordo →',
+    btn_export: 'Exportar relatório PDF',
+    sc_cons: 'Conservador', sc_prov: 'Provável ✓', sc_agr: 'Agressivo',
+    prov_rec: '— recomendado',
+    ia_title: 'Análise de IA — Risco jurídico',
+    rec_title: 'Recomendação de negociação',
+    disclaimer: '⚠ Valores de referência para negociação. Não constituem garantia de resultado judicial.',
+    empty_title: 'Preencha os dados', empty_sub: 'O simulador calculará os cenários de acordo em tempo real',
+    hist_empty: 'Nenhuma simulação no histórico.',
+    prob_label: 'Probabilidade de êxito: ',
+    score_labels: ['Caso fraco','Caso moderado','Caso favorável','Caso sólido','Caso muito sólido']
+  }
+};
+
 const CHECKLIST_ES = [
-  {cat:'Despido', items:[
-    {id:'es1',label:'Carta de despido recibida',pts:15},
-    {id:'es2',label:'Historial de evaluaciones positivas',pts:10},
-    {id:'es3',label:'Comunicaciones escritas (email, WhatsApp)',pts:15},
-    {id:'es4',label:'Ausencia de advertencias previas',pts:10},
-    {id:'es5',label:'Testigos identificados',pts:12}
+  {cat:'Despido — Documentación', items:[
+    {id:'es1',label:'Carta de despido recibida con causas especificadas (art. 55 ET)',pts:15},
+    {id:'es2',label:'Carta de despido sin causas concretas o genérica',pts:20},
+    {id:'es3',label:'Historial de evaluaciones de desempeño positivas',pts:12},
+    {id:'es4',label:'Ausencia total de sanciones o advertencias previas',pts:10},
+    {id:'es5',label:'Testigos identificados del despido o situación previa',pts:12},
+    {id:'es6',label:'Comunicaciones previas al despido (email, WhatsApp)',pts:15},
+    {id:'es7',label:'Defectos de forma en la carta (plazo, firma, notificación)',pts:18}
   ]},
-  {cat:'Horas extra / Salarios', items:[
-    {id:'es6',label:'Registro de jornada (control horario)',pts:20},
-    {id:'es7',label:'Emails fuera del horario laboral',pts:15},
-    {id:'es8',label:'Nóminas sin pago de horas extra',pts:18}
+  {cat:'Horas Extra y Jornada', items:[
+    {id:'es8',label:'Registro de jornada (obligatorio desde 2019, art. 34.9 ET)',pts:22},
+    {id:'es9',label:'Registro de jornada con horarios no uniformes (variación real)',pts:20},
+    {id:'es10',label:'Emails, mensajes fuera del horario laboral pactado',pts:18},
+    {id:'es11',label:'Nóminas sin pago de horas extra',pts:20},
+    {id:'es12',label:'Testigos que confirman la jornada real',pts:12},
+    {id:'es13',label:'Ausencia de registro de jornada (presunción favorable)',pts:18}
   ]},
-  {cat:'Enfermedad / Accidente', items:[
-    {id:'es9',label:'Informe médico con nexo causal',pts:25},
-    {id:'es10',label:'Parte de accidente registrado',pts:22},
-    {id:'es11',label:'Ausencia de medidas de seguridad',pts:18},
-    {id:'es12',label:'Incapacidad permanente reconocida',pts:30}
+  {cat:'Accidente Laboral / Enfermedad Profesional', items:[
+    {id:'es14',label:'Parte de accidente de trabajo registrado ante la Mutua',pts:22},
+    {id:'es15',label:'Informe médico con nexo causal establecido',pts:25},
+    {id:'es16',label:'Informe de la Inspección de Trabajo',pts:25},
+    {id:'es17',label:'Incapacidad permanente reconocida por el INSS',pts:30},
+    {id:'es18',label:'Ausencia de medidas de seguridad (EPI, formación)',pts:20},
+    {id:'es19',label:'Informe de la Mutua Colaboradora favorable',pts:18},
+    {id:'es20',label:'Reconocimiento de recargo de prestaciones (art. 164 LGSS)',pts:28}
   ]},
-  {cat:'Discriminación / Acoso', items:[
-    {id:'es13',label:'Comunicaciones que evidencian el acoso',pts:25},
-    {id:'es14',label:'Denuncia interna previa sin respuesta',pts:20},
-    {id:'es15',label:'Varios testigos',pts:18},
-    {id:'es16',label:'Denuncia ante la Inspección de Trabajo',pts:25}
+  {cat:'Discriminación y Despido Nulo', items:[
+    {id:'es21',label:'Trabajadora embarazada o en período de lactancia (nulidad automática)',pts:35},
+    {id:'es22',label:'Víctima de violencia de género',pts:35},
+    {id:'es23',label:'Despido durante baja médica (Ley Orgánica 1/2025)',pts:30},
+    {id:'es24',label:'Despido durante reducción de jornada por conciliación',pts:30},
+    {id:'es25',label:'Denuncia previa a la Inspección de Trabajo',pts:25},
+    {id:'es26',label:'Comunicaciones que evidencian motivo discriminatorio',pts:28},
+    {id:'es27',label:'Patrón comparativo (compañeros en situación similar no despedidos)',pts:20}
+  ]},
+  {cat:'Acoso Laboral / Sexual (Mobbing)', items:[
+    {id:'es28',label:'Comunicaciones escritas que evidencian el acoso',pts:28},
+    {id:'es29',label:'Denuncia interna previa sin respuesta de la empresa',pts:22},
+    {id:'es30',label:'Protocolo de acoso activado formalmente',pts:20},
+    {id:'es31',label:'Múltiples testigos del acoso',pts:20},
+    {id:'es32',label:'Bajas médicas por ansiedad/depresión relacionadas',pts:22},
+    {id:'es33',label:'Denuncia ante la Inspección de Trabajo por acoso',pts:28}
+  ]},
+  {cat:'Salarios e Indemnizaciones Pendientes', items:[
+    {id:'es34',label:'Nóminas sin abonar (3 meses en 1 año — art. 50 ET)',pts:25},
+    {id:'es35',label:'Extracto bancario sin transferencias salariales',pts:22},
+    {id:'es36',label:'Finiquito incorrecto o incompleto',pts:18},
+    {id:'es37',label:'Vacaciones no disfrutadas no liquidadas',pts:15},
+    {id:'es38',label:'Pagas extraordinarias no abonadas',pts:18},
+    {id:'es39',label:'Comunicación de la empresa reconociendo deuda',pts:25}
+  ]},
+  {cat:'Modificación Sustancial / Movilidad Geográfica', items:[
+    {id:'es40',label:'Notificación de modificación sustancial sin causa acreditada',pts:20},
+    {id:'es41',label:'Modificación de funciones, turno o salario sin acuerdo',pts:18},
+    {id:'es42',label:'Traslado sin período de consultas',pts:22},
+    {id:'es43',label:'Perjuicio acreditado para conciliación familiar',pts:15}
   ]}
 ];
 
 const CHECKLIST_PT = [
-  {cat:'Despedimento', items:[
-    {id:'pt1',label:'Carta de despedimento sem justa causa',pts:20},
-    {id:'pt2',label:'Processo disciplinar irregular',pts:18},
-    {id:'pt3',label:'Ausência de audiência prévia',pts:15},
-    {id:'pt4',label:'Testemunhas do processo',pts:12}
+  {cat:'Despedimento — Documentação', items:[
+    {id:'pt1',label:'Carta de despedimento com nota de culpa (processo disciplinar, art. 353.º CT)',pts:18},
+    {id:'pt2',label:'Despedimento sem processo disciplinar prévio (despedimento ilícito)',pts:25},
+    {id:'pt3',label:'Ausência de audiência prévia do trabalhador (art. 355.º CT)',pts:20},
+    {id:'pt4',label:'Testemunhas identificadas para o processo',pts:12},
+    {id:'pt5',label:'Falta de comunicação escrita ao trabalhador',pts:18},
+    {id:'pt6',label:'Irregularidades procedimentais no processo disciplinar',pts:20}
   ]},
-  {cat:'Acidente / Doença Profissional', items:[
-    {id:'pt5',label:'Participação de acidente registada',pts:20},
-    {id:'pt6',label:'Relatório da ACT favorável',pts:25},
-    {id:'pt7',label:'Nexo causal médico estabelecido',pts:25},
-    {id:'pt8',label:'Incapacidade permanente reconhecida',pts:30}
+  {cat:'Trabalho Suplementar e Horário', items:[
+    {id:'pt7',label:'Registo de trabalho suplementar documentado',pts:22},
+    {id:'pt8',label:'Banco de horas sem acordo escrito',pts:18},
+    {id:'pt9',label:'Emails/mensagens fora do horário normal de trabalho',pts:15},
+    {id:'pt10',label:'Recibos de vencimento sem pagamento de trabalho suplementar',pts:20},
+    {id:'pt11',label:'Testemunhos sobre horário real praticado',pts:12},
+    {id:'pt12',label:'Ausência de registo de ponto (presunção favorável)',pts:18}
   ]},
-  {cat:'Créditos Salariais', items:[
-    {id:'pt9',label:'Recibos de vencimento em falta',pts:20},
-    {id:'pt10',label:'Extrato bancário sem transferências',pts:18},
-    {id:'pt11',label:'Comunicação da DGERT',pts:15}
+  {cat:'Acidente de Trabalho / Doença Profissional', items:[
+    {id:'pt13',label:'Participação de acidente de trabalho registada (art. 292.º LAT)',pts:22},
+    {id:'pt14',label:'Relatório da ACT favorável ao trabalhador',pts:28},
+    {id:'pt15',label:'Nexo causal médico estabelecido entre doença e trabalho',pts:28},
+    {id:'pt16',label:'Incapacidade permanente reconhecida pela Segurança Social',pts:32},
+    {id:'pt17',label:'Ausência de EPI ou medidas de segurança adequadas',pts:20},
+    {id:'pt18',label:'Relatório de medicina do trabalho desfavorável à entidade patronal',pts:22},
+    {id:'pt19',label:'Doença profissional reconhecida pelo Centro Nacional de Proteção contra Riscos Profissionais',pts:28}
+  ]},
+  {cat:'Despedimento Ilícito e Discriminação', items:[
+    {id:'pt20',label:'Trabalhadora grávida, puérpera ou lactante (nulidade — art. 63.º CT)',pts:35},
+    {id:'pt21',label:'Trabalhador em licença parental (proteção absoluta)',pts:35},
+    {id:'pt22',label:'Vítima de assédio que apresentou queixa formal',pts:28},
+    {id:'pt23',label:'Despedimento como represália por exercício de direitos laborais',pts:25},
+    {id:'pt24',label:'Discriminação por doença, deficiência, raça ou religião',pts:28},
+    {id:'pt25',label:'Comunicações que evidenciam motivação discriminatória',pts:25},
+    {id:'pt26',label:'Queixa prévia na ACT ou na Comissão para a Igualdade no Trabalho (CIG)',pts:25}
   ]},
   {cat:'Assédio Moral / Sexual', items:[
-    {id:'pt12',label:'Queixa prévia na empresa',pts:20},
-    {id:'pt13',label:'Queixa na ACT ou Ministério Público',pts:28},
-    {id:'pt14',label:'Comunicações digitais',pts:22},
-    {id:'pt15',label:'Testemunhos escritos',pts:15}
+    {id:'pt27',label:'Comunicações digitais que evidenciam assédio (email, mensagens)',pts:25},
+    {id:'pt28',label:'Queixa na ACT ou no Ministério Público',pts:30},
+    {id:'pt29',label:'Queixa interna prévia sem resposta da entidade patronal',pts:22},
+    {id:'pt30',label:'Testemunhos escritos de colegas',pts:18},
+    {id:'pt31',label:'Atestados psicológicos/psiquiátricos relacionados',pts:22},
+    {id:'pt32',label:'Padrão de conduta sistemático (não incidente isolado)',pts:20}
+  ]},
+  {cat:'Créditos Salariais e Verbas Rescisórias', items:[
+    {id:'pt33',label:'Retribuição em atraso superior a 30 dias (art. 394.º CT — resolução justa causa)',pts:28},
+    {id:'pt34',label:'Recibos de vencimento em falta ou incorretos',pts:20},
+    {id:'pt35',label:'Extracto bancário sem transferências salariais',pts:22},
+    {id:'pt36',label:'Férias vencidas e não gozadas não liquidadas',pts:18},
+    {id:'pt37',label:'Subsídio de férias e de Natal não pagos',pts:18},
+    {id:'pt38',label:'Horas de formação profissional não ministradas (40h/ano — art. 131.º CT)',pts:12},
+    {id:'pt39',label:'Comunicação da DGERT ou Segurança Social',pts:15}
+  ]},
+  {cat:'Resolução pelo Trabalhador com Justa Causa', items:[
+    {id:'pt40',label:'Comportamento culposo do empregador claramente identificado',pts:25},
+    {id:'pt41',label:'Violação das garantias legais ou convencionais do trabalhador',pts:22},
+    {id:'pt42',label:'Ofensas à integridade física, moral ou dignidade',pts:28},
+    {id:'pt43',label:'Alteração substancial das condições de trabalho sem acordo',pts:20},
+    {id:'pt44',label:'Notificação prévia enviada ao empregador (art. 395.º CT)',pts:18},
+    {id:'pt45',label:'Ausência de resposta do empregador à notificação',pts:12}
   ]}
 ];
 
+let pactoCountry = 'es';
+
+function setPactoCountry(country) {
+  pactoCountry = country;
+  document.getElementById('pa-pais')?.remove();
+  // Atualizar botões
+  document.getElementById('btn-es')?.classList.toggle('active', country==='es');
+  document.getElementById('btn-pt')?.classList.toggle('active', country==='pt');
+  // Aplicar i18n
+  applyPactoI18n(country);
+  // Renderizar checklist do país
+  renderPactoChecklist(country);
+  calcPacto();
+}
+
+function applyPactoI18n(lang) {
+  const t = PACTO_I18N[lang];
+  if(!t) return;
+  const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  const setHTML = (id,val) => { const el=document.getElementById(id); if(el) el.innerHTML=val; };
+  set('pacto-hero-title', t.hero_title);
+  set('pacto-hero-sub', t.hero_sub);
+  set('ptab-sim-label', t.tab_sim);
+  set('ptab-hist-label', t.tab_hist);
+  set('pp-title-dados', t.panel_dados);
+  set('pp-title-desc', t.panel_desc);
+  set('pp-title-check', t.panel_check);
+  set('pp-title-base', t.panel_base);
+  set('lbl-salario', t.lbl_salario);
+  set('lbl-contrato', t.lbl_contrato);
+  set('lbl-inicio', t.lbl_inicio);
+  set('lbl-fim', t.lbl_fim);
+  set('lbl-tipo', t.lbl_tipo);
+  set('lbl-desc', t.lbl_desc);
+  set('lbl-anos', t.lbl_anos);
+  set('lbl-diario', t.lbl_diario);
+  set('lbl-base', t.lbl_base);
+  set('opt-indefinido', t.opt_indefinido);
+  set('opt-temporal', t.opt_temporal);
+  set('opt-improcedente', t.opt_improcedente);
+  set('opt-procedente', t.opt_procedente);
+  set('opt-nulo', t.opt_nulo);
+  set('opt-objetivo', t.opt_objetivo);
+  set('btn-simular', t.btn_simular);
+  set('btn-export', t.btn_export);
+  set('sc-label-cons', t.sc_cons);
+  set('sc-label-prov', t.sc_prov);
+  set('sc-label-agr', t.sc_agr);
+  set('ia-title', t.ia_title);
+  set('rec-title', t.rec_title);
+  set('pa-disclaimer', t.disclaimer);
+  set('empty-title', t.empty_title);
+  set('empty-sub', t.empty_sub);
+  set('pa-prob-label', t.prob_label+' ');
+  const hist = document.getElementById('pacto-hist-list');
+  if(hist && hist.textContent.length < 50) hist.innerHTML = '<p style="color:rgba(255,255,255,.4);font-size:13px">'+t.hist_empty+'</p>';
+}
+
 function updatePactoChecklist() {
-  const pais = document.getElementById('pa-pais')?.value;
+  const pais = document.getElementById('pa-pais')?.value || pactoCountry;
   renderPactoChecklist(pais);
   calcPacto();
 }
@@ -2683,41 +3014,52 @@ function renderPactoChecklist(pais) {
   if(!el) return;
   const lista = pais==='pt' ? CHECKLIST_PT : CHECKLIST_ES;
   el.innerHTML = lista.map(cat => `
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${cat.cat}</div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:10px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(234,88,12,.2)">${cat.cat}</div>
       ${cat.items.map(item => `
-        <div class="chk-row" style="margin-bottom:6px">
-          <input type="checkbox" id="${item.id}" onchange="calcPacto()"/>
-          <label for="${item.id}" style="flex:1">${item.label}</label>
-          <span style="font-size:11px;font-weight:600;color:var(--or);min-width:36px;text-align:right">+${item.pts}</span>
+        <div class="chk-row" style="margin-bottom:6px;align-items:flex-start">
+          <input type="checkbox" id="${item.id}" onchange="calcPacto()" style="margin-top:2px;flex-shrink:0"/>
+          <label for="${item.id}" style="flex:1;font-size:12px;color:rgba(255,255,255,.65);line-height:1.4">${item.label}</label>
+          <span style="font-size:10px;font-weight:700;color:#EA580C;min-width:30px;text-align:right;flex-shrink:0">+${item.pts}</span>
         </div>`).join('')}
     </div>`).join('');
 }
 
 function calcPacto() {
-  const pais = document.getElementById('pa-pais')?.value||'es';
+  const pais = pactoCountry;
   const salario = parseFloat(document.getElementById('pa-salario')?.value)||0;
   const inicioStr = document.getElementById('pa-inicio')?.value;
   const fimStr = document.getElementById('pa-fim')?.value;
   const contrato = document.getElementById('pa-contrato')?.value||'indefinido';
   const tipo = document.getElementById('pa-tipo')?.value||'improcedente';
-  if(!salario||!inicioStr||!fimStr) return;
+  const t = PACTO_I18N[pais];
+  if(!salario||!inicioStr||!fimStr) { document.getElementById('pa-resultado').style.display='none'; document.getElementById('pa-empty-state').style.display='block'; return; }
 
   const anos = (new Date(fimStr)-new Date(inicioStr))/(1000*60*60*24*365);
+  if(anos<=0) return;
   const diasPorAno = pais==='es' ? 33 : 20;
+  // Para despido objetivo ES: 20 dias
+  const diasEfetivos = (pais==='es' && tipo==='objetivo') ? 20 : diasPorAno;
   const salarioDiario = salario/30;
-  let indenizacaoBase = salarioDiario * diasPorAno * anos;
-
-  // Teto España: 24 meses
-  if(pais==='es') indenizacaoBase = Math.min(indenizacaoBase, salario*24);
+  let indenizacaoBase = salarioDiario * diasEfetivos * anos;
+  // Teto España
+  if(pais==='es') {
+    const teto = tipo==='objetivo' ? salario*12 : salario*24;
+    indenizacaoBase = Math.min(indenizacaoBase, teto);
+  }
+  // Despido procedente ES e PT: sem indenização base
+  if(tipo==='procedente') indenizacaoBase = 0;
 
   // Score base
   let scoreBase = 0;
   if(anos>=10) scoreBase+=20; else if(anos>=5) scoreBase+=12; else if(anos>=2) scoreBase+=6;
   if(salario>=3000) scoreBase+=15; else if(salario>=1800) scoreBase+=8;
-  if(tipo==='improcedente'||tipo==='nula') scoreBase+=25; else if(tipo==='procedente') scoreBase-=20;
-  if(contrato==='indefinido') scoreBase+=10; else scoreBase-=15;
-  if(tipo==='nula') scoreBase+=10;
+  if(tipo==='improcedente') scoreBase+=25;
+  else if(tipo==='nula') scoreBase+=35;
+  else if(tipo==='objetivo') scoreBase+=10;
+  else if(tipo==='procedente') scoreBase-=20;
+  if(contrato==='indefinido'||contrato==='sem_termo') scoreBase+=10;
+  else scoreBase-=10;
 
   // Score probatório
   const lista = pais==='pt' ? CHECKLIST_PT : CHECKLIST_ES;
@@ -2742,31 +3084,39 @@ function calcPacto() {
   else if(scoreTotal<=85) prob='75-88%';
   else prob='88-95%';
 
-  let label;
-  if(scoreTotal<=25) label= pais==='es'?'Caso débil':'Caso fraco';
-  else if(scoreTotal<=50) label= pais==='es'?'Caso moderado':'Caso moderado';
-  else if(scoreTotal<=70) label= pais==='es'?'Caso favorable':'Caso favorável';
-  else label= pais==='es'?'Caso sólido':'Caso sólido';
+  const scoreIdx = scoreTotal<=20?0:scoreTotal<=40?1:scoreTotal<=60?2:scoreTotal<=80?3:4;
+  const label = t.score_labels[scoreIdx];
 
-  const cur = pais==='es'?'€':'€';
-  const fmtEur = v => cur+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const fmtEur = v => '€'+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 
   let rec;
-  if(scoreTotal<=50) rec=`${pais==='es'?'Negociar entre':'Negocear entre'} <strong>${fmtEur(indenizacaoBase*pCons)}</strong> e <strong>${fmtEur(indenizacaoBase*pProv)}</strong>.`;
-  else rec=`${pais==='es'?'Exigir mínimo de':'Exigir mínimo de'} <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. ${pais==='es'?'Objetivo agressivo':'Objetivo agressivo'}: <strong>${fmtEur(indenizacaoBase*pAgr)}</strong>.`;
+  if(tipo==='procedente') {
+    rec = pais==='es'
+      ? 'El despido procedente no genera derecho a indemnización legal. Puede negociarse una compensación voluntaria para evitar litigios.'
+      : 'O despedimento lícito não gera compensação legal. Pode negociar-se uma compensação voluntária para evitar litígios.';
+  } else if(scoreTotal<=50) {
+    rec = pais==='es'
+      ? `Posición moderada. Negocie entre <strong>${fmtEur(indenizacaoBase*pCons)}</strong> y <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. Refuerce el acervo probatorio antes de rechazar propuestas.`
+      : `Posição moderada. Negocear entre <strong>${fmtEur(indenizacaoBase*pCons)}</strong> e <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. Reforce o acervo probatório antes de recusar propostas.`;
+  } else {
+    rec = pais==='es'
+      ? `Posición fuerte. No acepte menos de <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. El escenario agresivo de <strong>${fmtEur(indenizacaoBase*pAgr)}</strong> es plenamente sostenible con la documentación actual.`
+      : `Posição forte. Não aceite menos de <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. O cenário agressivo de <strong>${fmtEur(indenizacaoBase*pAgr)}</strong> é plenamente sustentável com a documentação actual.`;
+  }
 
+  document.getElementById('pa-empty-state').style.display='none';
   document.getElementById('pa-resultado').style.display='block';
   document.getElementById('pa-score-num').textContent=scoreTotal;
   document.getElementById('pa-score-label').textContent=label;
   document.getElementById('pa-prob').textContent=prob;
   document.getElementById('pa-score-bar').style.width=scoreTotal+'%';
-  document.getElementById('pa-anos').textContent=anos.toFixed(1)+' anos';
+  document.getElementById('pa-anos').textContent=anos.toFixed(1)+' '+(pais==='es'?'años':'anos');
   document.getElementById('pa-diario').textContent=fmtEur(salarioDiario);
   document.getElementById('pa-base').textContent=fmtEur(indenizacaoBase);
   document.getElementById('pa-cen-cons').textContent=fmtEur(indenizacaoBase*pCons);
   document.getElementById('pa-pct-cons').textContent=(pCons*100).toFixed(0)+'%';
   document.getElementById('pa-cen-prov').textContent=fmtEur(indenizacaoBase*pProv);
-  document.getElementById('pa-pct-prov').textContent=(pProv*100).toFixed(0)+'% ✓';
+  document.getElementById('pa-pct-prov').textContent=(pProv*100).toFixed(0)+'% '+t.prov_rec;
   document.getElementById('pa-cen-agr').textContent=fmtEur(indenizacaoBase*pAgr);
   document.getElementById('pa-pct-agr').textContent=(pAgr*100).toFixed(0)+'%';
   document.getElementById('pa-recomendacao').innerHTML=rec;
@@ -2775,369 +3125,41 @@ function calcPacto() {
 async function simularPacto() {
   const desc = document.getElementById('pa-desc')?.value||'';
   calcPacto();
-  if(!desc) { document.getElementById('pa-ia-analise').textContent='Adicione uma descrição do caso para análise de IA.'; return; }
-
-  document.getElementById('pa-ia-analise').textContent='Analisando...';
-  const pais = document.getElementById('pa-pais')?.value==='es'?'espanhol':'português';
+  if(!desc) {
+    document.getElementById('pa-ia-analise').textContent = pactoCountry==='es'
+      ? 'Añada una descripción del caso para el análisis de IA.'
+      : 'Adicione uma descrição do caso para a análise de IA.';
+    return;
+  }
+  const pais = pactoCountry==='es'?'español':'português europeo';
+  const iaEl = document.getElementById('pa-ia-analise');
+  iaEl.textContent = pactoCountry==='es' ? 'Analizando...' : 'A analisar...';
   try {
-    const txt = await claudeAPI([{role:'user',content:`Você é um especialista em direito laboral ${pais}. Analise o caso abaixo e responda em 3-4 linhas identificando: 1) Principal risco jurídico, 2) Se há indícios de discriminação ou situação especial, 3) Recomendação estratégica para o advogado. Seja objetivo e direto.
+    const prompt = pactoCountry==='es'
+      ? `Eres un experto en derecho laboral español. Analiza el caso y responde en 3-4 líneas identificando: 1) Principal riesgo jurídico, 2) Si hay indicios de discriminación o nulidad, 3) Recomendación estratégica para el abogado. Sé objetivo y directo. Usa terminología del Estatuto de los Trabajadores.
 
-Caso: ${desc}`}], 500);
-    document.getElementById('pa-ia-analise').textContent = txt;
+Caso: ${desc}`
+      : `És um especialista em direito laboral português. Analisa o caso e responde em 3-4 linhas identificando: 1) Principal risco jurídico, 2) Se há indícios de despedimento ilícito ou nulidade, 3) Recomendação estratégica para o advogado. Sê objectivo e directo. Usa terminologia do Código do Trabalho português.
+
+Caso: ${desc}`;
+    const txt = await claudeAPI([{role:'user',content:prompt}], 600);
+    iaEl.textContent = txt;
   } catch(e) {
-    document.getElementById('pa-ia-analise').textContent = 'Erro na análise de IA. Verifique sua conexão.';
+    iaEl.textContent = pactoCountry==='es'
+      ? 'Error en el análisis. Verifique su conexión.'
+      : 'Erro na análise. Verifique a sua ligação.';
   }
 }
 
-function exportScorePDF() {
-  const valor = parseFloat(document.getElementById('sc-valor')?.value)||0;
-  if(!valor){ alert('Preencha o valor base antes de exportar.'); return; }
-  const {jsPDF} = jspdf;
-  const doc = new jsPDF();
-  const orange=[234,88,12], ml=14, pw=210, ph=297;
-
-  function header(titulo) {
-    doc.setFillColor(234,88,12); doc.rect(10,9,2,11,'F'); doc.rect(10,9,8,2,'F'); doc.rect(10,13,6,2,'F');
-    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('az',22,17); doc.setTextColor(234,88,12); doc.text('AI',29,17);
-    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('Plataforma de Perícia Contábil Trabalhista',22,22);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('LC',185,14); doc.setTextColor(234,88,12); doc.text('A',191,14);
-    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
-    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
-    doc.text(titulo,105,34,{align:'center'});
-  }
-
-  function footer() {
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){
-      doc.setPage(i);
-      doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
-      doc.setFontSize(7);doc.setTextColor(107,114,128);
-      doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág. '+i+'/'+pages,105,288,{align:'center'});
-    }
-  }
-
-  // Dados do caso
-  const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
-  const admStr = document.getElementById('sc-adm')?.value||'';
-  const rescisao = document.getElementById('sc-rescisao')?.value||'';
-  const rescisaoLabel = {indireta:'Rescisão indireta por falta grave',sem_causa:'Dispensa sem justa causa',com_causa:'Dispensa com justa causa',acordo:'Acordo entre partes'}[rescisao]||'—';
-  const scoreNum = parseInt(document.getElementById('sc-score-num')?.textContent)||0;
-  const scoreLabel = document.getElementById('sc-score-label')?.textContent||'—';
-  const prob = document.getElementById('sc-prob')?.textContent||'—';
-  const cons = document.getElementById('sc-cen-cons')?.textContent||'—';
-  const prov = document.getElementById('sc-cen-prov')?.textContent||'—';
-  const agr = document.getElementById('sc-cen-agr')?.textContent||'—';
-  const pctCons = document.getElementById('sc-cen-cons-pct')?.textContent||'—';
-  const pctProv = document.getElementById('sc-cen-prov-pct')?.textContent||'—';
-  const pctAgr = document.getElementById('sc-cen-agr-pct')?.textContent||'—';
-  const rec = document.getElementById('sc-recomendacao')?.innerText||'—';
-
-  // PÁGINA 1 — DADOS + SCORE
-  header('ACORDAI BRASIL — RELATÓRIO DE SIMULAÇÃO DE ACORDO');
-
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text('DADOS DO CASO',ml,42);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+36,43);
-  doc.autoTable({startY:45,margin:{left:ml,right:14},
-    body:[
-      ['Valor base do acordo',fmtBRL(valor)],
-      ['Salário mensal',salario?fmtBRL(salario):'—'],
-      ['Data de admissão',admStr||'—'],
-      ['Tipo de rescisão',rescisaoLabel]
-    ],
-    theme:'plain',
-    columnStyles:{0:{fontStyle:'bold',cellWidth:50,fontSize:8,textColor:[107,114,128]},1:{fontSize:8,textColor:[17,24,39]}},
-    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}}});
-
-  // Score visual
-  const yScore=doc.lastAutoTable.finalY+8;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text('SCORE DO CASO',ml,yScore);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yScore+1,ml+34,yScore+1);
-
-  // Barra de score
-  const barY=yScore+8, barW=130, barH=8;
-  doc.setFillColor(229,231,235);doc.rect(ml,barY,barW,barH,'F');
-  doc.setFillColor(234,88,12);doc.rect(ml,barY,(barW*scoreNum/100),barH,'F');
-  doc.setFontSize(18);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(scoreNum+'/100',ml+barW+5,barY+7);
-  doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-  doc.text(scoreLabel,ml,barY+16);
-  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-  doc.text('Probabilidade de êxito estimada: '+prob,ml,barY+22);
-
-  // Cenários
-  const yCen=barY+32;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text('CENÁRIOS DE ACORDO',ml,yCen);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yCen+1,ml+46,yCen+1);
-  doc.autoTable({startY:yCen+4,margin:{left:ml,right:14},
-    head:[['Cenário','Valor sugerido','% do valor base','Recomendação']],
-    body:[
-      ['Conservador',cons,pctCons,'Mínimo aceitável'],
-      ['Provável',prov,pctProv,'✓ RECOMENDADO'],
-      ['Agressivo',agr,pctAgr,'Máximo sustentável']
-    ],
-    theme:'striped',
-    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-    styles:{fontSize:8,cellPadding:{top:3,bottom:3,left:3,right:3}},
-    alternateRowStyles:{fillColor:[249,250,251]},
-    didParseCell:function(data){
-      if(data.row.index===1) data.cell.styles.textColor=[234,88,12];
-    }});
-
-  // Recomendação
-  const yRec=doc.lastAutoTable.finalY+8;
-  doc.setFillColor(255,247,237);doc.rect(ml,yRec,pw-28,20,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yRec,pw-28,20);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text('RECOMENDAÇÃO DE NEGOCIAÇÃO',ml+3,yRec+5);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  const recLines=doc.splitTextToSize(rec,pw-34);
-  doc.text(recLines,ml+3,yRec+11);
-
-  // PÁGINA 2 — CHECKLIST PROBATÓRIO
-  doc.addPage();
-  header('ACORDAI BRASIL — CHECKLIST PROBATÓRIO');
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text('PROVAS MARCADAS PELO ADVOGADO',ml,42);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+68,43);
-
-  const provas=[];
-  CHECKLIST_BR.forEach(cat => {
-    cat.items.forEach(item => {
-      const el=document.getElementById(item.id);
-      if(el?.checked) provas.push([cat.cat,item.label,item.pts>0?'+'+item.pts:String(item.pts)]);
-    });
-  });
-
-  if(provas.length){
-    doc.autoTable({startY:46,margin:{left:ml,right:14},
-      head:[['Categoria','Prova','Pts']],
-      body:provas,
-      theme:'striped',
-      headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-      styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
-      alternateRowStyles:{fillColor:[249,250,251]},
-      columnStyles:{0:{cellWidth:40},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center',fontStyle:'bold'}},
-      didParseCell:function(data){
-        if(data.column.index===2){
-          data.cell.styles.textColor=data.cell.raw&&data.cell.raw.startsWith('-')?[185,28,28]:[234,88,12];
-        }
-      }});
-  } else {
-    doc.setFontSize(9);doc.setTextColor(107,114,128);
-    doc.text('Nenhuma prova marcada.',ml,56);
-  }
-
-  // Aviso legal
-  const yAviso=doc.lastAutoTable?doc.lastAutoTable.finalY+10:70;
-  doc.setFillColor(254,242,242);doc.rect(ml,yAviso,pw-28,14,'F');
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
-  doc.text('⚠ AVISO LEGAL: Este relatório é uma ferramenta de apoio à negociação. Os valores e probabilidades são estimativas',ml+3,yAviso+5);
-  doc.text('baseadas nas informações fornecidas. Não constituem garantia de resultado judicial. Consulte sempre um advogado.',ml+3,yAviso+10);
-
-  footer();
-  const nome=(document.getElementById('sc-score-label')?.textContent||'acordo').replace(/\s/g,'_');
-  doc.save('AcordAI_Brasil_'+nome+'.pdf');
-}
-
-function exportPactoPDF() {
-  const pais = document.getElementById('pa-pais')?.value||'es';
-  const salario = parseFloat(document.getElementById('pa-salario')?.value)||0;
-  if(!salario){ alert('Preencha o salário antes de exportar.'); return; }
-
-  const {jsPDF} = jspdf;
-  const doc = new jsPDF();
-  const orange=[234,88,12], ml=14, pw=210;
-  const isES = pais==='es';
-  const paisNome = isES?'España':'Portugal';
-  const cur = '€';
-  const fmtEur = v => cur+(typeof v==='number'?v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'):v);
-
-  function header(titulo) {
-    doc.setFillColor(234,88,12); doc.rect(10,9,2,11,'F'); doc.rect(10,9,8,2,'F'); doc.rect(10,13,6,2,'F');
-    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('az',22,17); doc.setTextColor(234,88,12); doc.text('AI',29,17);
-    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('PactoAI Europa — '+paisNome,22,22);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('LC',185,14); doc.setTextColor(234,88,12); doc.text('A',191,14);
-    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
-    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
-    doc.text(titulo,105,34,{align:'center'});
-  }
-
-  function footer() {
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){
-      doc.setPage(i);
-      doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
-      doc.setFontSize(7);doc.setTextColor(107,114,128);
-      doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág. '+i+'/'+pages,105,288,{align:'center'});
-    }
-  }
-
-  const inicioStr = document.getElementById('pa-inicio')?.value||'';
-  const fimStr = document.getElementById('pa-fim')?.value||'';
-  const contrato = document.getElementById('pa-contrato')?.value||'indefinido';
-  const tipo = document.getElementById('pa-tipo')?.value||'improcedente';
-  const desc = document.getElementById('pa-desc')?.value||'—';
-  const scoreNum = parseInt(document.getElementById('pa-score-num')?.textContent)||0;
-  const scoreLabel = document.getElementById('pa-score-label')?.textContent||'—';
-  const prob = document.getElementById('pa-prob')?.textContent||'—';
-  const anos = document.getElementById('pa-anos')?.textContent||'—';
-  const diario = document.getElementById('pa-diario')?.textContent||'—';
-  const base = document.getElementById('pa-base')?.textContent||'—';
-  const cons = document.getElementById('pa-cen-cons')?.textContent||'—';
-  const prov = document.getElementById('pa-cen-prov')?.textContent||'—';
-  const agr = document.getElementById('pa-cen-agr')?.textContent||'—';
-  const pctCons = document.getElementById('pa-pct-cons')?.textContent||'—';
-  const pctProv = document.getElementById('pa-pct-prov')?.textContent||'—';
-  const pctAgr = document.getElementById('pa-pct-agr')?.textContent||'—';
-  const rec = document.getElementById('pa-recomendacao')?.innerText||'—';
-  const iaAnalise = document.getElementById('pa-ia-analise')?.textContent||'—';
-
-  const tipoLabel = isES
-    ? {improcedente:'Despido improcedente',procedente:'Despido procedente',nula:'Despido nulo'}[tipo]||tipo
-    : {improcedente:'Despedimento ilícito',procedente:'Despedimento lícito',nula:'Despedimento discriminatório'}[tipo]||tipo;
-  const contratoLabel = isES
-    ? {indefinido:'Contrato indefinido',temporal:'Contrato temporal'}[contrato]||contrato
-    : {indefinido:'Contrato sem termo',temporal:'Contrato a termo'}[contrato]||contrato;
-
-  // PÁGINA 1 — DADOS + SCORE + CENÁRIOS
-  header('PACTOAI EUROPA — SIMULAÇÃO DE ACORDO LABORAL');
-
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'DATOS DEL CASO':'DADOS DO CASO',ml,42);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+34,43);
-  doc.autoTable({startY:45,margin:{left:ml,right:14},
-    body:[
-      [isES?'País':'País',paisNome+' '+(isES?'🇪🇸':'🇵🇹')],
-      [isES?'Salario mensual bruto':'Salário mensal bruto',fmtEur(salario)],
-      [isES?'Fecha de inicio':'Data de início',inicioStr||'—'],
-      [isES?'Fecha de baja':'Data de término',fimStr||'—'],
-      [isES?'Tipo de contrato':'Tipo de contrato',contratoLabel],
-      [isES?'Tipo de despido':'Tipo de despedimento',tipoLabel],
-      [isES?'Años trabajados':'Anos trabalhados',anos],
-      [isES?'Salario diario':'Salário diário',diario],
-      [isES?'Indemnización base':'Indenização base',base]
-    ],
-    theme:'plain',
-    columnStyles:{0:{fontStyle:'bold',cellWidth:52,fontSize:8,textColor:[107,114,128]},1:{fontSize:8,textColor:[17,24,39]}},
-    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}}});
-
-  // Score
-  const yScore=doc.lastAutoTable.finalY+8;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'PUNTUACIÓN DEL CASO':'SCORE DO CASO',ml,yScore);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yScore+1,ml+36,yScore+1);
-  const barY=yScore+6, barW=120, barH=7;
-  doc.setFillColor(229,231,235);doc.rect(ml,barY,barW,barH,'F');
-  doc.setFillColor(234,88,12);doc.rect(ml,barY,(barW*scoreNum/100),barH,'F');
-  doc.setFontSize(16);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(scoreNum+'/100',ml+barW+4,barY+6);
-  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-  doc.text(scoreLabel,ml,barY+14);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-  doc.text((isES?'Probabilidad de éxito estimada: ':'Probabilidade de êxito estimada: ')+prob,ml,barY+20);
-
-  // Cenários
-  const yCen=barY+28;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'ESCENARIOS DE ACUERDO':'CENÁRIOS DE ACORDO',ml,yCen);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yCen+1,ml+50,yCen+1);
-  doc.autoTable({startY:yCen+4,margin:{left:ml,right:14},
-    head:[[isES?'Escenario':'Cenário',isES?'Valor':'Valor','%',isES?'Recomendación':'Recomendação']],
-    body:[
-      [isES?'Conservador':'Conservador',cons,pctCons,isES?'Mínimo aceptable':'Mínimo aceitável'],
-      [isES?'Probable':'Provável',prov,pctProv,'✓ '+( isES?'RECOMENDADO':'RECOMENDADO')],
-      [isES?'Agresivo':'Agressivo',agr,pctAgr,isES?'Máximo sostenible':'Máximo sustentável']
-    ],
-    theme:'striped',
-    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-    styles:{fontSize:8,cellPadding:{top:3,bottom:3,left:3,right:3}},
-    alternateRowStyles:{fillColor:[249,250,251]},
-    didParseCell:function(data){if(data.row.index===1)data.cell.styles.textColor=[234,88,12];}});
-
-  // Recomendação
-  const yRec=doc.lastAutoTable.finalY+6;
-  doc.setFillColor(255,247,237);doc.rect(ml,yRec,pw-28,18,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yRec,pw-28,18);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(isES?'RECOMENDACIÓN DE NEGOCIACIÓN':'RECOMENDAÇÃO DE NEGOCIAÇÃO',ml+3,yRec+5);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  const recLines=doc.splitTextToSize(rec,pw-34);
-  doc.text(recLines,ml+3,yRec+11);
-
-  // PÁGINA 2 — ANÁLISE IA + CHECKLIST
-  doc.addPage();
-  header('PACTOAI EUROPA — ANÁLISE JURÍDICA');
-
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'DESCRIPCIÓN DEL CASO':'DESCRIÇÃO DO CASO',ml,42);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+50,43);
-  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  const descLines=doc.splitTextToSize(desc,pw-28);
-  doc.text(descLines,ml,48);
-
-  const yIA=48+descLines.length*4+8;
-  doc.setFillColor(255,247,237);doc.rect(ml,yIA,pw-28,32,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yIA,pw-28,32);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(isES?'ANÁLISIS DE IA — RIESGO JURÍDICO':'ANÁLISE DE IA — RISCO JURÍDICO',ml+3,yIA+5);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  const iaLines=doc.splitTextToSize(iaAnalise,pw-34);
-  doc.text(iaLines,ml+3,yIA+11);
-
-  const yCheck=yIA+38;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'CHECKLIST PROBATORIO':'CHECKLIST PROBATÓRIO',ml,yCheck);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yCheck+1,ml+52,yCheck+1);
-
-  const lista = pais==='pt' ? CHECKLIST_PT : CHECKLIST_ES;
-  const provas=[];
-  lista.forEach(cat => cat.items.forEach(item => {
-    const el=document.getElementById(item.id);
-    if(el?.checked) provas.push([cat.cat,item.label,'+'+item.pts]);
-  }));
-
-  if(provas.length){
-    doc.autoTable({startY:yCheck+4,margin:{left:ml,right:14},
-      head:[[isES?'Categoría':'Categoria',isES?'Prueba':'Prova','Pts']],
-      body:provas,
-      theme:'striped',
-      headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-      styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
-      alternateRowStyles:{fillColor:[249,250,251]},
-      columnStyles:{0:{cellWidth:42},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center',fontStyle:'bold',textColor:[234,88,12]}}});
-  } else {
-    doc.setFontSize(9);doc.setTextColor(107,114,128);
-    doc.text(isES?'Ninguna prueba marcada.':'Nenhuma prova marcada.',ml,yCheck+10);
-  }
-
-  // Aviso legal
-  const yAviso=doc.lastAutoTable?doc.lastAutoTable.finalY+10:yCheck+20;
-  doc.setFillColor(254,242,242);doc.rect(ml,yAviso,pw-28,16,'F');
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
-  const aviso = isES
-    ? '⚠ AVISO LEGAL: Este informe es una herramienta de apoyo a la negociación. Los valores y probabilidades son estimaciones basadas en la información proporcionada. No constituyen garantía de resultado judicial.'
-    : '⚠ AVISO LEGAL: Este relatório é uma ferramenta de apoio à negociação. Os valores e probabilidades são estimativas baseadas nas informações fornecidas. Não constituem garantia de resultado judicial.';
-  const avisoLines=doc.splitTextToSize(aviso,pw-34);
-  doc.text(avisoLines,ml+3,yAviso+5);
-
-  footer();
-  doc.save('PactoAI_'+paisNome+'_Score'+scoreNum+'.pdf');
+function switchPactoTab(tab, btn) {
+  document.querySelectorAll('.pacto-tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.pacto-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('pacto-tab-'+tab)?.classList.add('active');
+  btn?.classList.add('active');
 }
 
 // ============================================================
+// GLOBAL HISTORY// ============================================================
 // GLOBAL HISTORY
 function renderGlobalHist() {
   renderLiqHistTo('gh-liq-list');
