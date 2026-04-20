@@ -735,67 +735,96 @@ a{color:var(--or);text-decoration:none}
           </div>
         </div>
         <div id="ac-tab-score" class="tab-content">
-          <div class="panel">
-            <div class="ptitle">Valor base do acordo</div>
-            <div class="g2">
-              <div class="field"><label>Valor total calculado (R$)</label><input type="number" id="sc-valor" placeholder="Ex: 80000" oninput="calcScore()"/></div>
-              <div class="field"><label>Salário mensal (R$)</label><input type="number" id="sc-salario" placeholder="Ex: 3000" oninput="calcScore()"/></div>
-            </div>
-            <div class="g2">
-              <div class="field"><label>Admissão</label><input type="date" id="sc-adm" oninput="calcScore()"/></div>
-              <div class="field"><label>Tipo de rescisão</label>
-                <select id="sc-rescisao" onchange="calcScore()">
-                  <option value="">Selecione</option>
-                  <option value="indireta">Rescisão indireta por falta grave</option>
-                  <option value="sem_causa">Dispensa sem justa causa</option>
-                  <option value="com_causa">Dispensa com justa causa</option>
-                  <option value="acordo">Acordo entre partes</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="ptitle">Checklist probatório — marque as provas disponíveis</div>
-            <div id="sc-checklist"></div>
-          </div>
-          <div id="sc-resultado" style="display:none">
-            <div class="panel" style="border:2px solid var(--or)">
-              <div class="ptitle">Score do caso</div>
-              <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px">
-                <div style="font-size:56px;font-weight:800;color:var(--or)" id="sc-score-num">0</div>
-                <div>
-                  <div style="font-size:14px;font-weight:600" id="sc-score-label">—</div>
-                  <div style="font-size:13px;color:var(--gy);margin-top:4px">Probabilidade de êxito: <strong id="sc-prob">—</strong></div>
+          <div class="g2" style="gap:20px;align-items:start">
+            <!-- Coluna esquerda: verbas + checklist -->
+            <div>
+              <div class="panel">
+                <div class="ptitle">Dados do caso</div>
+                <div class="g2">
+                  <div class="field"><label>Salário mensal (R$)</label><input type="number" id="sc-salario" placeholder="Ex: 3000" oninput="calcScore()"/></div>
+                  <div class="field"><label>Tipo de rescisão</label>
+                    <select id="sc-rescisao" onchange="calcScore()">
+                      <option value="">Selecione</option>
+                      <option value="indireta">Rescisão indireta por falta grave</option>
+                      <option value="sem_causa">Dispensa sem justa causa</option>
+                      <option value="com_causa">Dispensa com justa causa</option>
+                      <option value="acordo">Acordo entre partes</option>
+                    </select>
+                  </div>
                 </div>
-                <div style="flex:1;height:12px;background:var(--bd);border-radius:6px;overflow:hidden">
-                  <div id="sc-score-bar" style="height:100%;background:var(--or);border-radius:6px;transition:width .5s;width:0%"></div>
+                <div class="field"><label>Data de admissão</label><input type="date" id="sc-adm" oninput="calcScore()"/></div>
+              </div>
+              <div class="panel">
+                <div class="ptitle">Verbas pleiteadas — selecione e informe o valor apurado</div>
+                <div id="sc-verbas-list"></div>
+              </div>
+              <div class="panel" id="sc-checklist-panel" style="display:none">
+                <div class="ptitle">Checklist probatório por verba</div>
+                <div id="sc-checklist"></div>
+              </div>
+            </div>
+            <!-- Coluna direita: resultado -->
+            <div>
+              <div id="sc-empty" style="text-align:center;padding:60px 20px;color:var(--gy)">
+                <div style="font-size:40px;margin-bottom:12px">⚖️</div>
+                <div style="font-size:14px">Selecione as verbas e informe os valores</div>
+              </div>
+              <div id="sc-resultado" style="display:none">
+                <!-- Score geral -->
+                <div class="panel" style="border:2px solid var(--or)">
+                  <div class="ptitle">Score ponderado do caso</div>
+                  <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+                    <div style="font-size:52px;font-weight:800;color:var(--or);line-height:1" id="sc-score-num">0</div>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="sc-score-label">—</div>
+                      <div style="height:10px;background:var(--bd);border-radius:5px;overflow:hidden">
+                        <div id="sc-score-bar" style="height:100%;background:var(--or);border-radius:5px;transition:width .5s;width:0%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Tabela verba a verba -->
+                <div class="panel" style="margin-top:12px">
+                  <div class="ptitle">Análise por verba</div>
+                  <div style="overflow-x:auto">
+                    <table class="rtable" id="sc-verbas-table" style="font-size:12px">
+                      <thead><tr>
+                        <th>Verba</th><th>Valor pleiteado</th><th>Score</th><th>Prob.</th><th>Esperado</th><th>Alerta</th>
+                      </tr></thead>
+                      <tbody id="sc-verbas-tbody"></tbody>
+                      <tfoot id="sc-verbas-tfoot"></tfoot>
+                    </table>
+                  </div>
+                </div>
+                <!-- Alertas -->
+                <div id="sc-alertas" style="margin-top:12px"></div>
+                <!-- Cenários -->
+                <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-top:12px">
+                  <div class="mc">
+                    <div class="mc-label">Conservador</div>
+                    <div class="mc-value" id="sc-cen-cons" style="font-size:15px">—</div>
+                    <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-cons-pct">—</div>
+                  </div>
+                  <div class="mc hi">
+                    <div class="mc-label">Provável ✓</div>
+                    <div class="mc-value" id="sc-cen-prov" style="font-size:15px">—</div>
+                    <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-prov-pct">—</div>
+                  </div>
+                  <div class="mc">
+                    <div class="mc-label">Agressivo</div>
+                    <div class="mc-value" id="sc-cen-agr" style="font-size:15px">—</div>
+                    <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-agr-pct">—</div>
+                  </div>
+                </div>
+                <div class="panel" style="background:var(--orp);border-color:#FED7AA;margin-top:12px">
+                  <div class="ptitle" style="color:var(--or)">Recomendação de negociação</div>
+                  <div id="sc-recomendacao" style="font-size:13px;line-height:1.6"></div>
+                </div>
+                <div style="text-align:center;margin-top:12px">
+                  <p style="font-size:11px;color:var(--gy);margin-bottom:10px">⚠ Valores de referência para negociação. Não constituem garantia de resultado judicial.</p>
+                  <button class="btn btn-primary" onclick="exportScorePDF()">Exportar relatório PDF</button>
                 </div>
               </div>
-            </div>
-            <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
-              <div class="mc">
-                <div class="mc-label">Conservador</div>
-                <div class="mc-value" id="sc-cen-cons" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-cons-pct">—</div>
-              </div>
-              <div class="mc hi">
-                <div class="mc-label">Provável</div>
-                <div class="mc-value" id="sc-cen-prov" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-prov-pct">— ✓ recomendado</div>
-              </div>
-              <div class="mc">
-                <div class="mc-label">Agressivo</div>
-                <div class="mc-value" id="sc-cen-agr" style="font-size:15px">—</div>
-                <div style="font-size:11px;color:var(--gy);margin-top:4px" id="sc-cen-agr-pct">—</div>
-              </div>
-            </div>
-            <div class="panel" style="background:var(--orp);border-color:#FED7AA">
-              <div class="ptitle" style="color:var(--or)">Recomendação de negociação</div>
-              <div id="sc-recomendacao" style="font-size:14px;line-height:1.6"></div>
-            </div>
-            <div style="text-align:center;margin-top:8px">
-              <p style="font-size:11px;color:var(--gy);margin-bottom:12px">⚠ Valores de referência para negociação. Não constituem garantia de resultado judicial.</p>
-              <button class="btn btn-primary" onclick="exportScorePDF()">Exportar relatório PDF</button>
             </div>
           </div>
         </div>
@@ -871,6 +900,10 @@ a{color:var(--or);text-decoration:none}
                   </div>
                 </div>
                 <div class="pacto-panel">
+                  <div class="pacto-panel-title" id="pp-title-verbas">Conceptos reclamados — valor por concepto</div>
+                  <div id="pa-verbas-list"></div>
+                </div>
+                <div class="pacto-panel">
                   <div class="pacto-panel-title" id="pp-title-desc">Descripción del caso</div>
                   <div class="field" style="margin-bottom:0">
                     <label id="lbl-desc">La IA analizará el riesgo jurídico del caso</label>
@@ -911,7 +944,7 @@ a{color:var(--or);text-decoration:none}
                   </div>
                   <!-- Base -->
                   <div class="pacto-panel" style="margin-top:16px">
-                    <div class="pacto-panel-title" id="pp-title-base">Indemnización base calculada</div>
+                    <div class="pacto-panel-title" id="pp-title-base">Base legal calculada</div>
                     <div class="pacto-metrics-3">
                       <div class="pacto-metric">
                         <div class="pacto-metric-label" id="lbl-anos">Años trabajados</div>
@@ -927,6 +960,26 @@ a{color:var(--or);text-decoration:none}
                       </div>
                     </div>
                   </div>
+                  <!-- Tabela por verba -->
+                  <div class="pacto-panel" style="margin-top:12px">
+                    <div class="pacto-panel-title" id="pp-title-verbas-res">Análisis por concepto</div>
+                    <div style="overflow-x:auto">
+                      <table style="width:100%;font-size:11px;border-collapse:collapse">
+                        <thead><tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+                          <th style="text-align:left;padding:6px;color:rgba(255,255,255,.4)">Concepto</th>
+                          <th style="text-align:right;padding:6px;color:rgba(255,255,255,.4)">Valor</th>
+                          <th style="text-align:center;padding:6px;color:rgba(255,255,255,.4)">Score</th>
+                          <th style="text-align:center;padding:6px;color:rgba(255,255,255,.4)">Prob.</th>
+                          <th style="text-align:right;padding:6px;color:rgba(255,255,255,.4)">Esperado</th>
+                          <th style="padding:6px"></th>
+                        </tr></thead>
+                        <tbody id="pa-verbas-tbody"></tbody>
+                        <tfoot id="pa-verbas-tfoot"></tfoot>
+                      </table>
+                    </div>
+                  </div>
+                  <!-- Alertas -->
+                  <div id="pa-alertas" style="margin-top:10px"></div>
                   <!-- Cenários -->
                   <div class="pacto-scenarios">
                     <div class="pacto-scenario cons">
@@ -1211,8 +1264,8 @@ function showMod(m) {
   if(m==='admin') loadAdminUsers();
   if(m==='hist') renderGlobalHist();
   if(m==='planos') renderPlanos();
-  if(m==='acordos') renderChecklistBR();
-  if(m==='pacto'){ applyPactoI18n(pactoCountry); renderPactoChecklist(pactoCountry); }
+  if(m==='acordos') { renderVerbasListBR(); renderChecklistBR(); }
+  if(m==='pacto'){ applyPactoI18n(pactoCountry); renderVerbasListPacto(); renderChecklistPactoByVerbas(); }
 }
 function renderPlanos() {
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
@@ -1271,12 +1324,46 @@ async function doLogin() {
   hideLoad();
   if(error) showAuthMsg(error.message.includes('Invalid')?'E-mail ou senha incorretos.':error.message,'err');
 }
+// Domínios de e-mail descartável bloqueados
+const BLOCKED_DOMAINS = [
+  'bmoar.com','temp-mail.org','guerrillamail.com','mailinator.com',
+  'throwam.com','yopmail.com','tempmail.com','fakeinbox.com',
+  'sharklasers.com','guerrillamailblock.com','grr.la','guerrillamail.info',
+  'spam4.me','trashmail.com','trashmail.me','trashmail.net','dispostable.com',
+  'mailnull.com','spamgourmet.com','spamgourmet.net','spamgourmet.org',
+  'spamspot.com','spamthisplease.com','spamhereplease.com','spam.la',
+  'tempr.email','discard.email','crapmail.org','ht.cx','r-tv.net',
+  'discardmail.com','discardmail.de','spamdesign.com','trashmail.at',
+  'trashmail.io','trashmail.xyz','mailtemp.net','tempinbox.com',
+  'getairmail.com','filzmail.com','maildrop.cc','mailnew.com',
+  'jetable.fr.nf','nomail.xl.cx','spamfree24.org','tempemail.net',
+  'armyspy.com','cuvox.de','dayrep.com','einrot.com','fleckens.hu',
+  'gustr.com','jourrapide.com','superrito.com','teleworm.us',
+  'bettereve.com','boftm.com','boixi.com','byagu.com',
+  'ailicke.com','akdip.com','alisaol.com','anidaw.com',
+  'nwldx.com','afrobacon.com','thisisnotmyrealemail.com',
+  'tempinbox.org','dispomail.eu','trash-me.com','wegwerfmail.de',
+  'abyssmail.com','anonbox.net','meltmail.com','nervmich.net',
+  'objectmail.com','onewaymail.com','rmqkr.net','tafmail.com',
+  'trasz.com','uroid.com','venompen.com','zxcv.com','klzlk.com'
+];
+
+function isDisposableEmail(email) {
+  const domain = email.split('@')[1]?.toLowerCase();
+  if(!domain) return false;
+  return BLOCKED_DOMAINS.some(d => domain === d || domain.endsWith('.'+d));
+}
+
 async function doRegister() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim();
   const pass = document.getElementById('rg-pass').value;
   if(!name||!email||!pass) { showAuthMsg('Preencha todos os campos.','err'); return; }
   if(pass.length<6) { showAuthMsg('Senha mínimo 6 caracteres.','err'); return; }
+  if(isDisposableEmail(email)) {
+    showAuthMsg('Por favor, utilize um e-mail profissional ou permanente. E-mails temporários não são aceitos.','err');
+    return;
+  }
   showLoad('Criando conta...');
   const {error} = await sb.auth.signUp({email, password:pass, options:{data:{name}}});
   hideLoad();
@@ -2593,166 +2680,211 @@ function loadAcHist(i) {
 }
 
 // ============================================================
-// ACORDAI BRASIL — SCORE + CENÁRIOS + CHECKLIST
+// ACORDAI BRASIL — SCORE POR VERBA + CHECKLIST
 // ============================================================
 
-const CHECKLIST_BR = [
-  {cat:'Horas Extras', items:[
-    {id:'he1',label:'Espelho de ponto juntado',pts:15},
-    {id:'he2',label:'Espelho de ponto com horários não britânicos (variação real)',pts:20},
-    {id:'he3',label:'Espelho de ponto britânico (horários idênticos)',pts:-15},
-    {id:'he4',label:'Holerites sem pagamento de HE',pts:18},
-    {id:'he5',label:'Emails/mensagens fora do horário contratual',pts:15},
-    {id:'he6',label:'Testemunhas que confirmam a jornada',pts:12},
-    {id:'he7',label:'Ausência total de controle de ponto',pts:18}
-  ]},
-  {cat:'Horas Intervalares', items:[
-    {id:'hi1',label:'Espelho mostrando intervalo inferior a 1h',pts:20},
-    {id:'hi2',label:'Testemunhas confirmando supressão',pts:12},
-    {id:'hi3',label:'Holerite sem pagamento de intervalo',pts:15}
-  ]},
-  {cat:'Periculosidade / Insalubridade', items:[
-    {id:'pi1',label:'Laudo pericial favorável ao autor',pts:25},
-    {id:'pi2',label:'NR aplicável identificada',pts:12},
-    {id:'pi3',label:'Ausência de EPI adequado documentada',pts:18},
-    {id:'pi4',label:'Fotos/vídeos do ambiente de trabalho',pts:15}
-  ]},
-  {cat:'Dano Moral', items:[
-    {id:'dm1',label:'Fatos descritos de forma clara e específica',pts:15},
-    {id:'dm2',label:'Testemunhas que presenciaram os fatos',pts:18},
-    {id:'dm3',label:'Comunicações que evidenciam o dano',pts:22},
-    {id:'dm4',label:'Atestados médicos/psicológicos',pts:20},
-    {id:'dm5',label:'Afastamento do trabalho por consequência',pts:15}
-  ]},
-  {cat:'Assédio Moral', items:[
-    {id:'am1',label:'Padrão de conduta (não evento isolado)',pts:20},
-    {id:'am2',label:'Múltiplas testemunhas',pts:22},
-    {id:'am3',label:'Comunicações escritas (emails, mensagens)',pts:25},
-    {id:'am4',label:'Denúncia interna prévia sem resposta',pts:20},
-    {id:'am5',label:'CID relacionado a transtorno por estresse',pts:20}
-  ]},
-  {cat:'Assédio Sexual', items:[
-    {id:'as1',label:'Comunicações explícitas (mensagens, emails)',pts:30},
-    {id:'as2',label:'Boletim de ocorrência',pts:25},
-    {id:'as3',label:'Mais de uma vítima identificada',pts:25},
-    {id:'as4',label:'Hierarquia entre agressor e vítima',pts:18}
-  ]},
-  {cat:'Pensão Vitalícia / Acidente', items:[
-    {id:'pv1',label:'Laudo médico com incapacidade permanente',pts:30},
-    {id:'pv2',label:'Nexo causal com atividade laboral estabelecido',pts:30},
-    {id:'pv3',label:'CAT registrada',pts:22},
-    {id:'pv4',label:'Perícia do INSS favorável',pts:25},
-    {id:'pv5',label:'Ausência de EPI/medidas de segurança',pts:18}
-  ]},
-  {cat:'Diferenças Salariais / Acúmulo de Função', items:[
-    {id:'ds1',label:'Holerites com salário inferior ao piso da categoria',pts:20},
-    {id:'ds2',label:'Convenção coletiva juntada',pts:18},
-    {id:'ds3',label:'Paradigma identificado (colega com mesmo cargo)',pts:22},
-    {id:'ds4',label:'Emails/ordens demonstrando funções distintas',pts:20},
-    {id:'ds5',label:'Testemunhas sobre função real exercida',pts:12}
-  ]},
-  {cat:'Rescisão Indireta por Falta Grave', items:[
-    {id:'ri1',label:'Falta grave do empregador documentada',pts:25},
-    {id:'ri2',label:'Comunicações que evidenciam a falta',pts:22},
-    {id:'ri3',label:'Salários atrasados (extratos bancários)',pts:25},
-    {id:'ri4',label:'Notificação prévia ao empregador',pts:18},
-    {id:'ri5',label:'Ausência de resposta do empregador',pts:12}
-  ]},
-  {cat:'Verbas Rescisórias', items:[
-    {id:'vr1',label:'FGTS não depositado (extrato)',pts:20},
-    {id:'vr2',label:'Aviso prévio não concedido/pago',pts:15},
-    {id:'vr3',label:'Multa 40% FGTS não paga',pts:18},
-    {id:'vr4',label:'TRCT juntado ao processo',pts:10}
-  ]}
+// Verbas disponíveis Brasil com mapeamento para checklist
+const VERBAS_BR = [
+  {id:'v_he',   label:'Horas Extras',                   catIdx:0},
+  {id:'v_hi',   label:'Horas Intervalares',              catIdx:1},
+  {id:'v_pi',   label:'Periculosidade / Insalubridade',  catIdx:2},
+  {id:'v_dm',   label:'Dano Moral',                     catIdx:3},
+  {id:'v_am',   label:'Assédio Moral',                  catIdx:4},
+  {id:'v_as',   label:'Assédio Sexual',                  catIdx:5},
+  {id:'v_pv',   label:'Pensão Vitalícia / Acidente',    catIdx:6},
+  {id:'v_ds',   label:'Diferenças Salariais / Acúmulo', catIdx:7},
+  {id:'v_ri',   label:'Rescisão Indireta',               catIdx:8},
+  {id:'v_vr',   label:'Verbas Rescisórias',              catIdx:9},
 ];
 
-function renderChecklistBR() {
-  const el = document.getElementById('sc-checklist');
+function scoreToProb(score) {
+  if(score<=25)  return {prob:0.25, label:'20-40%', pCons:0.50, pProv:0.65, pAgr:0.80};
+  if(score<=50)  return {prob:0.50, label:'40-60%', pCons:0.60, pProv:0.75, pAgr:0.88};
+  if(score<=70)  return {prob:0.68, label:'60-75%', pCons:0.68, pProv:0.85, pAgr:0.95};
+  if(score<=85)  return {prob:0.82, label:'75-88%', pCons:0.75, pProv:0.90, pAgr:0.98};
+  return                {prob:0.92, label:'88-95%', pCons:0.82, pProv:0.93, pAgr:1.00};
+}
+
+function getScoreBase() {
+  let base = 0;
+  const admStr = document.getElementById('sc-adm')?.value;
+  const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
+  const rescisao = document.getElementById('sc-rescisao')?.value||'';
+  if(admStr) {
+    const anos = (new Date()-new Date(admStr))/(1000*60*60*24*365);
+    if(anos>=10) base+=20; else if(anos>=5) base+=12; else if(anos>=2) base+=6;
+  }
+  if(salario>=5000) base+=15; else if(salario>=3000) base+=8;
+  if(rescisao==='indireta') base+=25;
+  else if(rescisao==='sem_causa') base+=10;
+  else if(rescisao==='com_causa') base-=15;
+  return Math.max(0, base);
+}
+
+function renderVerbasListBR() {
+  const el = document.getElementById('sc-verbas-list');
   if(!el) return;
-  el.innerHTML = CHECKLIST_BR.map(cat => `
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${cat.cat}</div>
-      ${cat.items.map(item => `
-        <div class="chk-row" style="margin-bottom:6px">
-          <input type="checkbox" id="${item.id}" onchange="calcScore()" ${item.pts<0?'style="accent-color:#B91C1C"':''}/>
-          <label for="${item.id}" style="flex:1">${item.label}</label>
-          <span style="font-size:11px;font-weight:600;color:${item.pts>0?'var(--or)':'#B91C1C'};min-width:36px;text-align:right">${item.pts>0?'+'+item.pts:item.pts}</span>
-        </div>`).join('')}
+  el.innerHTML = VERBAS_BR.map(v => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px;background:var(--lt);border-radius:8px;border:1px solid var(--bd)">
+      <input type="checkbox" id="chk_${v.id}" onchange="toggleVerba('${v.id}')" style="width:16px;height:16px;accent-color:var(--or);flex-shrink:0"/>
+      <label for="chk_${v.id}" style="flex:1;font-size:13px;font-weight:500;cursor:pointer">${v.label}</label>
+      <input type="number" id="val_${v.id}" placeholder="R$ valor" 
+        style="width:130px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:13px;display:none;background:var(--wh)"
+        oninput="calcScore()"/>
     </div>`).join('');
 }
 
+function toggleVerba(vid) {
+  const chk = document.getElementById('chk_'+vid);
+  const val = document.getElementById('val_'+vid);
+  if(val) val.style.display = chk?.checked ? 'block' : 'none';
+  renderChecklistBR();
+  calcScore();
+}
+
+function renderChecklistBR() {
+  const el = document.getElementById('sc-checklist');
+  const panel = document.getElementById('sc-checklist-panel');
+  if(!el) return;
+
+  const selected = VERBAS_BR.filter(v => document.getElementById('chk_'+v.id)?.checked);
+  if(selected.length===0) { panel.style.display='none'; el.innerHTML=''; return; }
+  panel.style.display='block';
+
+  el.innerHTML = selected.map(v => {
+    const cat = CHECKLIST_BR[v.catIdx];
+    if(!cat) return '';
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--or)">${cat.cat}</div>
+        ${cat.items.map(item => `
+          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start">
+            <input type="checkbox" id="${item.id}" onchange="calcScore()" ${item.pts<0?'style="accent-color:#B91C1C"':''}/>
+            <label for="${item.id}" style="flex:1;font-size:12px;line-height:1.4">${item.label}</label>
+            <span style="font-size:10px;font-weight:700;color:${item.pts>0?'var(--or)':'#B91C1C'};min-width:32px;text-align:right">${item.pts>0?'+':''  }${item.pts}</span>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
 function calcScore() {
-  const valor = parseFloat(document.getElementById('sc-valor')?.value)||0;
-  const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
-  const admStr = document.getElementById('sc-adm')?.value;
-  const rescisao = document.getElementById('sc-rescisao')?.value||'';
-  if(!valor) { document.getElementById('sc-resultado').style.display='none'; return; }
-
-  // Score base
-  let scoreBase = 0;
-  if(admStr) {
-    const anos = (new Date()-new Date(admStr))/(1000*60*60*24*365);
-    if(anos>=10) scoreBase+=20; else if(anos>=5) scoreBase+=12; else if(anos>=2) scoreBase+=6;
+  const selected = VERBAS_BR.filter(v => document.getElementById('chk_'+v.id)?.checked);
+  if(selected.length===0) {
+    document.getElementById('sc-resultado').style.display='none';
+    document.getElementById('sc-empty').style.display='block';
+    return;
   }
-  if(salario>=5000) scoreBase+=15; else if(salario>=3000) scoreBase+=8;
-  if(rescisao==='indireta') scoreBase+=25;
-  else if(rescisao==='sem_causa') scoreBase+=10;
-  else if(rescisao==='com_causa') scoreBase-=15;
 
-  // Score probatório
-  let scoreProb = 0;
-  CHECKLIST_BR.forEach(cat => cat.items.forEach(item => {
-    const el = document.getElementById(item.id);
-    if(el?.checked) scoreProb += item.pts;
-  }));
+  const baseScore = getScoreBase();
+  let totalPleiteado=0, totalEsperado=0, totalCons=0, totalProv=0, totalAgr=0;
+  let alertas=[], rows=[];
+  let scoresPonderados=[];
 
-  const scoreTotal = Math.max(0, Math.min(100, scoreBase + scoreProb));
+  selected.forEach(v => {
+    const valor = parseFloat(document.getElementById('val_'+v.id)?.value)||0;
+    const cat = CHECKLIST_BR[v.catIdx];
 
-  // Cenários
-  let pCons, pProv, pAgr;
-  if(scoreTotal<=30)      { pCons=0.50; pProv=0.65; pAgr=0.80; }
-  else if(scoreTotal<=60) { pCons=0.60; pProv=0.78; pAgr=0.90; }
-  else if(scoreTotal<=80) { pCons=0.70; pProv=0.88; pAgr=0.97; }
-  else                    { pCons=0.80; pProv=0.92; pAgr=1.00; }
+    // Score probatório desta verba
+    let scoreProb = 0;
+    if(cat) cat.items.forEach(item => {
+      const el=document.getElementById(item.id);
+      if(el?.checked) scoreProb += item.pts;
+    });
 
-  // Probabilidade de êxito
-  let prob;
-  if(scoreTotal<=25) prob='20-40%';
-  else if(scoreTotal<=50) prob='40-60%';
-  else if(scoreTotal<=70) prob='60-75%';
-  else if(scoreTotal<=85) prob='75-88%';
-  else prob='88-95%';
+    const scoreVerba = Math.max(0, Math.min(100, baseScore + scoreProb));
+    const {prob, label, pCons, pProv, pAgr} = scoreToProb(scoreVerba);
 
-  // Label
-  let label;
-  if(scoreTotal<=25) label='Caso fraco — aceite propostas conservadoras';
-  else if(scoreTotal<=50) label='Caso moderado — negocie com cautela';
-  else if(scoreTotal<=70) label='Caso favorável — posição boa para negociar';
-  else if(scoreTotal<=85) label='Caso forte — exija próximo do agressivo';
-  else label='Caso sólido — só aceite próximo de 100%';
+    const esperado = valor * prob;
+    const cons = valor * pCons;
+    const prov = valor * pProv;
+    const agr = Math.min(valor, valor * pAgr); // teto 100%
+
+    totalPleiteado += valor;
+    totalEsperado += esperado;
+    totalCons += cons;
+    totalProv += prov;
+    totalAgr += agr;
+    scoresPonderados.push({score:scoreVerba, valor});
+
+    // Alerta se score baixo
+    if(scoreVerba<=30 && valor>0) {
+      alertas.push({verba:v.label, score:scoreVerba, prob:label});
+    }
+
+    rows.push({label:v.label, valor, score:scoreVerba, prob:label, esperado, alerta:scoreVerba<=30});
+  });
+
+  // Score ponderado geral
+  const totalPeso = scoresPonderados.reduce((s,x)=>s+(x.valor||1),0);
+  const scorePonderado = totalPeso>0
+    ? Math.round(scoresPonderados.reduce((s,x)=>s+(x.score*(x.valor||1)),0)/totalPeso)
+    : Math.round(scoresPonderados.reduce((s,x)=>s+x.score,0)/scoresPonderados.length);
+
+  // Aplicar teto 100% do total pleiteado
+  totalCons = Math.min(totalCons, totalPleiteado);
+  totalProv = Math.min(totalProv, totalPleiteado);
+  totalAgr = Math.min(totalAgr, totalPleiteado);
+
+  // Renderizar tabela
+  const tbody = document.getElementById('sc-verbas-tbody');
+  const tfoot = document.getElementById('sc-verbas-tfoot');
+  tbody.innerHTML = rows.map(r=>`
+    <tr style="${r.alerta?'background:#FEF2F2':''}">
+      <td>${r.label}</td>
+      <td style="text-align:right">${fmtBRL(r.valor)}</td>
+      <td style="text-align:center;font-weight:700;color:${r.score<=30?'#B91C1C':r.score<=60?'#D97706':'var(--or)'}">${r.score}</td>
+      <td style="text-align:center;font-size:11px">${r.prob}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(r.esperado)}</td>
+      <td style="text-align:center">${r.alerta?'⚠️':''}</td>
+    </tr>`).join('');
+
+  tfoot.innerHTML = `
+    <tr style="background:var(--orp);font-weight:700">
+      <td>Total</td>
+      <td style="text-align:right">${fmtBRL(totalPleiteado)}</td>
+      <td colspan="2" style="text-align:center;font-size:11px">Score: ${scorePonderado}</td>
+      <td style="text-align:right;color:var(--or)">${fmtBRL(totalEsperado)}</td>
+      <td></td>
+    </tr>`;
+
+  // Alertas
+  const alertasEl = document.getElementById('sc-alertas');
+  alertasEl.innerHTML = alertas.length ? alertas.map(a=>`
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px">
+      <strong style="color:#B91C1C">⚠ ${a.verba}</strong> — Score ${a.score} | Prob. ${a.prob}<br>
+      <span style="color:#991B1B">Baixa probabilidade de êxito. Reforce o acervo probatório ou considere excluir da negociação.</span>
+    </div>`).join('') : '';
+
+  // Label score
+  const scoreLabels = ['Caso fraco','Caso moderado','Caso favorável','Caso sólido','Caso muito sólido'];
+  const scoreIdx = scorePonderado<=20?0:scorePonderado<=40?1:scorePonderado<=60?2:scorePonderado<=80?3:4;
 
   // Recomendação
   let rec;
-  if(scoreTotal<=25) rec=`Com o score atual, recomendamos aceitar propostas entre <strong>${fmtBRL(valor*pCons)}</strong> e <strong>${fmtBRL(valor*pProv)}</strong>. O caso apresenta fragilidade probatória — evite risco judicial.`;
-  else if(scoreTotal<=50) rec=`Posição moderada. Negocie entre <strong>${fmtBRL(valor*pProv)}</strong> e <strong>${fmtBRL(valor*pAgr)}</strong>. Fortaleça o acervo probatório antes de recusar propostas.`;
-  else if(scoreTotal<=70) rec=`Boa posição. Exija no mínimo <strong>${fmtBRL(valor*pProv)}</strong>. O cenário agressivo de <strong>${fmtBRL(valor*pAgr)}</strong> é viável se houver boas testemunhas.`;
-  else rec=`Caso muito forte. Não aceite menos que <strong>${fmtBRL(valor*pProv)}</strong>. Com as provas atuais, o valor agressivo de <strong>${fmtBRL(valor*pAgr)}</strong> é plenamente sustentável.`;
+  if(alertas.length>0) {
+    rec = `⚠ <strong>${alertas.length} verba(s) com score baixo</strong>. Negociar o valor total considerando apenas as verbas com boa probabilidade de êxito. Valor provável esperado: <strong>${fmtBRL(totalProv)}</strong>.`;
+  } else if(scorePonderado<=50) {
+    rec = `Posição moderada. Negociar entre <strong>${fmtBRL(totalCons)}</strong> e <strong>${fmtBRL(totalProv)}</strong>. Reforce o acervo probatório antes de recusar propostas.`;
+  } else {
+    rec = `Posição forte. Não aceite menos de <strong>${fmtBRL(totalProv)}</strong>. Com as provas atuais, o valor agressivo de <strong>${fmtBRL(totalAgr)}</strong> é plenamente sustentável.`;
+  }
 
+  document.getElementById('sc-empty').style.display='none';
   document.getElementById('sc-resultado').style.display='block';
-  document.getElementById('sc-score-num').textContent=scoreTotal;
-  document.getElementById('sc-score-label').textContent=label;
-  document.getElementById('sc-prob').textContent=prob;
-  document.getElementById('sc-score-bar').style.width=scoreTotal+'%';
-  document.getElementById('sc-cen-cons').textContent=fmtBRL(valor*pCons);
-  document.getElementById('sc-cen-cons-pct').textContent=(pCons*100).toFixed(0)+'% do valor base';
-  document.getElementById('sc-cen-prov').textContent=fmtBRL(valor*pProv);
-  document.getElementById('sc-cen-prov-pct').textContent=(pProv*100).toFixed(0)+'% ✓ recomendado';
-  document.getElementById('sc-cen-agr').textContent=fmtBRL(valor*pAgr);
-  document.getElementById('sc-cen-agr-pct').textContent=(pAgr*100).toFixed(0)+'% do valor base';
+  document.getElementById('sc-score-num').textContent=scorePonderado;
+  document.getElementById('sc-score-label').textContent=scoreLabels[scoreIdx];
+  document.getElementById('sc-score-bar').style.width=scorePonderado+'%';
+  document.getElementById('sc-cen-cons').textContent=fmtBRL(totalCons);
+  document.getElementById('sc-cen-cons-pct').textContent='Conservador — '+Math.round(totalCons/totalPleiteado*100)+'% do pleiteado';
+  document.getElementById('sc-cen-prov').textContent=fmtBRL(totalProv);
+  document.getElementById('sc-cen-prov-pct').textContent='Provável — '+Math.round(totalProv/totalPleiteado*100)+'% ✓ recomendado';
+  document.getElementById('sc-cen-agr').textContent=fmtBRL(totalAgr);
+  document.getElementById('sc-cen-agr-pct').textContent='Agressivo — '+Math.round(totalAgr/totalPleiteado*100)+'% do pleiteado';
   document.getElementById('sc-recomendacao').innerHTML=rec;
 }
 
 // ============================================================
+// PACTO AI EUROPA// ============================================================
 // PACTO AI EUROPA — I18N + CHECKLISTS EXPANDIDOS
 // ============================================================
 
@@ -2955,8 +3087,8 @@ function setPactoCountry(country) {
   document.getElementById('btn-pt')?.classList.toggle('active', country==='pt');
   // Aplicar i18n
   applyPactoI18n(country);
-  // Renderizar checklist do país
-  renderPactoChecklist(country);
+  renderVerbasListPacto();
+  renderChecklistPactoByVerbas();
   calcPacto();
 }
 
@@ -3025,6 +3157,75 @@ function renderPactoChecklist(pais) {
     </div>`).join('');
 }
 
+const VERBAS_ES = [
+  {id:'ves1', label:'Indemnización por despido',         catIdx:0},
+  {id:'ves2', label:'Horas extra y jornada',              catIdx:1},
+  {id:'ves3', label:'Accidente laboral / Enf. prof.',    catIdx:2},
+  {id:'ves4', label:'Discriminación / Despido nulo',     catIdx:3},
+  {id:'ves5', label:'Acoso laboral / Sexual',            catIdx:4},
+  {id:'ves6', label:'Salarios e indem. pendientes',      catIdx:5},
+  {id:'ves7', label:'Modificación sustancial / Traslado',catIdx:6},
+];
+
+const VERBAS_PT = [
+  {id:'vpt1', label:'Compensação por despedimento',      catIdx:0},
+  {id:'vpt2', label:'Trabalho suplementar',              catIdx:1},
+  {id:'vpt3', label:'Acidente trabalho / Doença prof.',  catIdx:2},
+  {id:'vpt4', label:'Despedimento ilícito / Discrimin.', catIdx:3},
+  {id:'vpt5', label:'Assédio moral / Sexual',            catIdx:4},
+  {id:'vpt6', label:'Créditos salariais',                catIdx:5},
+  {id:'vpt7', label:'Resolução c/ justa causa',          catIdx:6},
+];
+
+function getVerbasPacto() { return pactoCountry==='pt' ? VERBAS_PT : VERBAS_ES; }
+function getChecklistPacto() { return pactoCountry==='pt' ? CHECKLIST_PT : CHECKLIST_ES; }
+
+function renderVerbasListPacto() {
+  const el = document.getElementById('pa-verbas-list');
+  if(!el) return;
+  const verbas = getVerbasPacto();
+  const cur = '€';
+  el.innerHTML = verbas.map(v=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08)">
+      <input type="checkbox" id="chk_${v.id}" onchange="toggleVerbaPacto('${v.id}')" style="width:16px;height:16px;accent-color:#EA580C;flex-shrink:0"/>
+      <label for="chk_${v.id}" style="flex:1;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.8)">${v.label}</label>
+      <input type="number" id="val_${v.id}" placeholder="${cur} valor"
+        style="width:120px;padding:6px 10px;background:#111;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:13px;color:#fff;display:none;font-family:inherit"
+        oninput="calcPacto()"/>
+    </div>`).join('');
+}
+
+function toggleVerbaPacto(vid) {
+  const chk = document.getElementById('chk_'+vid);
+  const val = document.getElementById('val_'+vid);
+  if(val) val.style.display = chk?.checked ? 'block' : 'none';
+  renderChecklistPactoByVerbas();
+  calcPacto();
+}
+
+function renderChecklistPactoByVerbas() {
+  const el = document.getElementById('pa-checklist');
+  if(!el) return;
+  const verbas = getVerbasPacto();
+  const lista = getChecklistPacto();
+  const selected = verbas.filter(v=>document.getElementById('chk_'+v.id)?.checked);
+  if(selected.length===0) { el.innerHTML=''; return; }
+  el.innerHTML = selected.map(v=>{
+    const cat = lista[v.catIdx];
+    if(!cat) return '';
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:10px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(234,88,12,.3)">${cat.cat}</div>
+        ${cat.items.map(item=>`
+          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start">
+            <input type="checkbox" id="${item.id}" onchange="calcPacto()" style="margin-top:2px;flex-shrink:0"/>
+            <label for="${item.id}" style="flex:1;font-size:12px;color:rgba(255,255,255,.65);line-height:1.4">${item.label}</label>
+            <span style="font-size:10px;font-weight:700;color:#EA580C;min-width:30px;text-align:right;flex-shrink:0">+${item.pts}</span>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
 function calcPacto() {
   const pais = pactoCountry;
   const salario = parseFloat(document.getElementById('pa-salario')?.value)||0;
@@ -3033,92 +3234,157 @@ function calcPacto() {
   const contrato = document.getElementById('pa-contrato')?.value||'indefinido';
   const tipo = document.getElementById('pa-tipo')?.value||'improcedente';
   const t = PACTO_I18N[pais];
-  if(!salario||!inicioStr||!fimStr) { document.getElementById('pa-resultado').style.display='none'; document.getElementById('pa-empty-state').style.display='block'; return; }
-
-  const anos = (new Date(fimStr)-new Date(inicioStr))/(1000*60*60*24*365);
-  if(anos<=0) return;
-  const diasPorAno = pais==='es' ? 33 : 20;
-  // Para despido objetivo ES: 20 dias
-  const diasEfetivos = (pais==='es' && tipo==='objetivo') ? 20 : diasPorAno;
-  const salarioDiario = salario/30;
-  let indenizacaoBase = salarioDiario * diasEfetivos * anos;
-  // Teto España
-  if(pais==='es') {
-    const teto = tipo==='objetivo' ? salario*12 : salario*24;
-    indenizacaoBase = Math.min(indenizacaoBase, teto);
-  }
-  // Despido procedente ES e PT: sem indenização base
-  if(tipo==='procedente') indenizacaoBase = 0;
+  const verbas = getVerbasPacto();
+  const lista = getChecklistPacto();
+  const fmtEur = v=>'€'+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const isES = pais==='es';
 
   // Score base
   let scoreBase = 0;
-  if(anos>=10) scoreBase+=20; else if(anos>=5) scoreBase+=12; else if(anos>=2) scoreBase+=6;
-  if(salario>=3000) scoreBase+=15; else if(salario>=1800) scoreBase+=8;
+  if(inicioStr && fimStr) {
+    const anos = (new Date(fimStr)-new Date(inicioStr))/(1000*60*60*24*365);
+    if(anos>=10) scoreBase+=20; else if(anos>=5) scoreBase+=12; else if(anos>=2) scoreBase+=6;
+    if(salario) {
+      if(salario>=3000) scoreBase+=15; else if(salario>=1800) scoreBase+=8;
+    }
+  }
   if(tipo==='improcedente') scoreBase+=25;
   else if(tipo==='nula') scoreBase+=35;
   else if(tipo==='objetivo') scoreBase+=10;
   else if(tipo==='procedente') scoreBase-=20;
-  if(contrato==='indefinido'||contrato==='sem_termo') scoreBase+=10;
-  else scoreBase-=10;
+  if(contrato==='indefinido'||contrato==='sem_termo') scoreBase+=10; else scoreBase-=10;
 
-  // Score probatório
-  const lista = pais==='pt' ? CHECKLIST_PT : CHECKLIST_ES;
-  let scoreProb = 0;
-  lista.forEach(cat => cat.items.forEach(item => {
-    const el = document.getElementById(item.id);
-    if(el?.checked) scoreProb += item.pts;
-  }));
+  // Cálculo base legal para indemnização
+  let baseCalc = 0;
+  if(salario && inicioStr && fimStr) {
+    const anos = (new Date(fimStr)-new Date(inicioStr))/(1000*60*60*24*365);
+    const diasPorAno = isES ? (tipo==='objetivo'?20:33) : 20;
+    const salDiario = salario/30;
+    baseCalc = Math.min(salDiario*diasPorAno*anos, isES?(tipo==='objetivo'?salario*12:salario*24):999999);
+    if(tipo==='procedente') baseCalc=0;
+  }
 
-  const scoreTotal = Math.max(0, Math.min(100, scoreBase + scoreProb));
+  // Verificar verbas selecionadas
+  const selected = verbas.filter(v=>document.getElementById('chk_'+v.id)?.checked);
 
-  let pCons, pProv, pAgr;
-  if(scoreTotal<=30)      { pCons=0.50; pProv=0.65; pAgr=0.80; }
-  else if(scoreTotal<=60) { pCons=0.60; pProv=0.78; pAgr=0.90; }
-  else if(scoreTotal<=80) { pCons=0.70; pProv=0.88; pAgr=0.97; }
-  else                    { pCons=0.80; pProv=0.92; pAgr=1.00; }
+  // Atualizar métricas base
+  if(salario && inicioStr && fimStr) {
+    const anos = (new Date(fimStr)-new Date(inicioStr))/(1000*60*60*24*365);
+    const salDiario = salario/30;
+    const set = (id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+    set('pa-anos', anos.toFixed(1)+' '+(isES?'años':'anos'));
+    set('pa-diario', fmtEur(salDiario));
+    set('pa-base', fmtEur(baseCalc));
+  }
 
-  let prob;
-  if(scoreTotal<=25) prob='20-40%';
-  else if(scoreTotal<=50) prob='40-60%';
-  else if(scoreTotal<=70) prob='60-75%';
-  else if(scoreTotal<=85) prob='75-88%';
-  else prob='88-95%';
+  if(selected.length===0) {
+    document.getElementById('pa-resultado').style.display='none';
+    document.getElementById('pa-empty-state').style.display='block';
+    return;
+  }
 
-  const scoreIdx = scoreTotal<=20?0:scoreTotal<=40?1:scoreTotal<=60?2:scoreTotal<=80?3:4;
-  const label = t.score_labels[scoreIdx];
+  let totalPleiteado=0, totalCons=0, totalProv=0, totalAgr=0, totalEsperado=0;
+  let alertas=[], rows=[], scoresPonderados=[];
 
-  const fmtEur = v => '€'+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  selected.forEach(v=>{
+    // Para indemnização, usar valor calculado se não informado
+    let valor = parseFloat(document.getElementById('val_'+v.id)?.value)||0;
+    if(valor===0 && (v.id==='ves1'||v.id==='vpt1')) valor = baseCalc;
+
+    const cat = lista[v.catIdx];
+    let scoreProb = 0;
+    if(cat) cat.items.forEach(item=>{
+      const el=document.getElementById(item.id);
+      if(el?.checked) scoreProb+=item.pts;
+    });
+
+    const scoreVerba = Math.max(0, Math.min(100, scoreBase+scoreProb));
+    const {prob,label,pCons,pProv,pAgr} = scoreToProb(scoreVerba);
+    const esperado = valor*prob;
+    const cons = valor*pCons;
+    const prov = valor*pProv;
+    const agr = Math.min(valor, valor*pAgr);
+
+    totalPleiteado+=valor;
+    totalEsperado+=esperado;
+    totalCons+=cons;
+    totalProv+=prov;
+    totalAgr+=agr;
+    scoresPonderados.push({score:scoreVerba,valor});
+    if(scoreVerba<=30&&valor>0) alertas.push({verba:v.label,score:scoreVerba,prob:label});
+    rows.push({label:v.label,valor,score:scoreVerba,prob:label,esperado,alerta:scoreVerba<=30});
+  });
+
+  // Teto 100%
+  totalCons=Math.min(totalCons,totalPleiteado);
+  totalProv=Math.min(totalProv,totalPleiteado);
+  totalAgr=Math.min(totalAgr,totalPleiteado);
+
+  const totalPeso=scoresPonderados.reduce((s,x)=>s+(x.valor||1),0);
+  const scorePonderado=totalPeso>0
+    ? Math.round(scoresPonderados.reduce((s,x)=>s+(x.score*(x.valor||1)),0)/totalPeso)
+    : Math.round(scoresPonderados.reduce((s,x)=>s+x.score,0)/scoresPonderados.length);
+
+  // Renderizar tabela por verba
+  const tbody=document.getElementById('pa-verbas-tbody');
+  const tfoot=document.getElementById('pa-verbas-tfoot');
+  if(tbody) tbody.innerHTML=rows.map(r=>`
+    <tr style="${r.alerta?'background:rgba(185,28,28,.1)':''}">
+      <td style="color:rgba(255,255,255,.8)">${r.label}</td>
+      <td style="text-align:right;color:#fff">${fmtEur(r.valor)}</td>
+      <td style="text-align:center;font-weight:700;color:${r.score<=30?'#F87171':r.score<=60?'#FCD34D':'#EA580C'}">${r.score}</td>
+      <td style="text-align:center;font-size:11px;color:rgba(255,255,255,.5)">${r.prob}</td>
+      <td style="text-align:right;font-weight:600;color:#EA580C">${fmtEur(r.esperado)}</td>
+      <td style="text-align:center">${r.alerta?'⚠':''}</td>
+    </tr>`).join('');
+  if(tfoot) tfoot.innerHTML=`
+    <tr style="background:rgba(234,88,12,.1);font-weight:700">
+      <td style="color:#fff">${isES?'Total':'Total'}</td>
+      <td style="text-align:right;color:#fff">${fmtEur(totalPleiteado)}</td>
+      <td colspan="2" style="text-align:center;font-size:11px;color:rgba(255,255,255,.6)">Score: ${scorePonderado}</td>
+      <td style="text-align:right;color:#EA580C">${fmtEur(totalEsperado)}</td>
+      <td></td>
+    </tr>`;
+
+  // Alertas
+  const alertasEl=document.getElementById('pa-alertas');
+  if(alertasEl) alertasEl.innerHTML=alertas.length?alertas.map(a=>`
+    <div style="background:rgba(185,28,28,.15);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px">
+      <strong style="color:#F87171">⚠ ${a.verba}</strong> — Score ${a.score} | Prob. ${a.prob}<br>
+      <span style="color:rgba(248,113,113,.8)">${isES?'Baja probabilidad de éxito. Refuerce el acervo probatorio.':'Baixa probabilidade de êxito. Reforce o acervo probatório.'}</span>
+    </div>`).join(''):'';
+
+  const scoreLabels = isES
+    ? ['Caso débil','Caso moderado','Caso favorable','Caso sólido','Caso muy sólido']
+    : ['Caso fraco','Caso moderado','Caso favorável','Caso sólido','Caso muito sólido'];
+  const scoreIdx=scorePonderado<=20?0:scorePonderado<=40?1:scorePonderado<=60?2:scorePonderado<=80?3:4;
 
   let rec;
-  if(tipo==='procedente') {
-    rec = pais==='es'
-      ? 'El despido procedente no genera derecho a indemnización legal. Puede negociarse una compensación voluntaria para evitar litigios.'
-      : 'O despedimento lícito não gera compensação legal. Pode negociar-se uma compensação voluntária para evitar litígios.';
-  } else if(scoreTotal<=50) {
-    rec = pais==='es'
-      ? `Posición moderada. Negocie entre <strong>${fmtEur(indenizacaoBase*pCons)}</strong> y <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. Refuerce el acervo probatorio antes de rechazar propuestas.`
-      : `Posição moderada. Negocear entre <strong>${fmtEur(indenizacaoBase*pCons)}</strong> e <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. Reforce o acervo probatório antes de recusar propostas.`;
+  if(alertas.length>0) {
+    rec = isES
+      ? `⚠ <strong>${alertas.length} concepto(s) con score bajo</strong>. Negociar considerando solo los conceptos con buena probabilidad de éxito. Valor probable esperado: <strong>${fmtEur(totalProv)}</strong>.`
+      : `⚠ <strong>${alertas.length} verba(s) com score baixo</strong>. Negociar considerando apenas as verbas com boa probabilidade. Valor provável esperado: <strong>${fmtEur(totalProv)}</strong>.`;
+  } else if(scorePonderado<=50) {
+    rec = isES
+      ? `Posición moderada. Negocie entre <strong>${fmtEur(totalCons)}</strong> y <strong>${fmtEur(totalProv)}</strong>.`
+      : `Posição moderada. Negocear entre <strong>${fmtEur(totalCons)}</strong> e <strong>${fmtEur(totalProv)}</strong>.`;
   } else {
-    rec = pais==='es'
-      ? `Posición fuerte. No acepte menos de <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. El escenario agresivo de <strong>${fmtEur(indenizacaoBase*pAgr)}</strong> es plenamente sostenible con la documentación actual.`
-      : `Posição forte. Não aceite menos de <strong>${fmtEur(indenizacaoBase*pProv)}</strong>. O cenário agressivo de <strong>${fmtEur(indenizacaoBase*pAgr)}</strong> é plenamente sustentável com a documentação actual.`;
+    rec = isES
+      ? `Posición fuerte. No acepte menos de <strong>${fmtEur(totalProv)}</strong>. Objetivo agresivo: <strong>${fmtEur(totalAgr)}</strong>.`
+      : `Posição forte. Não aceite menos de <strong>${fmtEur(totalProv)}</strong>. Objectivo agressivo: <strong>${fmtEur(totalAgr)}</strong>.`;
   }
 
   document.getElementById('pa-empty-state').style.display='none';
   document.getElementById('pa-resultado').style.display='block';
-  document.getElementById('pa-score-num').textContent=scoreTotal;
-  document.getElementById('pa-score-label').textContent=label;
-  document.getElementById('pa-prob').textContent=prob;
-  document.getElementById('pa-score-bar').style.width=scoreTotal+'%';
-  document.getElementById('pa-anos').textContent=anos.toFixed(1)+' '+(pais==='es'?'años':'anos');
-  document.getElementById('pa-diario').textContent=fmtEur(salarioDiario);
-  document.getElementById('pa-base').textContent=fmtEur(indenizacaoBase);
-  document.getElementById('pa-cen-cons').textContent=fmtEur(indenizacaoBase*pCons);
-  document.getElementById('pa-pct-cons').textContent=(pCons*100).toFixed(0)+'%';
-  document.getElementById('pa-cen-prov').textContent=fmtEur(indenizacaoBase*pProv);
-  document.getElementById('pa-pct-prov').textContent=(pProv*100).toFixed(0)+'% '+t.prov_rec;
-  document.getElementById('pa-cen-agr').textContent=fmtEur(indenizacaoBase*pAgr);
-  document.getElementById('pa-pct-agr').textContent=(pAgr*100).toFixed(0)+'%';
+  document.getElementById('pa-score-num').textContent=scorePonderado;
+  document.getElementById('pa-score-label').textContent=scoreLabels[scoreIdx];
+  document.getElementById('pa-score-bar').style.width=scorePonderado+'%';
+  document.getElementById('pa-cen-cons').textContent=fmtEur(totalCons);
+  document.getElementById('pa-pct-cons').textContent=Math.round(totalCons/(totalPleiteado||1)*100)+'%';
+  document.getElementById('pa-cen-prov').textContent=fmtEur(totalProv);
+  document.getElementById('pa-pct-prov').textContent=Math.round(totalProv/(totalPleiteado||1)*100)+'% '+(isES?'recomendado':'recomendado');
+  document.getElementById('pa-cen-agr').textContent=fmtEur(totalAgr);
+  document.getElementById('pa-pct-agr').textContent=Math.round(totalAgr/(totalPleiteado||1)*100)+'%';
   document.getElementById('pa-recomendacao').innerHTML=rec;
 }
 
