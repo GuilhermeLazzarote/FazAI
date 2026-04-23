@@ -3395,7 +3395,7 @@ function calcPacto() {
   const t = PACTO_I18N[pais];
   const verbas = getVerbasPacto();
   const lista = getChecklistPacto();
-  const fmtEur = v=>'€'+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const fmtEur = v => { const s=Math.abs(v).toFixed(2); const p=s.split('.'); let i=p[0],r=[]; while(i.length>3){r.unshift(i.slice(-3));i=i.slice(0,-3);} if(i)r.unshift(i); return '€'+r.join('.')+','+p[1]; }
   const isES = pais==='es';
 
   // Score base
@@ -3762,14 +3762,14 @@ function exportPactoPDF() {
   const LGRAY = [60,60,60];
 
   function fillPage() {
-    doc.setFillColor(...BG);
+    doc.setFillColor(BG[0],BG[1],BG[2]);
     doc.rect(0,0,pw,ph,'F');
   }
 
   function addHeader(titulo) {
     fillPage();
     // Linha laranja topo
-    doc.setFillColor(...OR);
+    doc.setFillColor(OR[0],OR[1],OR[2]);
     doc.rect(0,0,pw,2,'F');
     // Barra lateral laranja
     doc.rect(0,0,3,ph,'F');
@@ -3778,24 +3778,24 @@ function exportPactoPDF() {
     doc.rect(10,10,8,2,'F');
     doc.rect(10,15,6,2,'F');
     // Nome
-    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
     doc.text('az',22,18);
-    doc.setTextColor(...OR);
+    doc.setTextColor(OR[0],OR[1],OR[2]);
     doc.text('AI',29,18);
-    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
     doc.text('PactoAI Europa — '+paisNome,22,23);
     // Badge país
-    doc.setFillColor(...PANEL);
+    doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
     doc.rect(pw-60,8,46,10,3,'F');
-    doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
-    doc.text((isES?'🇪🇸 ESPAÑA':'🇵🇹 PORTUGAL'),pw-37,14,{align:'center'});
+    doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
+    doc.text((isES?'ESPANA':'PORTUGAL'),pw-37,14,{align:'center'});
     // LCA
-    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
     doc.text('LCA — Legal Calculation Associate',pw-14,20,{align:'right'});
     // Linha separadora
-    doc.setDrawColor(...LGRAY);doc.setLineWidth(0.3);doc.line(10,27,pw-10,27);
+    doc.setDrawColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.setLineWidth(0.3);doc.line(10,27,pw-10,27);
     // Título
-    doc.setFontSize(10.5);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+    doc.setFontSize(10.5);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
     doc.text(titulo,105,35,{align:'center'});
   }
 
@@ -3803,8 +3803,8 @@ function exportPactoPDF() {
     const pages=doc.internal.getNumberOfPages();
     for(let i=1;i<=pages;i++){
       doc.setPage(i);
-      doc.setDrawColor(...LGRAY);doc.setLineWidth(0.3);doc.line(10,283,pw-10,283);
-      doc.setFontSize(6.5);doc.setTextColor(...GRAY);
+      doc.setDrawColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.setLineWidth(0.3);doc.line(10,283,pw-10,283);
+      doc.setFontSize(6.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
       doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág.'+i+'/'+pages,105,288,{align:'center'});
     }
   }
@@ -3817,7 +3817,7 @@ function exportPactoPDF() {
       alternateRowStyles:{fillColor:PANEL},
       didDrawCell: function(data) {
         // Borda sutil entre linhas
-        doc.setDrawColor(...LGRAY);doc.setLineWidth(0.2);
+        doc.setDrawColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.setLineWidth(0.2);
         doc.line(data.cell.x, data.cell.y+data.cell.height, data.cell.x+data.cell.width, data.cell.y+data.cell.height);
       }
     };
@@ -3849,9 +3849,9 @@ function exportPactoPDF() {
   addHeader(isES?'SIMULACIÓN DE ACUERDO LABORAL':'SIMULAÇÃO DE ACORDO LABORAL');
 
   // Dados do caso
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'DATOS DEL CASO':'DADOS DO CASO',ml,43);
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,44.5,ml+38,44.5);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);doc.line(ml,44.5,ml+38,44.5);
 
   doc.autoTable(darkTable({
     startY:47,margin:{left:ml,right:14},
@@ -3868,33 +3868,33 @@ function exportPactoPDF() {
 
   // Score card
   const yS=doc.lastAutoTable.finalY+8;
-  doc.setFillColor(...PANEL);
+  doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
   doc.roundedRect(ml,yS,pw-28,26,3,3,'F');
-  doc.setDrawColor(...OR);doc.setLineWidth(0.5);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.5);
   doc.roundedRect(ml,yS,pw-28,26,3,3);
 
   // Barra de score
   const bW=pw-28-80, bH=6, bX=ml+8, bY=yS+8;
-  doc.setFillColor(...LGRAY);doc.rect(bX,bY,bW,bH,'F');
-  doc.setFillColor(...OR);doc.rect(bX,bY,(bW*scoreNum/100),bH,'F');
+  doc.setFillColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.rect(bX,bY,bW,bH,'F');
+  doc.setFillColor(OR[0],OR[1],OR[2]);doc.rect(bX,bY,(bW*scoreNum/100),bH,'F');
 
   // Número
-  doc.setFontSize(24);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(24);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(scoreNum+'',pw-32,yS+20,{align:'right'});
   doc.setFontSize(9);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
   doc.text('/100',pw-14,yS+20);
 
   // Label
-  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
   doc.text(scoreLabel,bX,bY-3);
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
   doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+5);
 
   // Tabela por conceito
   const yV=yS+32;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'ANÁLISIS POR CONCEPTO':'ANÁLISE POR VERBA',ml,yV);
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yV+1.5,ml+55,yV+1.5);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);doc.line(ml,yV+1.5,ml+55,yV+1.5);
 
   const tbody=document.getElementById('pa-verbas-tbody');
   const tfoot=document.getElementById('pa-verbas-tfoot');
@@ -3921,9 +3921,9 @@ function exportPactoPDF() {
 
   // Cenários
   const yC=doc.lastAutoTable.finalY+6;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'ESCENARIOS DE ACUERDO':'CENÁRIOS DE ACORDO',ml,yC);
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yC+1.5,ml+50,yC+1.5);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);doc.line(ml,yC+1.5,ml+50,yC+1.5);
 
   doc.autoTable(darkTable({
     startY:yC+4,margin:{left:ml,right:14},
@@ -3943,11 +3943,11 @@ function exportPactoPDF() {
   const recH=Math.max(22, recLines.length*4.5+10);
   doc.setFillColor(40,20,0);
   doc.roundedRect(ml,yR,pw-28,recH,3,3,'F');
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);
   doc.roundedRect(ml,yR,pw-28,recH,3,3);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'RECOMENDACIÓN':'RECOMENDAÇÃO',ml+4,yR+6);
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...WHITE);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
   doc.text(recLines,ml+4,yR+12);
 
   // ── PÁG 2 — ANÁLISE IA + CHECKLIST ──
@@ -3958,19 +3958,19 @@ function exportPactoPDF() {
   const yIA=43;
   doc.setFillColor(20,10,0);
   doc.roundedRect(ml,yIA,pw-28,36,3,3,'F');
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);
   doc.roundedRect(ml,yIA,pw-28,36,3,3);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'ANÁLISIS DE IA — RIESGO JURÍDICO':'ANÁLISE DE IA — RISCO JURÍDICO',ml+4,yIA+6);
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...WHITE);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
   const iaLines=doc.splitTextToSize(iaText,pw-36);
   doc.text(iaLines,ml+4,yIA+12);
 
   // Checklist
   const yChk=yIA+42;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'CHECKLIST PROBATORIO':'CHECKLIST PROBATÓRIO',ml,yChk);
-  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yChk+1.5,ml+55,yChk+1.5);
+  doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);doc.line(ml,yChk+1.5,ml+55,yChk+1.5);
 
   const lista=pais==='pt'?CHECKLIST_PT:CHECKLIST_ES;
   const provas=[];
