@@ -1310,6 +1310,7 @@ function switchTab(prefix, tab, btn) {
   if(prefix==='liq'&&tab==='hist') renderLiqHist();
   if(prefix==='pt'&&tab==='hist') renderPtHist('pt-hist-list');
   if(prefix==='ac'&&tab==='hist') renderAcHist();
+  if(prefix==='ac'&&tab==='score') { renderVerbasListBR(); renderChecklistBR(); }
 }
 
 // ============================================================
@@ -2697,6 +2698,108 @@ const VERBAS_BR = [
   {id:'v_vr',   label:'Verbas Rescisórias',              catIdx:9},
 ];
 
+const CHECKLIST_BR = [
+  {cat:'Horas Extras', items:[
+    {id:'he1',label:'Espelho de ponto juntado',pts:15},
+    {id:'he2',label:'Espelho de ponto com horários não britânicos (variação real)',pts:20},
+    {id:'he3',label:'Espelho de ponto britânico — horários idênticos todos os dias',pts:-18},
+    {id:'he4',label:'Holerites sem pagamento de HE',pts:18},
+    {id:'he5',label:'Emails/mensagens fora do horário contratual',pts:15},
+    {id:'he6',label:'Testemunhas que confirmam a jornada',pts:12},
+    {id:'he7',label:'Ausência total de controle de ponto (presunção favorável)',pts:18},
+    {id:'he8',label:'Trabalhador ocupava cargo de confiança (art. 62 CLT)',pts:-20},
+    {id:'he9',label:'Trabalhador em regime de teletrabalho sem controle',pts:-15},
+    {id:'he10',label:'Holerites com pagamento regular de HE',pts:-20}
+  ]},
+  {cat:'Horas Intervalares', items:[
+    {id:'hi1',label:'Espelho mostrando intervalo inferior a 1h',pts:20},
+    {id:'hi2',label:'Testemunhas confirmando supressão do intervalo',pts:12},
+    {id:'hi3',label:'Holerite sem pagamento de intervalo',pts:15},
+    {id:'hi4',label:'Ausência de refeitório na empresa',pts:10},
+    {id:'hi5',label:'Holerites com pagamento de intervalo intrajornada',pts:-15},
+    {id:'hi6',label:'Jornada inferior a 6 horas (não exige intervalo de 1h)',pts:-20}
+  ]},
+  {cat:'Periculosidade / Insalubridade', items:[
+    {id:'pi1',label:'Laudo pericial favorável ao autor',pts:25},
+    {id:'pi2',label:'NR aplicável identificada e descumprida',pts:12},
+    {id:'pi3',label:'Ausência de EPI adequado documentada',pts:18},
+    {id:'pi4',label:'Fotos/vídeos do ambiente de trabalho',pts:15},
+    {id:'pi5',label:'Laudo pericial desfavorável ao autor',pts:-25},
+    {id:'pi6',label:'EPI fornecido e assinatura do trabalhador no recibo',pts:-18},
+    {id:'pi7',label:'Laudo da empresa demonstrando ausência de risco',pts:-15}
+  ]},
+  {cat:'Dano Moral', items:[
+    {id:'dm1',label:'Fatos descritos de forma clara e específica na inicial',pts:15},
+    {id:'dm2',label:'Testemunhas que presenciaram os fatos',pts:18},
+    {id:'dm3',label:'Comunicações que evidenciam o dano',pts:22},
+    {id:'dm4',label:'Atestados médicos/psicológicos relacionados',pts:20},
+    {id:'dm5',label:'Afastamento do trabalho por consequência do dano',pts:15},
+    {id:'dm6',label:'Fatos genéricos sem especificação de datas e situações',pts:-15},
+    {id:'dm7',label:'Ausência de qualquer prova documental',pts:-18},
+    {id:'dm8',label:'Trabalhador continuou trabalhando normalmente após o fato',pts:-12}
+  ]},
+  {cat:'Assédio Moral', items:[
+    {id:'am1',label:'Padrão de conduta sistemático (não evento isolado)',pts:20},
+    {id:'am2',label:'Múltiplas testemunhas',pts:22},
+    {id:'am3',label:'Comunicações escritas (emails, mensagens)',pts:25},
+    {id:'am4',label:'Denúncia interna prévia sem resposta',pts:20},
+    {id:'am5',label:'CID relacionado a transtorno por estresse/ansiedade',pts:20},
+    {id:'am6',label:'Evento isolado sem reiteração',pts:-18},
+    {id:'am7',label:'Apenas alegações sem qualquer prova documental',pts:-20},
+    {id:'am8',label:'Trabalhador com histórico de reclamações contra outros empregadores',pts:-12}
+  ]},
+  {cat:'Assédio Sexual', items:[
+    {id:'as1',label:'Comunicações explícitas (mensagens, emails)',pts:30},
+    {id:'as2',label:'Boletim de ocorrência registrado',pts:25},
+    {id:'as3',label:'Mais de uma vítima identificada',pts:25},
+    {id:'as4',label:'Hierarquia entre agressor e vítima',pts:18},
+    {id:'as5',label:'Testemunhas diretas',pts:20},
+    {id:'as6',label:'Apenas alegações sem prova documental ou testemunhal',pts:-22},
+    {id:'as7',label:'Relacionamento consensual anterior documentado',pts:-15}
+  ]},
+  {cat:'Pensão Vitalícia / Acidente', items:[
+    {id:'pv1',label:'Laudo médico com incapacidade permanente',pts:30},
+    {id:'pv2',label:'Nexo causal com atividade laboral estabelecido',pts:30},
+    {id:'pv3',label:'CAT registrada',pts:22},
+    {id:'pv4',label:'Perícia do INSS favorável',pts:25},
+    {id:'pv5',label:'Ausência de EPI/medidas de segurança',pts:18},
+    {id:'pv6',label:'Nexo causal negado em perícia médica',pts:-28},
+    {id:'pv7',label:'Acidente por culpa exclusiva do trabalhador',pts:-25},
+    {id:'pv8',label:'Doença preexistente sem relação com o trabalho',pts:-20},
+    {id:'pv9',label:'EPI fornecido com recibo e treinamento documentado',pts:-18}
+  ]},
+  {cat:'Diferenças Salariais / Acúmulo de Função', items:[
+    {id:'ds1',label:'Holerites com salário inferior ao piso da categoria',pts:20},
+    {id:'ds2',label:'Convenção coletiva juntada',pts:18},
+    {id:'ds3',label:'Paradigma identificado (colega com mesmo cargo e salário maior)',pts:22},
+    {id:'ds4',label:'Emails/ordens demonstrando funções distintas',pts:20},
+    {id:'ds5',label:'Testemunhas sobre função real exercida',pts:12},
+    {id:'ds6',label:'CTPS com cargo correto e salário conforme piso',pts:-18},
+    {id:'ds7',label:'Ausência de paradigma válido',pts:-15},
+    {id:'ds8',label:'Trabalhador assinou recibos sem ressalva por anos',pts:-12}
+  ]},
+  {cat:'Rescisão Indireta por Falta Grave', items:[
+    {id:'ri1',label:'Falta grave do empregador documentada',pts:25},
+    {id:'ri2',label:'Comunicações que evidenciam a falta',pts:22},
+    {id:'ri3',label:'Salários atrasados documentados (extratos bancários)',pts:25},
+    {id:'ri4',label:'Notificação prévia enviada ao empregador',pts:18},
+    {id:'ri5',label:'Ausência de resposta do empregador à notificação',pts:12},
+    {id:'ri6',label:'Trabalhador pediu demissão formalmente antes da rescisão indireta',pts:-25},
+    {id:'ri7',label:'Falta grave alegada sem prova documental',pts:-20},
+    {id:'ri8',label:'Trabalhador continuou trabalhando por longo período após o fato',pts:-18},
+    {id:'ri9',label:'Ausência de notificação prévia ao empregador',pts:-15}
+  ]},
+  {cat:'Verbas Rescisórias', items:[
+    {id:'vr1',label:'FGTS não depositado (extrato FGTS)',pts:20},
+    {id:'vr2',label:'Aviso prévio não concedido/pago',pts:15},
+    {id:'vr3',label:'Multa 40% FGTS não paga',pts:18},
+    {id:'vr4',label:'TRCT juntado ao processo',pts:10},
+    {id:'vr5',label:'TRCT quitado pelo trabalhador sem ressalvas',pts:-20},
+    {id:'vr6',label:'Extrato FGTS com depósitos regulares',pts:-15},
+    {id:'vr7',label:'Homologação regular com assistência sindical',pts:-18}
+  ]}
+];
+
 function scoreToProb(score) {
   if(score<=25)  return {prob:0.25, label:'20-40%', pCons:0.50, pProv:0.65, pAgr:0.80};
   if(score<=50)  return {prob:0.50, label:'40-60%', pCons:0.60, pProv:0.75, pAgr:0.88};
@@ -2963,55 +3066,79 @@ const CHECKLIST_ES = [
     {id:'es4',label:'Ausencia total de sanciones o advertencias previas',pts:10},
     {id:'es5',label:'Testigos identificados del despido o situación previa',pts:12},
     {id:'es6',label:'Comunicaciones previas al despido (email, WhatsApp)',pts:15},
-    {id:'es7',label:'Defectos de forma en la carta (plazo, firma, notificación)',pts:18}
+    {id:'es7',label:'Defectos de forma en la carta (plazo, firma, notificación)',pts:18},
+    {id:'esn1',label:'Historial de sanciones y advertencias documentadas',pts:-18},
+    {id:'esn2',label:'Trabajador firmó el finiquito sin reservas',pts:-20},
+    {id:'esn3',label:'Despido procedente con causa acreditada y documentada',pts:-25},
+    {id:'esn4',label:'Acuerdo de extinción firmado ante el SMAC',pts:-22},
+    {id:'esn5',label:'Trabajador en período de prueba',pts:-15}
   ]},
   {cat:'Horas Extra y Jornada', items:[
-    {id:'es8',label:'Registro de jornada (obligatorio desde 2019, art. 34.9 ET)',pts:22},
-    {id:'es9',label:'Registro de jornada con horarios no uniformes (variación real)',pts:20},
-    {id:'es10',label:'Emails, mensajes fuera del horario laboral pactado',pts:18},
-    {id:'es11',label:'Nóminas sin pago de horas extra',pts:20},
-    {id:'es12',label:'Testigos que confirman la jornada real',pts:12},
-    {id:'es13',label:'Ausencia de registro de jornada (presunción favorable)',pts:18}
+    {id:'es8',label:'Registro de jornada con horarios no uniformes (variación real)',pts:22},
+    {id:'es9',label:'Emails, mensajes fuera del horario laboral pactado',pts:18},
+    {id:'es10',label:'Nóminas sin pago de horas extra',pts:20},
+    {id:'es11',label:'Testigos que confirman la jornada real',pts:12},
+    {id:'es12',label:'Ausencia de registro de jornada (presunción favorable)',pts:18},
+    {id:'esn6',label:'Registro de jornada con horarios uniformes (británicos)',pts:-18},
+    {id:'esn7',label:'Nóminas con pago regular de horas extra',pts:-20},
+    {id:'esn8',label:'Trabajador en puesto directivo — art. 12 RD 1561/1995',pts:-20},
+    {id:'esn9',label:'Pacto de horas extra firmado y retribuidas',pts:-15}
   ]},
   {cat:'Accidente Laboral / Enfermedad Profesional', items:[
-    {id:'es14',label:'Parte de accidente de trabajo registrado ante la Mutua',pts:22},
-    {id:'es15',label:'Informe médico con nexo causal establecido',pts:25},
-    {id:'es16',label:'Informe de la Inspección de Trabajo',pts:25},
-    {id:'es17',label:'Incapacidad permanente reconocida por el INSS',pts:30},
-    {id:'es18',label:'Ausencia de medidas de seguridad (EPI, formación)',pts:20},
-    {id:'es19',label:'Informe de la Mutua Colaboradora favorable',pts:18},
-    {id:'es20',label:'Reconocimiento de recargo de prestaciones (art. 164 LGSS)',pts:28}
+    {id:'es13',label:'Parte de accidente de trabajo registrado ante la Mutua',pts:22},
+    {id:'es14',label:'Informe médico con nexo causal establecido',pts:25},
+    {id:'es15',label:'Informe de la Inspección de Trabajo',pts:25},
+    {id:'es16',label:'Incapacidad permanente reconocida por el INSS',pts:30},
+    {id:'es17',label:'Ausencia de medidas de seguridad (EPI, formación)',pts:20},
+    {id:'es18',label:'Reconocimiento de recargo de prestaciones (art. 164 LGSS)',pts:28},
+    {id:'esn10',label:'Nexo causal negado en informe médico pericial',pts:-28},
+    {id:'esn11',label:'Accidente por imprudencia temeraria del trabajador',pts:-25},
+    {id:'esn12',label:'EPI entregado con acuse de recibo y formación documentada',pts:-18},
+    {id:'esn13',label:'Enfermedad común sin relación con el trabajo acreditada',pts:-20},
+    {id:'esn14',label:'Informe de la Mutua desfavorable al trabajador',pts:-18}
   ]},
   {cat:'Discriminación y Despido Nulo', items:[
-    {id:'es21',label:'Trabajadora embarazada o en período de lactancia (nulidad automática)',pts:35},
-    {id:'es22',label:'Víctima de violencia de género',pts:35},
-    {id:'es23',label:'Despido durante baja médica (Ley Orgánica 1/2025)',pts:30},
-    {id:'es24',label:'Despido durante reducción de jornada por conciliación',pts:30},
-    {id:'es25',label:'Denuncia previa a la Inspección de Trabajo',pts:25},
-    {id:'es26',label:'Comunicaciones que evidencian motivo discriminatorio',pts:28},
-    {id:'es27',label:'Patrón comparativo (compañeros en situación similar no despedidos)',pts:20}
+    {id:'es19',label:'Trabajadora embarazada o en período de lactancia (nulidad automática)',pts:35},
+    {id:'es20',label:'Víctima de violencia de género',pts:35},
+    {id:'es21',label:'Despido durante baja médica (Ley Orgánica 1/2025)',pts:30},
+    {id:'es22',label:'Despido durante reducción de jornada por conciliación',pts:30},
+    {id:'es23',label:'Denuncia previa a la Inspección de Trabajo',pts:25},
+    {id:'es24',label:'Comunicaciones que evidencian motivo discriminatorio',pts:28},
+    {id:'es25',label:'Patrón comparativo (compañeros en situación similar no despedidos)',pts:20},
+    {id:'esn15',label:'Solo alegaciones sin prueba documental o testifical',pts:-22},
+    {id:'esn16',label:'Despido por causas objetivas acreditadas (ETOP)',pts:-20},
+    {id:'esn17',label:'Trabajador continuó trabajando normalmente tras supuesta discriminación',pts:-15}
   ]},
   {cat:'Acoso Laboral / Sexual (Mobbing)', items:[
-    {id:'es28',label:'Comunicaciones escritas que evidencian el acoso',pts:28},
-    {id:'es29',label:'Denuncia interna previa sin respuesta de la empresa',pts:22},
-    {id:'es30',label:'Protocolo de acoso activado formalmente',pts:20},
-    {id:'es31',label:'Múltiples testigos del acoso',pts:20},
-    {id:'es32',label:'Bajas médicas por ansiedad/depresión relacionadas',pts:22},
-    {id:'es33',label:'Denuncia ante la Inspección de Trabajo por acoso',pts:28}
+    {id:'es26',label:'Comunicaciones escritas que evidencian el acoso',pts:28},
+    {id:'es27',label:'Denuncia interna previa sin respuesta de la empresa',pts:22},
+    {id:'es28',label:'Protocolo de acoso activado formalmente',pts:20},
+    {id:'es29',label:'Múltiples testigos del acoso',pts:20},
+    {id:'es30',label:'Bajas médicas por ansiedad/depresión relacionadas',pts:22},
+    {id:'es31',label:'Denuncia ante la Inspección de Trabajo por acoso',pts:28},
+    {id:'esn18',label:'Incidente aislado sin patrón de conducta sistemático',pts:-18},
+    {id:'esn19',label:'Solo alegaciones sin testigos ni documentación',pts:-22},
+    {id:'esn20',label:'Relación sentimental previa consentida documentada',pts:-15}
   ]},
   {cat:'Salarios e Indemnizaciones Pendientes', items:[
-    {id:'es34',label:'Nóminas sin abonar (3 meses en 1 año — art. 50 ET)',pts:25},
-    {id:'es35',label:'Extracto bancario sin transferencias salariales',pts:22},
-    {id:'es36',label:'Finiquito incorrecto o incompleto',pts:18},
-    {id:'es37',label:'Vacaciones no disfrutadas no liquidadas',pts:15},
-    {id:'es38',label:'Pagas extraordinarias no abonadas',pts:18},
-    {id:'es39',label:'Comunicación de la empresa reconociendo deuda',pts:25}
+    {id:'es32',label:'Nóminas sin abonar (3 meses en 1 año — art. 50 ET)',pts:25},
+    {id:'es33',label:'Extracto bancario sin transferencias salariales',pts:22},
+    {id:'es34',label:'Finiquito incorrecto o incompleto',pts:18},
+    {id:'es35',label:'Vacaciones no disfrutadas no liquidadas',pts:15},
+    {id:'es36',label:'Pagas extraordinarias no abonadas',pts:18},
+    {id:'es37',label:'Comunicación de la empresa reconociendo deuda',pts:25},
+    {id:'esn21',label:'Finiquito correcto firmado con todos los conceptos',pts:-20},
+    {id:'esn22',label:'Nóminas pagadas con transferencias bancarias regulares',pts:-18},
+    {id:'esn23',label:'Vacaciones disfrutadas y firmadas en cuadrante',pts:-12}
   ]},
   {cat:'Modificación Sustancial / Movilidad Geográfica', items:[
-    {id:'es40',label:'Notificación de modificación sustancial sin causa acreditada',pts:20},
-    {id:'es41',label:'Modificación de funciones, turno o salario sin acuerdo',pts:18},
-    {id:'es42',label:'Traslado sin período de consultas',pts:22},
-    {id:'es43',label:'Perjuicio acreditado para conciliación familiar',pts:15}
+    {id:'es38',label:'Notificación de modificación sustancial sin causa acreditada',pts:20},
+    {id:'es39',label:'Modificación de funciones, turno o salario sin acuerdo',pts:18},
+    {id:'es40',label:'Traslado sin período de consultas',pts:22},
+    {id:'es41',label:'Perjuicio acreditado para conciliación familiar',pts:15},
+    {id:'esn24',label:'Trabajador aceptó la modificación por escrito',pts:-22},
+    {id:'esn25',label:'Causa organizativa o productiva acreditada',pts:-18},
+    {id:'esn26',label:'Período de consultas realizado correctamente',pts:-15}
   ]}
 ];
 
@@ -3022,7 +3149,12 @@ const CHECKLIST_PT = [
     {id:'pt3',label:'Ausência de audiência prévia do trabalhador (art. 355.º CT)',pts:20},
     {id:'pt4',label:'Testemunhas identificadas para o processo',pts:12},
     {id:'pt5',label:'Falta de comunicação escrita ao trabalhador',pts:18},
-    {id:'pt6',label:'Irregularidades procedimentais no processo disciplinar',pts:20}
+    {id:'pt6',label:'Irregularidades procedimentais no processo disciplinar',pts:20},
+    {id:'ptn1',label:'Processo disciplinar regularmente instruído com audiência prévia',pts:-20},
+    {id:'ptn2',label:'Trabalhador assinou acordo de cessação sem reservas',pts:-22},
+    {id:'ptn3',label:'Infracção disciplinar grave documentada e reiterada',pts:-25},
+    {id:'ptn4',label:'Trabalhador em período experimental (art. 114.º CT)',pts:-18},
+    {id:'ptn5',label:'Historial de advertências e sanções disciplinares',pts:-18}
   ]},
   {cat:'Trabalho Suplementar e Horário', items:[
     {id:'pt7',label:'Registo de trabalho suplementar documentado',pts:22},
@@ -3030,7 +3162,11 @@ const CHECKLIST_PT = [
     {id:'pt9',label:'Emails/mensagens fora do horário normal de trabalho',pts:15},
     {id:'pt10',label:'Recibos de vencimento sem pagamento de trabalho suplementar',pts:20},
     {id:'pt11',label:'Testemunhos sobre horário real praticado',pts:12},
-    {id:'pt12',label:'Ausência de registo de ponto (presunção favorável)',pts:18}
+    {id:'pt12',label:'Ausência de registo de ponto (presunção favorável)',pts:18},
+    {id:'ptn6',label:'Registo de ponto com horários uniformes (britânicos)',pts:-18},
+    {id:'ptn7',label:'Recibos com pagamento regular de trabalho suplementar',pts:-20},
+    {id:'ptn8',label:'Trabalhador isento de horário de trabalho (art. 218.º CT)',pts:-20},
+    {id:'ptn9',label:'Acordo de banco de horas validamente celebrado',pts:-15}
   ]},
   {cat:'Acidente de Trabalho / Doença Profissional', items:[
     {id:'pt13',label:'Participação de acidente de trabalho registada (art. 292.º LAT)',pts:22},
@@ -3039,7 +3175,12 @@ const CHECKLIST_PT = [
     {id:'pt16',label:'Incapacidade permanente reconhecida pela Segurança Social',pts:32},
     {id:'pt17',label:'Ausência de EPI ou medidas de segurança adequadas',pts:20},
     {id:'pt18',label:'Relatório de medicina do trabalho desfavorável à entidade patronal',pts:22},
-    {id:'pt19',label:'Doença profissional reconhecida pelo Centro Nacional de Proteção contra Riscos Profissionais',pts:28}
+    {id:'pt19',label:'Doença profissional reconhecida pelo CNPRP',pts:28},
+    {id:'ptn10',label:'Nexo causal negado em relatório médico-legal',pts:-28},
+    {id:'ptn11',label:'Acidente por negligência grave ou exclusiva do trabalhador',pts:-25},
+    {id:'ptn12',label:'EPI entregue com recibo e formação documentada',pts:-18},
+    {id:'ptn13',label:'Doença comum sem relação com a actividade profissional',pts:-20},
+    {id:'ptn14',label:'Relatório da ACT desfavorável ao trabalhador',pts:-22}
   ]},
   {cat:'Despedimento Ilícito e Discriminação', items:[
     {id:'pt20',label:'Trabalhadora grávida, puérpera ou lactante (nulidade — art. 63.º CT)',pts:35},
@@ -3048,7 +3189,10 @@ const CHECKLIST_PT = [
     {id:'pt23',label:'Despedimento como represália por exercício de direitos laborais',pts:25},
     {id:'pt24',label:'Discriminação por doença, deficiência, raça ou religião',pts:28},
     {id:'pt25',label:'Comunicações que evidenciam motivação discriminatória',pts:25},
-    {id:'pt26',label:'Queixa prévia na ACT ou na Comissão para a Igualdade no Trabalho (CIG)',pts:25}
+    {id:'pt26',label:'Queixa prévia na ACT ou na CIG',pts:25},
+    {id:'ptn15',label:'Apenas alegações sem qualquer prova documental',pts:-22},
+    {id:'ptn16',label:'Despedimento colectivo com processo negocial regular',pts:-18},
+    {id:'ptn17',label:'Trabalhador continuou a trabalhar normalmente após alegada discriminação',pts:-15}
   ]},
   {cat:'Assédio Moral / Sexual', items:[
     {id:'pt27',label:'Comunicações digitais que evidenciam assédio (email, mensagens)',pts:25},
@@ -3056,16 +3200,23 @@ const CHECKLIST_PT = [
     {id:'pt29',label:'Queixa interna prévia sem resposta da entidade patronal',pts:22},
     {id:'pt30',label:'Testemunhos escritos de colegas',pts:18},
     {id:'pt31',label:'Atestados psicológicos/psiquiátricos relacionados',pts:22},
-    {id:'pt32',label:'Padrão de conduta sistemático (não incidente isolado)',pts:20}
+    {id:'pt32',label:'Padrão de conduta sistemático (não incidente isolado)',pts:20},
+    {id:'ptn18',label:'Incidente isolado sem padrão de conduta reiterado',pts:-18},
+    {id:'ptn19',label:'Apenas alegações sem testemunhos ou documentação',pts:-22},
+    {id:'ptn20',label:'Relação pessoal prévia consentida documentada',pts:-15}
   ]},
   {cat:'Créditos Salariais e Verbas Rescisórias', items:[
-    {id:'pt33',label:'Retribuição em atraso superior a 30 dias (art. 394.º CT — resolução justa causa)',pts:28},
+    {id:'pt33',label:'Retribuição em atraso superior a 30 dias (art. 394.º CT)',pts:28},
     {id:'pt34',label:'Recibos de vencimento em falta ou incorretos',pts:20},
     {id:'pt35',label:'Extracto bancário sem transferências salariais',pts:22},
     {id:'pt36',label:'Férias vencidas e não gozadas não liquidadas',pts:18},
     {id:'pt37',label:'Subsídio de férias e de Natal não pagos',pts:18},
-    {id:'pt38',label:'Horas de formação profissional não ministradas (40h/ano — art. 131.º CT)',pts:12},
-    {id:'pt39',label:'Comunicação da DGERT ou Segurança Social',pts:15}
+    {id:'pt38',label:'Horas de formação profissional não ministradas (40h/ano)',pts:12},
+    {id:'pt39',label:'Comunicação da DGERT ou Segurança Social',pts:15},
+    {id:'ptn21',label:'Recibos de vencimento regularmente pagos e assinados',pts:-18},
+    {id:'ptn22',label:'Extracto bancário com transferências salariais regulares',pts:-20},
+    {id:'ptn23',label:'Férias gozadas e registadas em mapa de férias assinado',pts:-12},
+    {id:'ptn24',label:'Trabalhador assinou recibo de quitação sem reservas',pts:-20}
   ]},
   {cat:'Resolução pelo Trabalhador com Justa Causa', items:[
     {id:'pt40',label:'Comportamento culposo do empregador claramente identificado',pts:25},
@@ -3073,7 +3224,11 @@ const CHECKLIST_PT = [
     {id:'pt42',label:'Ofensas à integridade física, moral ou dignidade',pts:28},
     {id:'pt43',label:'Alteração substancial das condições de trabalho sem acordo',pts:20},
     {id:'pt44',label:'Notificação prévia enviada ao empregador (art. 395.º CT)',pts:18},
-    {id:'pt45',label:'Ausência de resposta do empregador à notificação',pts:12}
+    {id:'pt45',label:'Ausência de resposta do empregador à notificação',pts:12},
+    {id:'ptn25',label:'Trabalhador continuou a trabalhar por longo período após o facto',pts:-18},
+    {id:'ptn26',label:'Ausência de notificação prévia ao empregador',pts:-15},
+    {id:'ptn27',label:'Comportamento do empregador justificado por razões objectivas',pts:-18},
+    {id:'ptn28',label:'Trabalhador pediu demissão voluntariamente antes da resolução',pts:-25}
   ]}
 ];
 
@@ -3422,6 +3577,329 @@ function switchPactoTab(tab, btn) {
   document.querySelectorAll('.pacto-tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('pacto-tab-'+tab)?.classList.add('active');
   btn?.classList.add('active');
+}
+
+// ============================================================
+// EXPORT PDF — ACORDAI BRASIL + PACTOAI EUROPA
+// ============================================================
+
+function exportScorePDF() {
+  const selected = VERBAS_BR.filter(v => document.getElementById('chk_'+v.id)?.checked);
+  if(!selected.length){ alert('Selecione ao menos uma verba.'); return; }
+  const {jsPDF} = jspdf;
+  const doc = new jsPDF();
+  const orange=[234,88,12], ml=14, pw=210;
+
+  function addHeader(titulo) {
+    doc.setFillColor(234,88,12);doc.rect(10,9,2,11,'F');doc.rect(10,9,8,2,'F');doc.rect(10,13,6,2,'F');
+    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('az',22,17);doc.setTextColor(234,88,12);doc.text('AI',29,17);
+    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.text('AcordAI Brasil — Simulador de Acordos',22,22);
+    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('LC',185,14);doc.setTextColor(234,88,12);doc.text('A',191,14);
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
+    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
+    doc.text(titulo,105,34,{align:'center'});
+  }
+  function addFooter() {
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
+      doc.setFontSize(7);doc.setTextColor(107,114,128);
+      doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág.'+i+'/'+pages,105,288,{align:'center'});
+    }
+  }
+
+  // Dados gerais
+  const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
+  const admStr = document.getElementById('sc-adm')?.value||'';
+  const rescisao = document.getElementById('sc-rescisao')?.value||'';
+  const rescLabel = {indireta:'Rescisão indireta por falta grave',sem_causa:'Dispensa sem justa causa',com_causa:'Dispensa com justa causa',acordo:'Acordo entre partes'}[rescisao]||'—';
+  const scoreNum = parseInt(document.getElementById('sc-score-num')?.textContent)||0;
+  const scoreLabel = document.getElementById('sc-score-label')?.textContent||'—';
+  const cons = document.getElementById('sc-cen-cons')?.textContent||'—';
+  const prov = document.getElementById('sc-cen-prov')?.textContent||'—';
+  const agr = document.getElementById('sc-cen-agr')?.textContent||'—';
+  const pctCons = document.getElementById('sc-cen-cons-pct')?.textContent||'—';
+  const pctProv = document.getElementById('sc-cen-prov-pct')?.textContent||'—';
+  const pctAgr = document.getElementById('sc-cen-agr-pct')?.textContent||'—';
+  const rec = document.getElementById('sc-recomendacao')?.innerText||'—';
+
+  // PÁG 1 — SCORE + CENÁRIOS
+  addHeader('ACORDAI BRASIL — RELATÓRIO DE SIMULAÇÃO DE ACORDO');
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('DADOS DO CASO',ml,42);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+34,43);
+  doc.autoTable({startY:45,margin:{left:ml,right:14},
+    body:[['Salário mensal',salario?fmtBRL(salario):'—'],['Admissão',admStr||'—'],['Tipo de rescisão',rescLabel]],
+    theme:'plain',
+    columnStyles:{0:{fontStyle:'bold',cellWidth:44,fontSize:8,textColor:[107,114,128]},1:{fontSize:8}},
+    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}}});
+
+  // Score bar
+  const yS=doc.lastAutoTable.finalY+8;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('SCORE PONDERADO DO CASO',ml,yS);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yS+1,ml+58,yS+1);
+  const bY=yS+6,bW=120,bH=8;
+  doc.setFillColor(229,231,235);doc.rect(ml,bY,bW,bH,'F');
+  doc.setFillColor(234,88,12);doc.rect(ml,bY,(bW*scoreNum/100),bH,'F');
+  doc.setFontSize(18);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
+  doc.text(scoreNum+'/100',ml+bW+5,bY+7);
+  doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+  doc.text(scoreLabel,ml,bY+16);
+
+  // Tabela por verba
+  const yV=bY+24;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('ANÁLISE POR VERBA',ml,yV);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yV+1,ml+42,yV+1);
+  const tbody=document.getElementById('sc-verbas-tbody');
+  const tfoot=document.getElementById('sc-verbas-tfoot');
+  const rows=[];
+  if(tbody) tbody.querySelectorAll('tr').forEach(tr=>{
+    const tds=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(tds.length) rows.push(tds.slice(0,5));
+  });
+  const footRows=[];
+  if(tfoot) tfoot.querySelectorAll('tr').forEach(tr=>{
+    const tds=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(tds.length) footRows.push([tds[0],'',tds[2]||'','',tds[4]||'']);
+  });
+  doc.autoTable({startY:yV+4,margin:{left:ml,right:14},
+    head:[['Verba','Valor pleiteado','Score','Prob.','Esperado']],
+    body:rows.length?rows:[['—','—','—','—','—']],
+    foot:footRows,
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    footStyles:{fillColor:[255,247,237],textColor:[234,88,12],fontStyle:'bold',fontSize:8},
+    styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]}});
+
+  // Cenários
+  const yC=doc.lastAutoTable.finalY+8;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('CENÁRIOS DE ACORDO',ml,yC);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yC+1,ml+46,yC+1);
+  doc.autoTable({startY:yC+4,margin:{left:ml,right:14},
+    head:[['Cenário','Valor','Referência','']],
+    body:[['Conservador',cons,pctCons,'Mínimo aceitável'],['Provável',prov,pctProv,'✓ RECOMENDADO'],['Agressivo',agr,pctAgr,'Máximo sustentável']],
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    styles:{fontSize:8,cellPadding:{top:3,bottom:3,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    didParseCell:function(d){if(d.row.index===1)d.cell.styles.textColor=[234,88,12];}});
+
+  // Recomendação
+  const yR=doc.lastAutoTable.finalY+6;
+  doc.setFillColor(255,247,237);doc.rect(ml,yR,pw-28,22,'F');
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yR,pw-28,22);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
+  doc.text('RECOMENDAÇÃO DE NEGOCIAÇÃO',ml+3,yR+6);
+  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
+  doc.text(doc.splitTextToSize(rec,pw-34),ml+3,yR+12);
+
+  // PÁG 2 — CHECKLIST
+  doc.addPage();
+  addHeader('ACORDAI BRASIL — CHECKLIST PROBATÓRIO');
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text('PROVAS MARCADAS',ml,42);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+40,43);
+  const provas=[];
+  CHECKLIST_BR.forEach(cat=>cat.items.forEach(item=>{
+    const el=document.getElementById(item.id);
+    if(el?.checked) provas.push([cat.cat,item.label,item.pts>0?'+'+item.pts:String(item.pts)]);
+  }));
+  doc.autoTable({startY:46,margin:{left:ml,right:14},
+    head:[['Categoria','Prova','Pts']],
+    body:provas.length?provas:[['—','Nenhuma prova marcada','']],
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    columnStyles:{0:{cellWidth:42},1:{cellWidth:'auto'},2:{cellWidth:12,halign:'center',fontStyle:'bold'}},
+    didParseCell:function(d){
+      if(d.column.index===2&&d.cell.raw){
+        d.cell.styles.textColor=String(d.cell.raw).startsWith('-')?[185,28,28]:[234,88,12];
+      }
+    }});
+
+  const yAv=doc.lastAutoTable.finalY+8;
+  doc.setFillColor(254,242,242);doc.rect(ml,yAv,pw-28,14,'F');
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
+  doc.text('⚠ AVISO LEGAL: Relatório de apoio à negociação. Valores e probabilidades são estimativas. Não constituem garantia de resultado judicial.',ml+3,yAv+5);
+  doc.text('Consulte sempre um advogado especializado antes de tomar decisões.',ml+3,yAv+10);
+
+  addFooter();
+  doc.save('AcordAI_Brasil_Score'+scoreNum+'.pdf');
+}
+
+function exportPactoPDF() {
+  const pais = pactoCountry;
+  const salario = parseFloat(document.getElementById('pa-salario')?.value)||0;
+  if(!salario){ alert(pais==='es'?'Complete el salario antes de exportar.':'Complete o salário antes de exportar.'); return; }
+  const {jsPDF} = jspdf;
+  const doc = new jsPDF();
+  const orange=[234,88,12], ml=14, pw=210;
+  const isES = pais==='es';
+  const paisNome = isES?'España':'Portugal';
+  const fmtEur = v => '€'+(typeof v==='number'?v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'):v);
+
+  function addHeader(titulo) {
+    doc.setFillColor(234,88,12);doc.rect(10,9,2,11,'F');doc.rect(10,9,8,2,'F');doc.rect(10,13,6,2,'F');
+    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('az',22,17);doc.setTextColor(234,88,12);doc.text('AI',29,17);
+    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.text('PactoAI Europa — '+paisNome,22,22);
+    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+    doc.text('LC',185,14);doc.setTextColor(234,88,12);doc.text('A',191,14);
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
+    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
+    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
+    doc.text(titulo,105,34,{align:'center'});
+  }
+  function addFooter() {
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
+      doc.setFontSize(7);doc.setTextColor(107,114,128);
+      doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág.'+i+'/'+pages,105,288,{align:'center'});
+    }
+  }
+
+  const inicioStr=document.getElementById('pa-inicio')?.value||'';
+  const fimStr=document.getElementById('pa-fim')?.value||'';
+  const contrato=document.getElementById('pa-contrato')?.value||'indefinido';
+  const tipo=document.getElementById('pa-tipo')?.value||'improcedente';
+  const scoreNum=parseInt(document.getElementById('pa-score-num')?.textContent)||0;
+  const scoreLabel=document.getElementById('pa-score-label')?.textContent||'—';
+  const anos=document.getElementById('pa-anos')?.textContent||'—';
+  const base=document.getElementById('pa-base')?.textContent||'—';
+  const cons=document.getElementById('pa-cen-cons')?.textContent||'—';
+  const prov=document.getElementById('pa-cen-prov')?.textContent||'—';
+  const agr=document.getElementById('pa-cen-agr')?.textContent||'—';
+  const pctCons=document.getElementById('pa-pct-cons')?.textContent||'—';
+  const pctProv=document.getElementById('pa-pct-prov')?.textContent||'—';
+  const pctAgr=document.getElementById('pa-pct-agr')?.textContent||'—';
+  const rec=document.getElementById('pa-recomendacao')?.innerText||'—';
+  const iaText=document.getElementById('pa-ia-analise')?.textContent||'—';
+  const tipoLabel=isES?{improcedente:'Improcedente (art.56 ET)',procedente:'Procedente',nula:'Nulo/discriminatorio',objetivo:'Objetivo (art.52 ET)'}[tipo]:
+    {improcedente:'Despedimento ilícito',procedente:'Despedimento lícito',nula:'Despedimento nulo',objetivo:'Despedimento colectivo'}[tipo];
+
+  // PÁG 1
+  addHeader('PACTOAI EUROPA — '+paisNome.toUpperCase()+' — SIMULAÇÃO DE ACORDO LABORAL');
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text(isES?'DATOS DEL CASO':'DADOS DO CASO',ml,42);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+34,43);
+  doc.autoTable({startY:45,margin:{left:ml,right:14},
+    body:[[isES?'País':'País',paisNome],[isES?'Salario bruto':'Salário bruto',fmtEur(salario)],[isES?'Inicio / Baja':'Início / Cessação',inicioStr+' / '+fimStr],[isES?'Años trabajados':'Anos trabalhados',anos],[isES?'Tipo despido':'Tipo despedimento',tipoLabel||tipo],[isES?'Indemnización base':'Compensação base',base]],
+    theme:'plain',
+    columnStyles:{0:{fontStyle:'bold',cellWidth:48,fontSize:8,textColor:[107,114,128]},1:{fontSize:8}},
+    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}}});
+
+  const yS=doc.lastAutoTable.finalY+8;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text(isES?'PUNTUACIÓN DEL CASO':'SCORE DO CASO',ml,yS);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yS+1,ml+36,yS+1);
+  const bY=yS+6,bW=120,bH=7;
+  doc.setFillColor(229,231,235);doc.rect(ml,bY,bW,bH,'F');
+  doc.setFillColor(234,88,12);doc.rect(ml,bY,(bW*scoreNum/100),bH,'F');
+  doc.setFontSize(16);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
+  doc.text(scoreNum+'/100',ml+bW+5,bY+6);
+  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
+  doc.text(scoreLabel,ml,bY+14);
+
+  // Tabela por verba
+  const yV=bY+22;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text(isES?'ANÁLISIS POR CONCEPTO':'ANÁLISE POR VERBA',ml,yV);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yV+1,ml+52,yV+1);
+  const tbody=document.getElementById('pa-verbas-tbody');
+  const tfoot=document.getElementById('pa-verbas-tfoot');
+  const rows=[];
+  if(tbody) tbody.querySelectorAll('tr').forEach(tr=>{
+    const tds=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(tds.length) rows.push(tds.slice(0,5));
+  });
+  const footRows=[];
+  if(tfoot) tfoot.querySelectorAll('tr').forEach(tr=>{
+    const tds=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(tds.length) footRows.push([tds[0],'',tds[2]||'','',tds[4]||'']);
+  });
+  doc.autoTable({startY:yV+4,margin:{left:ml,right:14},
+    head:[[isES?'Concepto':'Verba',isES?'Valor':'Valor','Score',isES?'Prob.':'Prob.',isES?'Esperado':'Esperado']],
+    body:rows.length?rows:[['—','—','—','—','—']],
+    foot:footRows,
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    footStyles:{fillColor:[255,247,237],textColor:[234,88,12],fontStyle:'bold',fontSize:8},
+    styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]}});
+
+  const yC=doc.lastAutoTable.finalY+6;
+  doc.autoTable({startY:yC,margin:{left:ml,right:14},
+    head:[[isES?'Escenario':'Cenário',isES?'Valor':'Valor','%',isES?'Recomendación':'Recomendação']],
+    body:[[isES?'Conservador':'Conservador',cons,pctCons,isES?'Mínimo aceptable':'Mínimo aceitável'],[isES?'Probable':'Provável',prov,pctProv,'✓ RECOMENDADO'],[isES?'Agresivo':'Agressivo',agr,pctAgr,isES?'Máximo sostenible':'Máximo sustentável']],
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    styles:{fontSize:8,cellPadding:{top:3,bottom:3,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    didParseCell:function(d){if(d.row.index===1)d.cell.styles.textColor=[234,88,12];}});
+
+  const yR=doc.lastAutoTable.finalY+6;
+  doc.setFillColor(255,247,237);doc.rect(ml,yR,pw-28,20,'F');
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yR,pw-28,20);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
+  doc.text(isES?'RECOMENDACIÓN':'RECOMENDAÇÃO',ml+3,yR+6);
+  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
+  doc.text(doc.splitTextToSize(rec,pw-34),ml+3,yR+12);
+
+  // PÁG 2 — ANÁLISE IA + CHECKLIST
+  doc.addPage();
+  addHeader('PACTOAI EUROPA — ANÁLISE JURÍDICA');
+  const yIA=42;
+  doc.setFillColor(255,247,237);doc.rect(ml,yIA,pw-28,30,'F');
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yIA,pw-28,30);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
+  doc.text(isES?'ANÁLISIS DE IA — RIESGO JURÍDICO':'ANÁLISE DE IA — RISCO JURÍDICO',ml+3,yIA+6);
+  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
+  doc.text(doc.splitTextToSize(iaText,pw-34),ml+3,yIA+12);
+
+  const yChk=yIA+36;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  doc.text(isES?'CHECKLIST PROBATORIO':'CHECKLIST PROBATÓRIO',ml,yChk);
+  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yChk+1,ml+52,yChk+1);
+  const lista=pais==='pt'?CHECKLIST_PT:CHECKLIST_ES;
+  const provas=[];
+  lista.forEach(cat=>cat.items.forEach(item=>{
+    const el=document.getElementById(item.id);
+    if(el?.checked) provas.push([cat.cat,item.label,'+'+item.pts]);
+  }));
+  doc.autoTable({startY:yChk+4,margin:{left:ml,right:14},
+    head:[[isES?'Categoría':'Categoria',isES?'Prueba':'Prova','Pts']],
+    body:provas.length?provas:[['—',isES?'Ninguna prueba marcada':'Nenhuma prova marcada','']],
+    theme:'striped',
+    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
+    styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
+    alternateRowStyles:{fillColor:[249,250,251]},
+    columnStyles:{0:{cellWidth:42},1:{cellWidth:'auto'},2:{cellWidth:12,halign:'center',fontStyle:'bold',textColor:[234,88,12]}}});
+
+  const yAv=doc.lastAutoTable.finalY+8;
+  doc.setFillColor(254,242,242);doc.rect(ml,yAv,pw-28,14,'F');
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
+  const aviso=isES
+    ?'⚠ AVISO LEGAL: Informe de apoyo a la negociación. Valores y probabilidades son estimaciones. No constituyen garantía de resultado judicial.'
+    :'⚠ AVISO LEGAL: Relatório de apoio à negociação. Valores e probabilidades são estimativas. Não constituem garantia de resultado judicial.';
+  doc.text(doc.splitTextToSize(aviso,pw-34),ml+3,yAv+5);
+
+  addFooter();
+  doc.save('PactoAI_'+paisNome+'_Score'+scoreNum+'.pdf');
 }
 
 // ============================================================
