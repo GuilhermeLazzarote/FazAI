@@ -2801,11 +2801,15 @@ const CHECKLIST_BR = [
 ];
 
 function scoreToProb(score) {
-  if(score<=25)  return {prob:0.25, label:'20-40%', pCons:0.50, pProv:0.65, pAgr:0.80};
-  if(score<=50)  return {prob:0.50, label:'40-60%', pCons:0.60, pProv:0.75, pAgr:0.88};
-  if(score<=70)  return {prob:0.68, label:'60-75%', pCons:0.68, pProv:0.85, pAgr:0.95};
-  if(score<=85)  return {prob:0.82, label:'75-88%', pCons:0.75, pProv:0.90, pAgr:0.98};
-  return                {prob:0.92, label:'88-95%', pCons:0.82, pProv:0.93, pAgr:1.00};
+  // Proporcional ao score: score 14 => ~18-29%, score 80 => ~64-82%
+  const pCons = Math.min(parseFloat((score * 0.0065 + 0.08).toFixed(2)), 0.75);
+  const pProv = Math.min(parseFloat((score * 0.0075 + 0.12).toFixed(2)), 0.92);
+  const pAgr  = Math.min(parseFloat((score * 0.0082 + 0.16).toFixed(2)), 1.00);
+  const cPct = Math.round(pCons*100);
+  const pPct = Math.round(pProv*100);
+  const aPct = Math.round(pAgr*100);
+  const label = cPct+'\u2013'+aPct+'%';
+  return {prob: pProv, label, pCons, pProv, pAgr};
 }
 
 function getScoreBase() {
@@ -3744,35 +3748,83 @@ function exportPactoPDF() {
   if(!salario){ alert(pais==='es'?'Complete el salario antes de exportar.':'Complete o salário antes de exportar.'); return; }
   const {jsPDF} = jspdf;
   const doc = new jsPDF();
-  const orange=[234,88,12], ml=14, pw=210;
+  const pw=210, ph=297, ml=14;
   const isES = pais==='es';
   const paisNome = isES?'España':'Portugal';
   const fmtEur = v => '€'+(typeof v==='number'?v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'):v);
 
-  function addHeader(titulo) {
-    doc.setFillColor(234,88,12);doc.rect(10,9,2,11,'F');doc.rect(10,9,8,2,'F');doc.rect(10,13,6,2,'F');
-    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('az',22,17);doc.setTextColor(234,88,12);doc.text('AI',29,17);
-    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('PactoAI Europa — '+paisNome,22,22);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-    doc.text('LC',185,14);doc.setTextColor(234,88,12);doc.text('A',191,14);
-    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('LCA — Legal Calculation Associate',196,19,{align:'right'});
-    doc.setDrawColor(234,88,12);doc.setLineWidth(0.8);doc.line(0,26,pw,26);
-    doc.setTextColor(17,24,39);doc.setFontSize(11);doc.setFont(undefined,'bold');
-    doc.text(titulo,105,34,{align:'center'});
+  // Cores dark
+  const BG    = [10,10,10];
+  const PANEL = [26,26,26];
+  const OR    = [234,88,12];
+  const WHITE = [255,255,255];
+  const GRAY  = [120,120,120];
+  const LGRAY = [60,60,60];
+
+  function fillPage() {
+    doc.setFillColor(...BG);
+    doc.rect(0,0,pw,ph,'F');
   }
+
+  function addHeader(titulo) {
+    fillPage();
+    // Linha laranja topo
+    doc.setFillColor(...OR);
+    doc.rect(0,0,pw,2,'F');
+    // Barra lateral laranja
+    doc.rect(0,0,3,ph,'F');
+    // Logo F
+    doc.rect(10,10,2,11,'F');
+    doc.rect(10,10,8,2,'F');
+    doc.rect(10,15,6,2,'F');
+    // Nome
+    doc.setFontSize(12);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+    doc.text('az',22,18);
+    doc.setTextColor(...OR);
+    doc.text('AI',29,18);
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+    doc.text('PactoAI Europa — '+paisNome,22,23);
+    // Badge país
+    doc.setFillColor(...PANEL);
+    doc.rect(pw-60,8,46,10,3,'F');
+    doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+    doc.text((isES?'🇪🇸 ESPAÑA':'🇵🇹 PORTUGAL'),pw-37,14,{align:'center'});
+    // LCA
+    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+    doc.text('LCA — Legal Calculation Associate',pw-14,20,{align:'right'});
+    // Linha separadora
+    doc.setDrawColor(...LGRAY);doc.setLineWidth(0.3);doc.line(10,27,pw-10,27);
+    // Título
+    doc.setFontSize(10.5);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+    doc.text(titulo,105,35,{align:'center'});
+  }
+
   function addFooter() {
     const pages=doc.internal.getNumberOfPages();
     for(let i=1;i<=pages;i++){
       doc.setPage(i);
-      doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(14,283,196,283);
-      doc.setFontSize(7);doc.setTextColor(107,114,128);
+      doc.setDrawColor(...LGRAY);doc.setLineWidth(0.3);doc.line(10,283,pw-10,283);
+      doc.setFontSize(6.5);doc.setTextColor(...GRAY);
       doc.text('LCA — Legal Calculation Associate · (11) 97329-4795 · (11) 96449-6270 · Pág.'+i+'/'+pages,105,288,{align:'center'});
     }
   }
 
+  function darkTable(opts) {
+    const defaults = {
+      theme:'plain',
+      styles:{textColor:WHITE, fontSize:8, cellPadding:{top:3,bottom:3,left:4,right:4}},
+      headStyles:{fillColor:OR, textColor:WHITE, fontStyle:'bold', fontSize:8},
+      alternateRowStyles:{fillColor:PANEL},
+      didDrawCell: function(data) {
+        // Borda sutil entre linhas
+        doc.setDrawColor(...LGRAY);doc.setLineWidth(0.2);
+        doc.line(data.cell.x, data.cell.y+data.cell.height, data.cell.x+data.cell.width, data.cell.y+data.cell.height);
+      }
+    };
+    return Object.assign({}, defaults, opts);
+  }
+
+  // Dados
   const inicioStr=document.getElementById('pa-inicio')?.value||'';
   const fimStr=document.getElementById('pa-fim')?.value||'';
   const contrato=document.getElementById('pa-contrato')?.value||'indefinido';
@@ -3789,37 +3841,61 @@ function exportPactoPDF() {
   const pctAgr=document.getElementById('pa-pct-agr')?.textContent||'—';
   const rec=document.getElementById('pa-recomendacao')?.innerText||'—';
   const iaText=document.getElementById('pa-ia-analise')?.textContent||'—';
-  const tipoLabel=isES?{improcedente:'Improcedente (art.56 ET)',procedente:'Procedente',nula:'Nulo/discriminatorio',objetivo:'Objetivo (art.52 ET)'}[tipo]:
-    {improcedente:'Despedimento ilícito',procedente:'Despedimento lícito',nula:'Despedimento nulo',objetivo:'Despedimento colectivo'}[tipo];
+  const tipoLabel=isES
+    ?{improcedente:'Improcedente (art.56 ET)',procedente:'Procedente',nula:'Nulo/discriminatorio',objetivo:'Objetivo (art.52 ET)'}[tipo]||tipo
+    :{improcedente:'Despedimento ilícito',procedente:'Despedimento lícito',nula:'Despedimento nulo',objetivo:'Despedimento colectivo'}[tipo]||tipo;
 
-  // PÁG 1
-  addHeader('PACTOAI EUROPA — '+paisNome.toUpperCase()+' — SIMULAÇÃO DE ACORDO LABORAL');
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'DATOS DEL CASO':'DADOS DO CASO',ml,42);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,43,ml+34,43);
-  doc.autoTable({startY:45,margin:{left:ml,right:14},
-    body:[[isES?'País':'País',paisNome],[isES?'Salario bruto':'Salário bruto',fmtEur(salario)],[isES?'Inicio / Baja':'Início / Cessação',inicioStr+' / '+fimStr],[isES?'Años trabajados':'Anos trabalhados',anos],[isES?'Tipo despido':'Tipo despedimento',tipoLabel||tipo],[isES?'Indemnización base':'Compensação base',base]],
-    theme:'plain',
-    columnStyles:{0:{fontStyle:'bold',cellWidth:48,fontSize:8,textColor:[107,114,128]},1:{fontSize:8}},
-    styles:{cellPadding:{top:2,bottom:2,left:0,right:4}}});
+  // ── PÁG 1 — SCORE + CENÁRIOS ──
+  addHeader(isES?'SIMULACIÓN DE ACUERDO LABORAL':'SIMULAÇÃO DE ACORDO LABORAL');
 
+  // Dados do caso
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.text(isES?'DATOS DEL CASO':'DADOS DO CASO',ml,43);
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,44.5,ml+38,44.5);
+
+  doc.autoTable(darkTable({
+    startY:47,margin:{left:ml,right:14},
+    body:[
+      [isES?'País':'País', paisNome+(isES?' 🇪🇸':' 🇵🇹')],
+      [isES?'Salario bruto':'Salário bruto', fmtEur(salario)],
+      [isES?'Inicio / Baja':'Início / Cessação', inicioStr+' / '+fimStr],
+      [isES?'Años trabajados':'Anos trabalhados', anos],
+      [isES?'Tipo despido':'Tipo despedimento', tipoLabel],
+      [isES?'Indemnización base':'Compensação base', base]
+    ],
+    columnStyles:{0:{fontStyle:'bold',cellWidth:52,textColor:GRAY},1:{textColor:WHITE}}
+  }));
+
+  // Score card
   const yS=doc.lastAutoTable.finalY+8;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
-  doc.text(isES?'PUNTUACIÓN DEL CASO':'SCORE DO CASO',ml,yS);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yS+1,ml+36,yS+1);
-  const bY=yS+6,bW=120,bH=7;
-  doc.setFillColor(229,231,235);doc.rect(ml,bY,bW,bH,'F');
-  doc.setFillColor(234,88,12);doc.rect(ml,bY,(bW*scoreNum/100),bH,'F');
-  doc.setFontSize(16);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(scoreNum+'/100',ml+bW+5,bY+6);
-  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
-  doc.text(scoreLabel,ml,bY+14);
+  doc.setFillColor(...PANEL);
+  doc.roundedRect(ml,yS,pw-28,26,3,3,'F');
+  doc.setDrawColor(...OR);doc.setLineWidth(0.5);
+  doc.roundedRect(ml,yS,pw-28,26,3,3);
 
-  // Tabela por verba
-  const yV=bY+22;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  // Barra de score
+  const bW=pw-28-80, bH=6, bX=ml+8, bY=yS+8;
+  doc.setFillColor(...LGRAY);doc.rect(bX,bY,bW,bH,'F');
+  doc.setFillColor(...OR);doc.rect(bX,bY,(bW*scoreNum/100),bH,'F');
+
+  // Número
+  doc.setFontSize(24);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.text(scoreNum+'',pw-32,yS+20,{align:'right'});
+  doc.setFontSize(9);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text('/100',pw-14,yS+20);
+
+  // Label
+  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(...WHITE);
+  doc.text(scoreLabel,bX,bY-3);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...GRAY);
+  doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+5);
+
+  // Tabela por conceito
+  const yV=yS+32;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
   doc.text(isES?'ANÁLISIS POR CONCEPTO':'ANÁLISE POR VERBA',ml,yV);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yV+1,ml+52,yV+1);
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yV+1.5,ml+55,yV+1.5);
+
   const tbody=document.getElementById('pa-verbas-tbody');
   const tfoot=document.getElementById('pa-verbas-tfoot');
   const rows=[];
@@ -3832,75 +3908,103 @@ function exportPactoPDF() {
     const tds=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
     if(tds.length) footRows.push([tds[0],'',tds[2]||'','',tds[4]||'']);
   });
-  doc.autoTable({startY:yV+4,margin:{left:ml,right:14},
+
+  doc.autoTable(darkTable({
+    startY:yV+4,margin:{left:ml,right:14},
     head:[[isES?'Concepto':'Verba',isES?'Valor':'Valor','Score',isES?'Prob.':'Prob.',isES?'Esperado':'Esperado']],
     body:rows.length?rows:[['—','—','—','—','—']],
     foot:footRows,
-    theme:'striped',
-    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-    footStyles:{fillColor:[255,247,237],textColor:[234,88,12],fontStyle:'bold',fontSize:8},
-    styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
-    alternateRowStyles:{fillColor:[249,250,251]}});
+    headStyles:{fillColor:OR,textColor:WHITE,fontStyle:'bold',fontSize:8},
+    footStyles:{fillColor:[40,20,0],textColor:OR,fontStyle:'bold',fontSize:8},
+    columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'right'},1:{halign:'right'}}
+  }));
 
+  // Cenários
   const yC=doc.lastAutoTable.finalY+6;
-  doc.autoTable({startY:yC,margin:{left:ml,right:14},
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.text(isES?'ESCENARIOS DE ACUERDO':'CENÁRIOS DE ACORDO',ml,yC);
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yC+1.5,ml+50,yC+1.5);
+
+  doc.autoTable(darkTable({
+    startY:yC+4,margin:{left:ml,right:14},
     head:[[isES?'Escenario':'Cenário',isES?'Valor':'Valor','%',isES?'Recomendación':'Recomendação']],
-    body:[[isES?'Conservador':'Conservador',cons,pctCons,isES?'Mínimo aceptable':'Mínimo aceitável'],[isES?'Probable':'Provável',prov,pctProv,'✓ RECOMENDADO'],[isES?'Agresivo':'Agressivo',agr,pctAgr,isES?'Máximo sostenible':'Máximo sustentável']],
-    theme:'striped',
-    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-    styles:{fontSize:8,cellPadding:{top:3,bottom:3,left:3,right:3}},
-    alternateRowStyles:{fillColor:[249,250,251]},
-    didParseCell:function(d){if(d.row.index===1)d.cell.styles.textColor=[234,88,12];}});
+    body:[
+      [isES?'Conservador':'Conservador',cons,pctCons,isES?'Mínimo aceptable':'Mínimo aceitável'],
+      [isES?'Probable ✓':'Provável ✓',prov,pctProv,'✓ RECOMENDADO'],
+      [isES?'Agresivo':'Agressivo',agr,pctAgr,isES?'Máximo sostenible':'Máximo sustentável']
+    ],
+    didParseCell:function(d){if(d.row.index===1){d.cell.styles.textColor=OR;d.cell.styles.fontStyle='bold';}}
+  }));
 
+  // Recomendação — altura dinâmica
   const yR=doc.lastAutoTable.finalY+6;
-  doc.setFillColor(255,247,237);doc.rect(ml,yR,pw-28,20,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yR,pw-28,20);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(isES?'RECOMENDACIÓN':'RECOMENDAÇÃO',ml+3,yR+6);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  doc.text(doc.splitTextToSize(rec,pw-34),ml+3,yR+12);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');
+  const recLines=doc.splitTextToSize(rec,pw-36);
+  const recH=Math.max(22, recLines.length*4.5+10);
+  doc.setFillColor(40,20,0);
+  doc.roundedRect(ml,yR,pw-28,recH,3,3,'F');
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);
+  doc.roundedRect(ml,yR,pw-28,recH,3,3);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.text(isES?'RECOMENDACIÓN':'RECOMENDAÇÃO',ml+4,yR+6);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...WHITE);
+  doc.text(recLines,ml+4,yR+12);
 
-  // PÁG 2 — ANÁLISE IA + CHECKLIST
+  // ── PÁG 2 — ANÁLISE IA + CHECKLIST ──
   doc.addPage();
-  addHeader('PACTOAI EUROPA — ANÁLISE JURÍDICA');
-  const yIA=42;
-  doc.setFillColor(255,247,237);doc.rect(ml,yIA,pw-28,30,'F');
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.5);doc.rect(ml,yIA,pw-28,30);
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(234,88,12);
-  doc.text(isES?'ANÁLISIS DE IA — RIESGO JURÍDICO':'ANÁLISE DE IA — RISCO JURÍDICO',ml+3,yIA+6);
-  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(17,24,39);
-  doc.text(doc.splitTextToSize(iaText,pw-34),ml+3,yIA+12);
+  addHeader(isES?'ANÁLISIS JURÍDICO':'ANÁLISE JURÍDICA');
 
-  const yChk=yIA+36;
-  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
+  // IA
+  const yIA=43;
+  doc.setFillColor(20,10,0);
+  doc.roundedRect(ml,yIA,pw-28,36,3,3,'F');
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);
+  doc.roundedRect(ml,yIA,pw-28,36,3,3);
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
+  doc.text(isES?'ANÁLISIS DE IA — RIESGO JURÍDICO':'ANÁLISE DE IA — RISCO JURÍDICO',ml+4,yIA+6);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(...WHITE);
+  const iaLines=doc.splitTextToSize(iaText,pw-36);
+  doc.text(iaLines,ml+4,yIA+12);
+
+  // Checklist
+  const yChk=yIA+42;
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(...OR);
   doc.text(isES?'CHECKLIST PROBATORIO':'CHECKLIST PROBATÓRIO',ml,yChk);
-  doc.setDrawColor(234,88,12);doc.setLineWidth(0.3);doc.line(ml,yChk+1,ml+52,yChk+1);
+  doc.setDrawColor(...OR);doc.setLineWidth(0.4);doc.line(ml,yChk+1.5,ml+55,yChk+1.5);
+
   const lista=pais==='pt'?CHECKLIST_PT:CHECKLIST_ES;
   const provas=[];
   lista.forEach(cat=>cat.items.forEach(item=>{
     const el=document.getElementById(item.id);
-    if(el?.checked) provas.push([cat.cat,item.label,'+'+item.pts]);
+    if(el?.checked) provas.push([cat.cat,item.label,item.pts>0?'+'+item.pts:String(item.pts)]);
   }));
-  doc.autoTable({startY:yChk+4,margin:{left:ml,right:14},
+
+  doc.autoTable(darkTable({
+    startY:yChk+4,margin:{left:ml,right:14},
     head:[[isES?'Categoría':'Categoria',isES?'Prueba':'Prova','Pts']],
     body:provas.length?provas:[['—',isES?'Ninguna prueba marcada':'Nenhuma prova marcada','']],
-    theme:'striped',
-    headStyles:{fillColor:orange,fontSize:8,fontStyle:'bold',textColor:255},
-    styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},
-    alternateRowStyles:{fillColor:[249,250,251]},
-    columnStyles:{0:{cellWidth:42},1:{cellWidth:'auto'},2:{cellWidth:12,halign:'center',fontStyle:'bold',textColor:[234,88,12]}}});
+    columnStyles:{0:{cellWidth:45},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center',fontStyle:'bold'}},
+    didParseCell:function(d){
+      if(d.column.index===2&&d.cell.raw){
+        d.cell.styles.textColor=String(d.cell.raw).startsWith('-')?[248,113,113]:OR;
+      }
+    }
+  }));
 
+  // Aviso legal
   const yAv=doc.lastAutoTable.finalY+8;
-  doc.setFillColor(254,242,242);doc.rect(ml,yAv,pw-28,14,'F');
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
+  doc.setFillColor(40,10,10);
+  doc.roundedRect(ml,yAv,pw-28,16,3,3,'F');
+  doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(248,113,113);
   const aviso=isES
-    ?'⚠ AVISO LEGAL: Informe de apoyo a la negociación. Valores y probabilidades son estimaciones. No constituyen garantía de resultado judicial.'
-    :'⚠ AVISO LEGAL: Relatório de apoio à negociação. Valores e probabilidades são estimativas. Não constituem garantia de resultado judicial.';
-  doc.text(doc.splitTextToSize(aviso,pw-34),ml+3,yAv+5);
+    ?'⚠ AVISO LEGAL: Informe de apoyo a la negociación. Los valores y probabilidades son estimaciones basadas en la información proporcionada. No constituyen garantía de resultado judicial ni asesoramiento jurídico.'
+    :'⚠ AVISO LEGAL: Relatório de apoio à negociação. Os valores e probabilidades são estimativas baseadas nas informações fornecidas. Não constituem garantia de resultado judicial nem aconselhamento jurídico.';
+  doc.text(doc.splitTextToSize(aviso,pw-36),ml+4,yAv+5);
 
   addFooter();
   doc.save('PactoAI_'+paisNome+'_Score'+scoreNum+'.pdf');
 }
+
 
 // ============================================================
 // GLOBAL HISTORY// ============================================================
