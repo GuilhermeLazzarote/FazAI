@@ -3797,9 +3797,11 @@ function exportPactoPDF() {
     doc.text('PactoAI Europa — '+paisNome,22,23);
     // Badge país
     doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
-    doc.roundedRect(pw-60,8,46,10,2,2,'F');
+    doc.roundedRect(pw-58,7,50,12,2,2,'F');
+    doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.3);
+    doc.roundedRect(pw-58,7,50,12,2,2);
     doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
-    doc.text((isES?'ESPANA':'PORTUGAL'),pw-37,14,{align:'center'});
+    doc.text((isES?'ESPANA':'PORTUGAL'),pw-33,14,{align:'center'});
     // LCA
     doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
     doc.text('LCA — Legal Calculation Associate',pw-14,20,{align:'right'});
@@ -3877,29 +3879,29 @@ function exportPactoPDF() {
     columnStyles:{0:{fontStyle:'bold',cellWidth:52,textColor:GRAY},1:{textColor:WHITE}}
   }));
 
-  // Score card
+  // Score card — altura 32 para caber número grande
   const yS=doc.lastAutoTable.finalY+8;
   doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
-  doc.roundedRect(ml,yS,pw-28,26,3,3,'F');
+  doc.roundedRect(ml,yS,pw-28,32,3,3,'F');
   doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.5);
-  doc.roundedRect(ml,yS,pw-28,26,3,3);
+  doc.roundedRect(ml,yS,pw-28,32,3,3);
 
-  // Barra de score
-  const bW=pw-28-80, bH=6, bX=ml+8, bY=yS+8;
+  // Número grande à direita — dentro do card
+  doc.setFontSize(20);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
+  doc.text(scoreNum+'',pw-50,yS+18);
+  doc.setFontSize(10);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text('/100',pw-50+(doc.getTextWidth(scoreNum+'')+2),yS+18);
+
+  // Barra de score — lado esquerdo
+  const bW=pw-28-75, bH=5, bX=ml+8, bY=yS+10;
   doc.setFillColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.rect(bX,bY,bW,bH,'F');
   doc.setFillColor(OR[0],OR[1],OR[2]);doc.rect(bX,bY,(bW*scoreNum/100),bH,'F');
-
-  // Número
-  doc.setFontSize(24);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
-  doc.text(scoreNum+'',pw-32,yS+20,{align:'right'});
-  doc.setFontSize(9);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text('/100',pw-14,yS+20);
 
   // Label
   doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
   doc.text(scoreLabel,bX,bY-3);
   doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+5);
+  doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+6);
 
   // Tabela por conceito
   const yV=yS+32;
@@ -4002,15 +4004,18 @@ function exportPactoPDF() {
     }
   }));
 
-  // Aviso legal
+  // Aviso legal — altura dinâmica
   const yAv=doc.lastAutoTable.finalY+8;
-  doc.setFillColor(40,10,10);
-  doc.roundedRect(ml,yAv,pw-28,16,3,3,'F');
-  doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(248,113,113);
+  doc.setFontSize(6.5);doc.setFont(undefined,'normal');
   const aviso=isES
-    ?'⚠ AVISO LEGAL: Informe de apoyo a la negociación. Los valores y probabilidades son estimaciones basadas en la información proporcionada. No constituyen garantía de resultado judicial ni asesoramiento jurídico.'
-    :'⚠ AVISO LEGAL: Relatório de apoio à negociação. Os valores e probabilidades são estimativas baseadas nas informações fornecidas. Não constituem garantia de resultado judicial nem aconselhamento jurídico.';
-  doc.text(doc.splitTextToSize(aviso,pw-36),ml+4,yAv+5);
+    ?'AVISO LEGAL: Informe de apoyo a la negociacion. Los valores y probabilidades son estimaciones basadas en la informacion proporcionada. No constituyen garantia de resultado judicial ni asesoramiento juridico.'
+    :'AVISO LEGAL: Relatorio de apoio a negociacao. Os valores e probabilidades sao estimativas baseadas nas informacoes fornecidas. Nao constituem garantia de resultado judicial nem aconselhamento juridico.';
+  const avisoLines=doc.splitTextToSize(aviso,pw-40);
+  const avisoH=Math.max(14, avisoLines.length*4+8);
+  doc.setFillColor(40,10,10);
+  doc.roundedRect(ml,yAv,pw-28,avisoH,3,3,'F');
+  doc.setTextColor(248,113,113);
+  doc.text(avisoLines,ml+4,yAv+5);
 
   addFooter();
   doc.save('PactoAI_'+paisNome+'_Score'+scoreNum+'.pdf');
