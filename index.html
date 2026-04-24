@@ -3743,9 +3743,20 @@ function exportScorePDF() {
 }
 
 function exportPactoPDF() {
-  const pais = pactoCountry;
-  const salario = parseFloat(document.getElementById('pa-salario')?.value)||0;
-  if(!salario){ alert(pais==='es'?'Complete el salario antes de exportar.':'Complete o salário antes de exportar.'); return; }
+  try {
+  const pais = pactoCountry||'es';
+  const salarioEl = document.getElementById('pa-salario');
+  const salario = parseFloat(salarioEl?.value)||0;
+  if(!salario){ 
+    alert(pais==='es'?'Complete el salario antes de exportar.':'Complete o salário antes de exportar.'); 
+    return; 
+  }
+  if(typeof jspdf === 'undefined') {
+    const e=document.createElement('div');
+    e.style.cssText='position:fixed;top:20px;right:20px;background:#EA580C;color:#fff;padding:14px 20px;border-radius:8px;z-index:9999;font-size:13px';
+    e.textContent='Biblioteca PDF não carregada. Recarregue a página e tente novamente.';
+    document.body.appendChild(e);setTimeout(()=>e.remove(),6000);return;
+  }
   const {jsPDF} = jspdf;
   const doc = new jsPDF();
   const pw=210, ph=297, ml=14;
@@ -4003,6 +4014,14 @@ function exportPactoPDF() {
 
   addFooter();
   doc.save('PactoAI_'+paisNome+'_Score'+scoreNum+'.pdf');
+  } catch(err) {
+    console.error('exportPactoPDF erro:', err);
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText='position:fixed;top:20px;right:20px;background:#B91C1C;color:#fff;padding:14px 20px;border-radius:8px;z-index:9999;font-size:13px;max-width:400px';
+    errDiv.textContent='Erro ao gerar PDF: '+err.message;
+    document.body.appendChild(errDiv);
+    setTimeout(()=>errDiv.remove(),8000);
+  }
 }
 
 
