@@ -3797,7 +3797,7 @@ function exportPactoPDF() {
     doc.text('PactoAI Europa — '+paisNome,22,23);
     // Badge país
     doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
-    doc.rect(pw-60,8,46,10,3,'F');
+    doc.roundedRect(pw-60,8,46,10,2,2,'F');
     doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
     doc.text((isES?'ESPANA':'PORTUGAL'),pw-37,14,{align:'center'});
     // LCA
