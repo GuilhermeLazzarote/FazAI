@@ -330,6 +330,108 @@ a{color:var(--or);text-decoration:none}
 .pacto-empty-icon{font-size:48px;margin-bottom:16px;opacity:.3}
 .pacto-empty-title{font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:8px}
 .pacto-empty-sub{font-size:13px;color:rgba(255,255,255,.25)}
+
+/* =============================================
+   LANDING PAGE PREMIUM
+   ============================================= */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* Nav */
+.lp-nav{display:flex;justify-content:space-between;align-items:center;padding:20px 60px;background:#0A0A0A;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:100}
+.lp-nav-link{background:transparent;border:none;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;padding:8px 16px;border-radius:6px;transition:color .2s;font-family:inherit}
+.lp-nav-link:hover{color:#fff}
+.lp-nav-cta{background:rgba(234,88,12,.15);border:1px solid rgba(234,88,12,.4);color:#EA580C;font-size:14px;font-weight:600;cursor:pointer;padding:9px 20px;border-radius:8px;transition:all .2s;font-family:inherit}
+.lp-nav-cta:hover{background:#EA580C;color:#fff}
+
+/* Hero */
+.lp-hero{background:#0A0A0A;position:relative;overflow:hidden;padding:100px 60px 80px;text-align:center}
+.lp-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(234,88,12,.1) 0%,transparent 70%)}
+.lp-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:60px 60px}
+.lp-hero-content{position:relative;z-index:2;max-width:800px;margin:0 auto}
+.lp-hero-badge{display:inline-block;background:rgba(234,88,12,.1);border:1px solid rgba(234,88,12,.25);color:#EA580C;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:6px 18px;border-radius:20px;margin-bottom:32px}
+.lp-hero-title{font-family:'Playfair Display',Georgia,serif;font-size:clamp(44px,6vw,72px);font-weight:900;color:#fff;line-height:1.05;letter-spacing:-2px;margin-bottom:24px}
+.lp-hero-title span{color:#EA580C}
+.lp-hero-sub{font-size:18px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:40px;font-weight:300}
+.lp-hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
+.lp-btn-primary{background:#EA580C;border:none;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.03em}
+.lp-btn-primary:hover{background:#C2410C;transform:translateY(-1px)}
+.lp-btn-ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:15px;font-weight:500;padding:14px 28px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:inherit}
+.lp-btn-ghost:hover{background:rgba(255,255,255,.1);color:#fff}
+.lp-hero-stats{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap}
+.lp-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+.lp-stat-num{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.lp-stat-label{font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em}
+.lp-stat-div{width:1px;height:32px;background:rgba(255,255,255,.1)}
+
+/* Módulos section */
+.lp-modules-section{background:#f8f6f2;padding:80px 60px}
+.lp-section-label{font-size:11px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px}
+.lp-section-title{font-family:'Playfair Display',Georgia,serif;font-size:clamp(28px,4vw,44px);font-weight:700;color:#111;letter-spacing:-1px;margin-bottom:12px}
+.lp-section-sub{font-size:16px;color:#6B7280;margin-bottom:48px}
+
+/* Tabs */
+.lp-tabs-wrap{display:grid;grid-template-columns:280px 1fr;gap:0;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 40px rgba(0,0,0,.08);border:1px solid #E5E0D8}
+.lp-tabs{display:flex;flex-direction:column;border-right:1px solid #E5E0D8;background:#fff}
+.lp-tab{display:flex;align-items:center;gap:14px;padding:20px 24px;background:transparent;border:none;cursor:pointer;text-align:left;border-bottom:1px solid #F3F0EB;transition:all .2s;position:relative}
+.lp-tab:last-child{border-bottom:none}
+.lp-tab:hover{background:#FFF7ED}
+.lp-tab.active{background:#FFF7ED;border-left:3px solid #EA580C}
+.lp-tab.active .lp-tab-icon{background:#EA580C;color:#fff}
+.lp-tab-icon{width:40px;height:40px;border-radius:10px;background:#F3F0EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.lp-tab-icon svg{width:18px;height:18px;color:#6B7280;transition:color .2s}
+.lp-tab.active .lp-tab-icon svg{color:#fff}
+.lp-tab-name{font-size:14px;font-weight:700;color:#111;margin-bottom:2px}
+.lp-tab-desc{font-size:12px;color:#9CA3AF}
+.lp-tab.active .lp-tab-name{color:#EA580C}
+
+/* Painel */
+.lp-panel{position:relative}
+.lp-panel-content{display:none;grid-template-columns:1fr 1fr;gap:0;height:100%}
+.lp-panel-content.active{display:grid}
+.lp-panel-video{background:#0A0A0A;position:relative}
+.lp-video-wrap{width:100%;height:100%;min-height:320px;position:relative}
+.lp-video-placeholder{width:100%;height:100%;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(135deg,#0d0d0d,#1a0a00);cursor:pointer}
+.lp-video-placeholder:hover .lp-play-btn{transform:scale(1.1);background:rgba(234,88,12,.9)}
+.lp-play-btn{width:64px;height:64px;border-radius:50%;background:rgba(234,88,12,.8);display:flex;align-items:center;justify-content:center;transition:all .3s;box-shadow:0 0 0 0 rgba(234,88,12,.4);animation:pulse-play 2s infinite}
+@keyframes pulse-play{0%,100%{box-shadow:0 0 0 0 rgba(234,88,12,.3)}50%{box-shadow:0 0 0 16px rgba(234,88,12,0)}}
+.lp-play-btn svg{width:24px;height:24px;color:#fff;margin-left:4px}
+.lp-video-label{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.04em}
+.lp-video-wrap iframe{width:100%;height:100%;min-height:320px;border:none;display:block}
+.lp-panel-info{padding:40px;background:#fff;display:flex;flex-direction:column;justify-content:center}
+.lp-panel-tag{display:inline-block;background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+.lp-panel-title{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#111;letter-spacing:-.5px;margin-bottom:12px;line-height:1.2}
+.lp-panel-desc{font-size:15px;color:#6B7280;line-height:1.7;margin-bottom:24px}
+.lp-panel-features{display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.lp-feat{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:#374151}
+.lp-feat-dot{width:6px;height:6px;border-radius:50%;background:#EA580C;flex-shrink:0}
+.lp-panel-cta{background:#EA580C;border:none;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s;align-self:flex-start;letter-spacing:.03em}
+.lp-panel-cta:hover{background:#C2410C}
+
+/* Pricing */
+.lp-pricing-section{background:#0A0A0A;padding:80px 60px;text-align:center}
+.lp-pricing-section .lp-section-title{color:#fff}
+.lp-pricing-section .lp-section-sub{color:rgba(255,255,255,.4)}
+.lp-pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1100px;margin:0 auto}
+.lp-price-card{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:28px 24px;text-align:left;position:relative;transition:border .2s}
+.lp-price-card:hover{border-color:rgba(234,88,12,.3)}
+.lp-price-card.featured{border-color:rgba(234,88,12,.4);background:rgba(234,88,12,.06)}
+.lp-price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#EA580C;color:#fff;font-size:10px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.05em}
+.lp-price-name{font-size:14px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.lp-price-val{font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:4px}
+.lp-price-period{font-size:12px;color:rgba(255,255,255,.35);margin-bottom:20px}
+.lp-price-feats{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.lp-price-feats div{font-size:13px;color:rgba(255,255,255,.6)}
+.lp-price-btn{width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s}
+.lp-price-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.lp-price-btn.primary{background:#EA580C;border-color:#EA580C;color:#fff}
+.lp-price-btn.primary:hover{background:#C2410C}
+
+/* Footer */
+.lp-footer-new{background:#0A0A0A;border-top:1px solid rgba(255,255,255,.06);padding:32px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.lp-footer-text{font-size:12px;color:rgba(255,255,255,.3)}
+.lp-wa-btn{display:flex;align-items:center;gap:8px;color:#25D366;font-size:13px;font-weight:600;text-decoration:none;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.2);padding:8px 16px;border-radius:8px;transition:all .2s}
+.lp-wa-btn:hover{background:rgba(37,211,102,.15)}
+
 </style>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-14375893340"></script>
@@ -354,38 +456,262 @@ a{color:var(--or);text-decoration:none}
 
 <!-- ===== LANDING ===== -->
 <div id="page-landing" class="page active">
-  <nav class="navbar">
-    <svg width="150" height="36" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><circle cx="30" cy="9" r="3" fill="#EA580C" opacity=".35"/><circle cx="30" cy="20" r="3" fill="#EA580C" opacity=".35"/><line x1="27" y1="9" x2="14" y2="9" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><line x1="27" y1="20" x2="22" y2="20" stroke="#EA580C" stroke-width="1" opacity=".25" stroke-dasharray="3,2"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#111827" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost btn-sm" onclick="showPage('auth');showAuthMode('login')">Entrar</button>
-      <button class="btn btn-primary btn-sm" onclick="showPage('auth');showAuthMode('register')">Começar — 7 dias grátis</button>
+  <!-- NAV -->
+  <nav class="lp-nav">
+    <svg width="130" height="32" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#fff" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="lp-nav-link" onclick="showPage('auth');showAuthMode('login')">Entrar</button>
+      <button class="lp-nav-cta" onclick="showPage('auth');showAuthMode('register')">Começar grátis →</button>
     </div>
   </nav>
-  <div class="hero">
-    <div class="hero-badge">Plataforma de Perícia Contábil Trabalhista</div>
-    <h1>Liquide, extraia e feche <span>acordos</span> com precisão pericial</h1>
-    <p>Três ferramentas especializadas para advogados e peritos trabalhistas. Cálculos independentes, laudos profissionais, histórico completo.</p>
-    <div class="hero-ctas">
-      <button class="btn btn-primary btn-lg" onclick="showPage('auth');showAuthMode('register')">Começar — 7 dias grátis</button>
-      <button class="btn btn-ghost btn-lg" onclick="showPage('auth');showAuthMode('login')">Já tenho conta</button>
+
+  <!-- HERO -->
+  <div class="lp-hero">
+    <div class="lp-hero-bg"></div>
+    <div class="lp-hero-grid"></div>
+    <div class="lp-hero-content">
+      <div class="lp-hero-badge">Inteligência Jurídica Trabalhista</div>
+      <h1 class="lp-hero-title">Liquide, extraia e feche<br/><span>acordos com IA</span></h1>
+      <p class="lp-hero-sub">Ferramentas especializadas para advogados trabalhistas.<br/>Sem planilha. Sem perder tempo.</p>
+      <div class="lp-hero-actions">
+        <button class="lp-btn-primary" onclick="showPage('auth');showAuthMode('register')">Começar — 7 dias grátis</button>
+        <button class="lp-btn-ghost" onclick="showPage('auth');showAuthMode('login')">Já tenho conta</button>
+      </div>
+      <div class="lp-hero-stats">
+        <div class="lp-stat"><span class="lp-stat-num">&lt;60s</span><span class="lp-stat-label">por liquidação</span></div>
+        <div class="lp-stat-div"></div>
+        <div class="lp-stat"><span class="lp-stat-num">4</span><span class="lp-stat-label">módulos especializados</span></div>
+      </div>
     </div>
   </div>
-  <div class="modules-grid">
-    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><h3>LiquidaAI — Liquidação Judicial</h3><p>Envie a petição inicial. A IA calcula cada verba do zero, aplica ADC 58, INSS/IRRF e gera laudo pericial profissional em PDF.</p></div>
-    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h3>PontoAI — Extrator de Ponto</h3><p>OCR inteligente de espelhos de ponto. Extrai todos os horários automaticamente e exporta CSV formatado para o PJe-Calc.</p></div>
-    <div class="mod-card"><div class="mod-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><h3>AcordAI — Calculadora de Acordos</h3><p>Calcule o valor bruto a partir do líquido desejado. INSS, IRRF, honorários, E-social mensal e custo total para a reclamada.</p></div>
-  </div>
-  <div class="lp-section" style="background:var(--wh)">
-    <div class="section-title">Planos e preços</div>
-    <div class="section-sub">7 dias grátis em qualquer plano · Cancele quando quiser</div>
-    <div class="pricing-grid">
-      <div class="price-card"><h3>Trial Gratuito</h3><div class="price-value">R$0</div><div class="price-period">7 dias · sem cartão</div><div class="price-features">✓ 5 liquidações<br>✓ 2 extrações de ponto<br>✓ 5 acordos<br>✓ Acesso completo</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Começar grátis</button></div>
-      <div class="price-card"><h3>Starter</h3><div class="price-value">R$197</div><div class="price-period">/mês · 1 usuário</div><div class="price-features">✓ 10 liquidações/mês<br>✓ PontoAI ilimitado<br>✓ AcordAI ilimitado<br>✓ Laudo PDF profissional<br>✓ Protocolo único</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
-      <div class="price-card featured"><h3>Profissional ⭐</h3><div class="price-value">R$397</div><div class="price-period">/mês · 3 usuários</div><div class="price-features">✓ 25 liquidações/mês<br>✓ Tudo do Starter<br>✓ Laudo padrão TRT<br>✓ Simulador de recursos<br>✓ Fila de processos</div><button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
-      <div class="price-card"><h3>Escritório</h3><div class="price-value">R$497</div><div class="price-period">/mês · ilimitado</div><div class="price-features">✓ Ilimitado<br>✓ Múltiplos usuários<br>✓ Tudo do Profissional<br>✓ Exportação em lote<br>✓ Suporte prioritário</div><button class="btn btn-outline" style="width:100%;margin-top:16px" onclick="showPage('auth');showAuthMode('register')">Assinar</button></div>
+
+  <!-- MÓDULOS COM VÍDEO -->
+  <div class="lp-modules-section">
+    <div class="lp-section-label">Módulos</div>
+    <h2 class="lp-section-title">Uma plataforma, quatro soluções</h2>
+    <p class="lp-section-sub">Clique em cada módulo para ver como funciona na prática</p>
+
+    <div class="lp-tabs-wrap">
+      <!-- Tabs -->
+      <div class="lp-tabs">
+        <button class="lp-tab active" onclick="selectTab('liquidaai',this)">
+          <div class="lp-tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="lp-tab-text">
+            <div class="lp-tab-name">LiquidaAI</div>
+            <div class="lp-tab-desc">Liquidação judicial</div>
+          </div>
+        </button>
+        <button class="lp-tab" onclick="selectTab('pactoai',this)">
+          <div class="lp-tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="lp-tab-text">
+            <div class="lp-tab-name">PactoAI Europa</div>
+            <div class="lp-tab-desc">España · Portugal</div>
+          </div>
+        </button>
+        <button class="lp-tab" onclick="selectTab('pontoai',this)">
+          <div class="lp-tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="lp-tab-text">
+            <div class="lp-tab-name">PontoAI</div>
+            <div class="lp-tab-desc">Extrator de ponto</div>
+          </div>
+        </button>
+        <button class="lp-tab" onclick="selectTab('acordai',this)">
+          <div class="lp-tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="lp-tab-text">
+            <div class="lp-tab-name">AcordAI</div>
+            <div class="lp-tab-desc">Simulador de acordos</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Painel de conteúdo -->
+      <div class="lp-panel">
+        <!-- LiquidaAI -->
+        <div class="lp-panel-content active" id="panel-liquidaai">
+          <div class="lp-panel-video">
+            <div class="lp-video-wrap" id="video-liquidaai">
+              <div class="lp-video-placeholder">
+                <div class="lp-play-btn" onclick="loadVideo('liquidaai','SEU_VIDEO_ID_AQUI')">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <div class="lp-video-label">Ver demonstração — LiquidaAI</div>
+              </div>
+            </div>
+          </div>
+          <div class="lp-panel-info">
+            <div class="lp-panel-tag">LiquidaAI</div>
+            <h3 class="lp-panel-title">Liquidação judicial com IA</h3>
+            <p class="lp-panel-desc">Envie a petição inicial em PDF. A IA lê o documento, identifica as verbas, aplica ADC 58 e gera o laudo pericial completo em menos de 60 segundos.</p>
+            <div class="lp-panel-features">
+              <div class="lp-feat"><span class="lp-feat-dot"></span>ADC 58 + Lei 14.905/2024</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>INSS E-Social mês a mês</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>IRRF regime RRA</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Laudo PDF profissional</div>
+            </div>
+            <button class="lp-panel-cta" onclick="showPage('auth');showAuthMode('register')">Testar grátis →</button>
+          </div>
+        </div>
+
+        <!-- PontoAI -->
+        <div class="lp-panel-content" id="panel-pontoai">
+          <div class="lp-panel-video">
+            <div class="lp-video-wrap" id="video-pontoai">
+              <div class="lp-video-placeholder">
+                <div class="lp-play-btn" onclick="loadVideo('pontoai','SEU_VIDEO_ID_AQUI')">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <div class="lp-video-label">Ver demonstração — PontoAI</div>
+              </div>
+            </div>
+          </div>
+          <div class="lp-panel-info">
+            <div class="lp-panel-tag">PontoAI</div>
+            <h3 class="lp-panel-title">OCR inteligente de espelho de ponto</h3>
+            <p class="lp-panel-desc">Jogue qualquer modelo de espelho de ponto em PDF. O sistema extrai todos os horários automaticamente e exporta CSV formatado para o PJe-Calc.</p>
+            <div class="lp-panel-features">
+              <div class="lp-feat"><span class="lp-feat-dot"></span>12 formatos suportados</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Exporta CSV para PJe-Calc</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Detecta ausências e faltas</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>400 páginas em minutos</div>
+            </div>
+            <button class="lp-panel-cta" onclick="showPage('auth');showAuthMode('register')">Testar grátis →</button>
+          </div>
+        </div>
+
+        <!-- AcordAI -->
+        <div class="lp-panel-content" id="panel-acordai">
+          <div class="lp-panel-video">
+            <div class="lp-video-wrap" id="video-acordai">
+              <div class="lp-video-placeholder">
+                <div class="lp-play-btn" onclick="loadVideo('acordai','SEU_VIDEO_ID_AQUI')">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <div class="lp-video-label">Ver demonstração — AcordAI</div>
+              </div>
+            </div>
+          </div>
+          <div class="lp-panel-info">
+            <div class="lp-panel-tag">AcordAI Brasil</div>
+            <h3 class="lp-panel-title">Simulador inteligente de acordos</h3>
+            <p class="lp-panel-desc">Score probatório por verba, três cenários de negociação e checklist de provas. Saiba exatamente quanto vale cada pedido antes de entrar numa audiência.</p>
+            <div class="lp-panel-features">
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Score 0-100 por verba</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Checklist probatório completo</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Cenários conservador/provável/agressivo</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Relatório PDF de negociação</div>
+            </div>
+            <button class="lp-panel-cta" onclick="showPage('auth');showAuthMode('register')">Testar grátis →</button>
+          </div>
+        </div>
+
+        <!-- PactoAI -->
+        <div class="lp-panel-content" id="panel-pactoai">
+          <div class="lp-panel-video">
+            <div class="lp-video-wrap" id="video-pactoai">
+              <div class="lp-video-placeholder" style="background:linear-gradient(135deg,#0d0d0d,#1a0800)">
+                <div class="lp-play-btn" onclick="loadVideo('pactoai','SEU_VIDEO_ID_AQUI')">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <div class="lp-video-label">Ver demonstração — PactoAI Europa</div>
+              </div>
+            </div>
+          </div>
+          <div class="lp-panel-info">
+            <div class="lp-panel-tag" style="background:rgba(234,88,12,.15);color:#EA580C;border-color:rgba(234,88,12,.3)">PactoAI Europa 🇪🇸 🇵🇹</div>
+            <h3 class="lp-panel-title">Acordos laborais na Europa</h3>
+            <p class="lp-panel-desc">Simulador de acordos para España e Portugal com legislação local, terminologia jurídica nativa e análise de IA do risco jurídico do caso.</p>
+            <div class="lp-panel-features">
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Estatuto de los Trabajadores (ES)</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Código do Trabalho (PT)</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Score + checklist probatório</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Informe bilingue em PDF</div>
+            </div>
+            <button class="lp-panel-cta" onclick="showPage('auth');showAuthMode('register')">Testar grátis →</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="lp-footer">Faz AI © 2025 · Plataforma de Perícia Contábil Trabalhista · Todos os direitos reservados</div>
+
+  <!-- PREÇOS -->
+  <div class="lp-pricing-section">
+    <div class="lp-section-label">Planos</div>
+    <h2 class="lp-section-title">Simples e transparente</h2>
+    <p class="lp-section-sub">7 dias grátis em qualquer plano · Cancele quando quiser</p>
+    <div class="lp-pricing-grid">
+      <div class="lp-price-card">
+        <div class="lp-price-name">Trial</div>
+        <div class="lp-price-val">R$0</div>
+        <div class="lp-price-period">7 dias grátis</div>
+        <div class="lp-price-feats">
+          <div>✓ 5 liquidações</div>
+          <div>✓ 2 extrações de ponto</div>
+          <div>✓ 5 acordos</div>
+          <div>✓ Acesso completo</div>
+        </div>
+        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Começar grátis</button>
+      </div>
+      <div class="lp-price-card">
+        <div class="lp-price-name">Starter</div>
+        <div class="lp-price-val">R$197</div>
+        <div class="lp-price-period">/mês · 1 usuário</div>
+        <div class="lp-price-feats">
+          <div>✓ 10 liquidações/mês</div>
+          <div>✓ PontoAI ilimitado</div>
+          <div>✓ AcordAI ilimitado</div>
+          <div>✓ Laudo PDF profissional</div>
+        </div>
+        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
+      </div>
+      <div class="lp-price-card featured">
+        <div class="lp-price-badge">Mais popular</div>
+        <div class="lp-price-name">Profissional</div>
+        <div class="lp-price-val">R$397</div>
+        <div class="lp-price-period">/mês · 3 usuários</div>
+        <div class="lp-price-feats">
+          <div>✓ 25 liquidações/mês</div>
+          <div>✓ Tudo do Starter</div>
+          <div>✓ Score & Cenários AcordAI</div>
+          <div>✓ Suporte prioritário</div>
+        </div>
+        <button class="lp-price-btn primary" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
+      </div>
+      <div class="lp-price-card">
+        <div class="lp-price-name">Escritório</div>
+        <div class="lp-price-val">R$497</div>
+        <div class="lp-price-period">/mês · ilimitado</div>
+        <div class="lp-price-feats">
+          <div>✓ Liquidações ilimitadas</div>
+          <div>✓ Múltiplos usuários</div>
+          <div>✓ Tudo do Profissional</div>
+          <div>✓ Exportação em lote</div>
+        </div>
+        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="lp-footer-new">
+    <div class="lp-footer-logo">
+      <svg width="100" height="28" viewBox="0 0 180 40"><rect x="10" y="7" width="4" height="26" rx="2" fill="#EA580C"/><rect x="10" y="7" width="18" height="4" rx="2" fill="#EA580C"/><rect x="10" y="18" width="12" height="4" rx="2" fill="#EA580C"/><text x="38" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="300" fill="#fff" letter-spacing="-0.5">az <tspan font-weight="700" fill="#EA580C">AI</tspan></text></svg>
+    </div>
+    <div class="lp-footer-text">Faz AI © 2026 · LCA — Legal Calculation Associate · Todos os direitos reservados</div>
+    <div class="lp-footer-wa">
+      <a href="https://www.linkedin.com/in/faz-ai/" target="_blank" class="lp-wa-btn" style="color:#0A66C2;background:rgba(10,102,194,.1);border-color:rgba(10,102,194,.2)">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn Faz AI
+      </a>
+    </div>
+  </div>
 </div>
 
 <!-- ===== AUTH ===== -->
@@ -464,6 +790,7 @@ a{color:var(--or);text-decoration:none}
 
       <!-- DASHBOARD -->
       <div id="mod-dash" class="mod-content">
+        <div id="dash-plan-info" style="display:none;background:var(--orp);border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400E;margin-bottom:12px"></div>
         <div class="ph"><h1>Dashboard</h1><p>Visão geral da sua atividade</p></div>
         <div class="dash-grid">
           <div class="dash-card"><div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div class="dash-card-label">Liquidações</div><div class="dash-card-value" id="dc-liq">0</div></div>
@@ -488,6 +815,8 @@ a{color:var(--or);text-decoration:none}
           <div class="panel">
             <div class="ptitle">Parâmetros periciais</div>
             <div class="g3">
+              <div class="field"><label>Salário base identificado (R$) — opcional</label><input type="number" id="liq-sal" placeholder="Ex: 2500" step="0.01"/></div>
+              <div class="field"><label>Valor da causa (R$) — opcional</label><input type="number" id="liq-val-ini" placeholder="Ex: 50000" step="0.01"/></div>
               <div class="field"><label>INSS Patronal (%)</label><input type="number" id="liq-inss" value="23" min="0" max="40"/></div>
               <div class="field"><label>Honorários sucumbência (%)</label><input type="number" id="liq-hon" value="0" min="0" max="30"/></div>
               <div class="field"><label>Data de ajuizamento</label><input type="date" id="liq-ajuiz"/></div>
@@ -1311,6 +1640,39 @@ function switchTab(prefix, tab, btn) {
   if(prefix==='pt'&&tab==='hist') renderPtHist('pt-hist-list');
   if(prefix==='ac'&&tab==='hist') renderAcHist();
   if(prefix==='ac'&&tab==='score') { renderVerbasListBR(); renderChecklistBR(); }
+}
+
+// ============================================================
+// LANDING PAGE — TABS + VIDEO
+// ============================================================
+
+// IDs dos vídeos do YouTube por módulo — substitua pelos IDs reais
+const LP_VIDEOS = {
+  liquidaai: 'SEU_VIDEO_LIQUIDAAI',
+  pontoai:   'SEU_VIDEO_PONTOAI',
+  acordai:   'SEU_VIDEO_ACORDAI',
+  pactoai:   'SEU_VIDEO_PACTOAI'
+};
+
+function selectTab(modulo, btn) {
+  // Atualizar tabs
+  document.querySelectorAll('.lp-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  // Atualizar painéis
+  document.querySelectorAll('.lp-panel-content').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-'+modulo);
+  if(panel) panel.classList.add('active');
+}
+
+function loadVideo(modulo, videoId) {
+  const wrap = document.getElementById('video-'+modulo);
+  if(!wrap) return;
+  const id = LP_VIDEOS[modulo] || videoId;
+  if(!id || id.startsWith('SEU_VIDEO')) {
+    alert('Vídeo não configurado ainda. Adicione o ID do YouTube em LP_VIDEOS.');
+    return;
+  }
+  wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0" allowfullscreen allow="autoplay"></iframe>';
 }
 
 // ============================================================
