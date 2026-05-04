@@ -4284,16 +4284,11 @@ Valor mínimo, probable y máximo con justificación jurisprudencial. Referencia
 **6. RECOMENDACIÓN ESTRATÉGICA**
 Qué debe hacer el abogado antes de aceptar o proponer el acuerdo.`;
 
-      const txt = await claudeAPI([{role:'user', content: SYSTEM_ES + '
-
-' + USER_ES}], 2000);
+      const txt = await claudeAPI([{role:'user', content: SYSTEM_ES + '\n\n' + USER_ES}], 2000);
       iaEl.innerHTML = txt
         .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#EA580C">$1</strong>')
-        .replace(/
-
-/g, '<br/><br/>')
-        .replace(/
-/g, '<br/>');
+        .replace(/\n\n/g, '<br/><br/>')
+        .replace(/\n/g, '<br/>');
 
     } else {
       // PORTUGAL
@@ -4350,16 +4345,11 @@ Valor mínimo, provável e máximo com justificação jurisprudencial.
 **6. RECOMENDAÇÃO ESTRATÉGICA**
 O que o advogado deve fazer antes de aceitar ou propor o acordo.`;
 
-      const txt = await claudeAPI([{role:'user', content: SYSTEM_PT + '
-
-' + USER_PT}], 2000);
+      const txt = await claudeAPI([{role:'user', content: SYSTEM_PT + '\n\n' + USER_PT}], 2000);
       iaEl.innerHTML = txt
         .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#EA580C">$1</strong>')
-        .replace(/
-
-/g, '<br/><br/>')
-        .replace(/
-/g, '<br/>');
+        .replace(/\n\n/g, '<br/><br/>')
+        .replace(/\n/g, '<br/>');
     }
   } catch(e) {
     iaEl.textContent = pactoCountry==='es'
@@ -4929,16 +4919,11 @@ O acordo tem risco de não homologação? O que o juiz vai verificar? Quitação
 O que o advogado deve fazer agora para fortalecer a posição antes de aceitar ou propor acordo.`;
 
   try {
-    const txt = await claudeAPI([{role:'user', content: SYSTEM_BR + '
-
-' + USER_BR}], 2000);
+    const txt = await claudeAPI([{role:'user', content: SYSTEM_BR + '\n\n' + USER_BR}], 2000);
     iaEl.innerHTML = txt
       .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--or)">$1</strong>')
-      .replace(/
-
-/g, '<br/><br/>')
-      .replace(/
-/g, '<br/>');
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
   } catch(e) {
     iaEl.textContent = 'Erro na análise. Verifique sua conexão e tente novamente.';
     console.error('analisarCasoBR:', e);
