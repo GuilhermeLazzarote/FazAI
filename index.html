@@ -1081,7 +1081,52 @@ a{color:var(--or);text-decoration:none}
                     </select>
                   </div>
                 </div>
-                <div class="field"><label>Data de admissão</label><input type="date" id="sc-adm" oninput="calcScore()"/></div>
+                <div class="g2">
+                  <div class="field"><label>Data de admissão</label><input type="date" id="sc-adm" oninput="calcScore()"/></div>
+                  <div class="field"><label>Data do ajuizamento / dispensa</label><input type="date" id="sc-ajuiz" oninput="calcScore()"/></div>
+                </div>
+                <div class="g2">
+                  <div class="field"><label>Setor econômico da empresa</label>
+                    <select id="sc-setor" onchange="calcScore()">
+                      <option value="">Selecione (opcional)</option>
+                      <option value="bancario">Bancário</option>
+                      <option value="construcao">Construção civil</option>
+                      <option value="telemarketing">Telemarketing / Call center</option>
+                      <option value="saude">Saúde</option>
+                      <option value="comercio">Comércio</option>
+                      <option value="industria">Indústria</option>
+                      <option value="domestico">Trabalho doméstico</option>
+                      <option value="rural">Rural / Agronegócio</option>
+                      <option value="transporte">Transporte / Logística</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                  <div class="field"><label>Estabilidade provisória</label>
+                    <select id="sc-estabilidade" onchange="calcScore()">
+                      <option value="nenhuma">Nenhuma</option>
+                      <option value="gestante">Gestante / Licença maternidade</option>
+                      <option value="cipa">Membro da CIPA</option>
+                      <option value="acidente">Acidente de trabalho (12 meses)</option>
+                      <option value="pre_apo">Pré-aposentadoria (24 meses)</option>
+                      <option value="sindical">Dirigente sindical</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="g2">
+                  <div class="field"><label>Tentativa de acordo anterior</label>
+                    <select id="sc-acordo-ant" onchange="calcScore()">
+                      <option value="nao">Não houve</option>
+                      <option value="sim_fracassou">Sim — fracassou</option>
+                      <option value="sim_pendente">Sim — ainda em negociação</option>
+                    </select>
+                  </div>
+                  <div class="field"><label>Proposta da parte contrária (R$)</label>
+                    <input type="number" id="sc-proposta-ré" placeholder="Valor oferecido pela empresa" oninput="avaliarPropostaContraria()"/>
+                  </div>
+                </div>
+                <div id="sc-alerta-prescricao" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;font-size:12px;color:#B91C1C;margin-top:8px"></div>
+                <div id="sc-alerta-estabilidade" style="display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;margin-top:8px"></div>
+                <div id="sc-avaliacao-proposta" style="display:none;margin-top:8px"></div>
               </div>
               <div class="panel">
                 <div class="ptitle">Verbas pleiteadas — selecione e informe o valor apurado</div>
@@ -1109,8 +1154,14 @@ a{color:var(--or);text-decoration:none}
                       <div style="height:10px;background:var(--bd);border-radius:5px;overflow:hidden">
                         <div id="sc-score-bar" style="height:100%;background:var(--or);border-radius:5px;transition:width .5s;width:0%"></div>
                       </div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                        <span style="font-size:11px;color:var(--gy)">Confiabilidade:</span>
+                        <span id="sc-confiabilidade" style="font-size:11px;font-weight:700">—</span>
+                        <span id="sc-margem-erro" style="font-size:11px;color:var(--gy)">—</span>
+                      </div>
                     </div>
                   </div>
+                  <div id="sc-benchmark" style="font-size:11px;color:var(--gy);font-style:italic;border-top:1px solid var(--bd);padding-top:8px;display:none"></div>
                 </div>
                 <!-- Tabela verba a verba -->
                 <div class="panel" style="margin-top:12px">
@@ -1148,6 +1199,15 @@ a{color:var(--or);text-decoration:none}
                 <div class="panel" style="background:var(--orp);border-color:#FED7AA;margin-top:12px">
                   <div class="ptitle" style="color:var(--or)">Recomendação de negociação</div>
                   <div id="sc-recomendacao" style="font-size:13px;line-height:1.6"></div>
+                </div>
+                <div class="panel" style="background:#F0F9FF;border:1px solid #BAE6FD;margin-top:12px">
+                  <div class="ptitle" style="color:#0369A1">Análise de IA — Risco jurídico aprofundado</div>
+                  <div class="field" style="margin-bottom:8px">
+                    <label>Descreva os fatos do caso para análise especializada</label>
+                    <textarea id="sc-desc" rows="3" placeholder="Ex: Empregado dispensado após 8 anos sem justa causa, recebia horas extras não quitadas há 2 anos, tem espelho de ponto divergente e testemunhas..."></textarea>
+                  </div>
+                  <button class="btn btn-primary" onclick="analisarCasoBR()" id="btn-analisar-br">Analisar caso com IA →</button>
+                  <div id="sc-ia-analise" style="font-size:13px;line-height:1.8;color:var(--dk);margin-top:12px;display:none"></div>
                 </div>
                 <div style="text-align:center;margin-top:12px">
                   <p style="font-size:11px;color:var(--gy);margin-bottom:10px">⚠ Valores de referência para negociação. Não constituem garantia de resultado judicial.</p>
@@ -3058,6 +3118,11 @@ const VERBAS_BR = [
   {id:'v_ds',   label:'Diferenças Salariais / Acúmulo', catIdx:7},
   {id:'v_ri',   label:'Rescisão Indireta',               catIdx:8},
   {id:'v_vr',   label:'Verbas Rescisórias',              catIdx:9},
+  {id:'v_est',  label:'Estabilidade Provisória',         catIdx:10},
+  {id:'v_de',   label:'Dano Existencial',                catIdx:11},
+  {id:'v_ij',   label:'Intervalo Interjornada (11h)',    catIdx:12},
+  {id:'v_at',   label:'Adicional de Transferência',      catIdx:13},
+  {id:'v_rs',   label:'Responsabilidade Subsidiária',    catIdx:14},
 ];
 
 const CHECKLIST_BR = [
@@ -3159,6 +3224,44 @@ const CHECKLIST_BR = [
     {id:'vr5',label:'TRCT quitado pelo trabalhador sem ressalvas',pts:-20},
     {id:'vr6',label:'Extrato FGTS com depósitos regulares',pts:-15},
     {id:'vr7',label:'Homologação regular com assistência sindical',pts:-18}
+  ]},
+  {cat:'Estabilidade Provisória', items:[
+    {id:'est1',label:'Gestante ou em licença maternidade no momento da dispensa (nulidade — art. 10 II ADCT)',pts:35},
+    {id:'est2',label:'Membro eleito da CIPA no exercício do mandato (Súmula 339 TST)',pts:30},
+    {id:'est3',label:'Acidente de trabalho — afastamento superior a 15 dias com CAT (Súmula 378 TST)',pts:32},
+    {id:'est4',label:'Pré-aposentadoria — 24 meses antes da aposentadoria por tempo de contribuição',pts:25},
+    {id:'est5',label:'Dirigente sindical no exercício do mandato (art. 543 CLT)',pts:30},
+    {id:'estn1',label:'Dispensa por justa causa — afasta estabilidade',pts:-25},
+    {id:'estn2',label:'Pedido de demissão voluntário — afasta estabilidade',pts:-30}
+  ]},
+  {cat:'Dano Existencial', items:[
+    {id:'de1',label:'Jornada excessiva habitual que impedia convívio familiar (acima de 10h/dia)',pts:20},
+    {id:'de2',label:'Privação de férias por mais de 2 períodos consecutivos',pts:18},
+    {id:'de3',label:'Trabalho em condições que comprometeram projeto de vida comprovado',pts:22},
+    {id:'de4',label:'Testemunhos sobre impacto na vida pessoal e familiar',pts:15},
+    {id:'den1',label:'Ausência de nexo causal entre jornada e dano à vida pessoal',pts:-20},
+    {id:'den2',label:'Trabalhador não demonstrou impacto concreto além do mero dissabor',pts:-18}
+  ]},
+  {cat:'Intervalo Interjornada (11h — art. 66 CLT)', items:[
+    {id:'ij1',label:'Escala de trabalho comprova intervalo inferior a 11h entre jornadas',pts:22},
+    {id:'ij2',label:'Registros de ponto confirmam violação reiterada do interjornada',pts:20},
+    {id:'ij3',label:'Testemunhas confirmam regime de trabalho sem respeito ao interjornada',pts:15},
+    {id:'ijn1',label:'Registros de ponto respeitando o mínimo de 11h entre jornadas',pts:-18}
+  ]},
+  {cat:'Adicional de Transferência (art. 469 CLT)', items:[
+    {id:'at1',label:'Transferência provisória sem acréscimo salarial de 25% (Súmula 29 TST)',pts:20},
+    {id:'at2',label:'Documentos comprovando transferência e ausência de adicional',pts:18},
+    {id:'at3',label:'Transferência após rescisão contratual — indevida',pts:15},
+    {id:'atn1',label:'Transferência definitiva — adicional não é devido',pts:-20},
+    {id:'atn2',label:'Contrato previa cláusula expressa de transferência',pts:-15}
+  ]},
+  {cat:'Responsabilidade Subsidiária / Solidária', items:[
+    {id:'rs1',label:'Empresa tomadora de serviço identificada (Súmula 331 TST)',pts:20},
+    {id:'rs2',label:'Prova de inadimplência da prestadora de serviços',pts:22},
+    {id:'rs3',label:'Grupo econômico configurado (art. 2º §2º CLT)',pts:25},
+    {id:'rs4',label:'Ente público tomador — responsabilidade subsidiária (Súmula 331 IV TST)',pts:18},
+    {id:'rsn1',label:'Ausência de prova do inadimplemento da empresa prestadora',pts:-18},
+    {id:'rsn2',label:'Terceirização regular sem prova de fraude ou culpa in vigilando',pts:-15}
   ]}
 ];
 
@@ -3179,6 +3282,9 @@ function getScoreBase() {
   const admStr = document.getElementById('sc-adm')?.value;
   const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
   const rescisao = document.getElementById('sc-rescisao')?.value||'';
+  const estabilidade = document.getElementById('sc-estabilidade')?.value||'nenhuma';
+  const acordoAnt = document.getElementById('sc-acordo-ant')?.value||'nao';
+
   if(admStr) {
     const anos = (new Date()-new Date(admStr))/(1000*60*60*24*365);
     if(anos>=10) base+=20; else if(anos>=5) base+=12; else if(anos>=2) base+=6;
@@ -3187,7 +3293,118 @@ function getScoreBase() {
   if(rescisao==='indireta') base+=25;
   else if(rescisao==='sem_causa') base+=10;
   else if(rescisao==='com_causa') base-=15;
+
+  // Estabilidade provisória
+  if(estabilidade==='gestante') base+=35;
+  else if(estabilidade==='cipa') base+=28;
+  else if(estabilidade==='acidente') base+=30;
+  else if(estabilidade==='pre_apo') base+=22;
+  else if(estabilidade==='sindical') base+=28;
+
+  // Acordo anterior fracassado = posição mais firme
+  if(acordoAnt==='sim_fracassou') base+=5;
+
+  // Alerta de prescrição
+  alertaPrescrição();
+  alertaEstabilidade();
+
   return Math.max(0, base);
+}
+
+function alertaPrescrição() {
+  const admStr = document.getElementById('sc-adm')?.value;
+  const ajuizStr = document.getElementById('sc-ajuiz')?.value;
+  const el = document.getElementById('sc-alerta-prescricao');
+  if(!el) return;
+  if(!admStr || !ajuizStr) { el.style.display='none'; return; }
+
+  const adm = new Date(admStr);
+  const ajuiz = new Date(ajuizStr);
+  const limitePrescrição = new Date(ajuiz);
+  limitePrescrição.setFullYear(limitePrescrição.getFullYear()-5);
+
+  if(adm < limitePrescrição) {
+    const anosPrescritos = ((limitePrescrição-adm)/(1000*60*60*24*365)).toFixed(1);
+    el.style.display='block';
+    el.innerHTML = `⚠️ <strong>Alerta de Prescrição (Súmula 308 TST + art. 7º XXIX CF):</strong> O período de ${anosPrescritos} ano(s) anterior ao ajuizamento pode estar prescrito. Verifique se as verbas pleiteadas respeitam o marco de ${limitePrescrição.toLocaleDateString('pt-BR')}.`;
+  } else {
+    el.style.display='none';
+  }
+}
+
+function alertaEstabilidade() {
+  const estabilidade = document.getElementById('sc-estabilidade')?.value||'nenhuma';
+  const el = document.getElementById('sc-alerta-estabilidade');
+  if(!el) return;
+  const msgs = {
+    gestante: '🤰 <strong>Estabilidade gestante:</strong> Dispensa nula de pleno direito (art. 10 II "b" ADCT). Reintegração ou indenização substitutiva obrigatória. Acordo abaixo do salário do período estabilitário é anulável.',
+    cipa: '🦺 <strong>Estabilidade CIPA (Súmula 339 TST):</strong> Membro eleito tem estabilidade durante o mandato + 12 meses. Dispensa sem inquérito judicial é nula.',
+    acidente: '🏥 <strong>Estabilidade acidentária (Súmula 378 TST):</strong> 12 meses após o retorno ao trabalho. CAT registrada é requisito. Dispensa nula — reintegração ou indenização.',
+    pre_apo: '👴 <strong>Pré-aposentadoria:</strong> Estabilidade de 24 meses prevista em norma coletiva — verificar se existe CCT/ACT aplicável.',
+    sindical: '✊ <strong>Dirigente sindical (art. 543 CLT):</strong> Estabilidade do registro até 1 ano após o mandato. Dispensa depende de processo judicial.'
+  };
+  if(msgs[estabilidade]) { el.style.display='block'; el.innerHTML=msgs[estabilidade]; }
+  else { el.style.display='none'; }
+}
+
+function avaliarPropostaContraria() {
+  const proposta = parseFloat(document.getElementById('sc-proposta-ré')?.value)||0;
+  const totalProv = document.getElementById('sc-cen-prov')?.textContent;
+  const el = document.getElementById('sc-avaliacao-proposta');
+  if(!el||!proposta) { if(el) el.style.display='none'; return; }
+
+  const provVal = parseFloat(totalProv?.replace(/[R$\s.]/g,'').replace(',','.'))||0;
+  if(!provVal) { el.style.display='none'; return; }
+
+  const ratio = proposta/provVal;
+  let cor, icone, label, rec;
+  if(ratio>=0.90) { cor='#166534';icone='✅';label='Proposta adequada';rec='O valor está dentro da faixa provável. Avalie aceitar ou contra-propor margem pequena.'; }
+  else if(ratio>=0.70) { cor='#92400E';icone='⚠️';label='Proposta moderada';rec='O valor está abaixo do provável mas dentro do conservador. Negocie para aproximar do cenário provável.'; }
+  else if(ratio>=0.50) { cor='#B91C1C';icone='❌';label='Proposta baixa';rec='O valor está significativamente abaixo do estimado. Recuse e contra-proponha com base legal.'; }
+  else { cor='#7C2D12';icone='🚫';label='Proposta abusiva';rec='O valor é muito inferior ao mínimo aceitável. Não recomendado aceitar sem contestação fundamentada.'; }
+
+  el.style.display='block';
+  el.innerHTML = `<div style="background:${cor}15;border:1px solid ${cor}40;border-radius:8px;padding:10px 14px">
+    <div style="font-weight:700;color:${cor};margin-bottom:4px">${icone} ${label} — ${(ratio*100).toFixed(0)}% do valor provável</div>
+    <div style="font-size:12px;color:${cor}">${rec}</div>
+  </div>`;
+}
+
+function calcConfiabilidade() {
+  const selected = VERBAS_BR.filter(v => document.getElementById('chk_'+v.id)?.checked);
+  let provaCount=0, provaPositiva=0;
+  CHECKLIST_BR.forEach(cat => cat.items.forEach(item => {
+    const el = document.getElementById(item.id);
+    if(el?.checked) { provaCount++; if(item.pts>0) provaPositiva++; }
+  }));
+
+  const temDesc = (document.getElementById('sc-desc')?.value?.length||0)>50;
+  const temValores = selected.filter(v=>parseFloat(document.getElementById('val_'+v.id)?.value)||0).length;
+  const temAdm = !!document.getElementById('sc-adm')?.value;
+  const temSal = !!document.getElementById('sc-salario')?.value;
+
+  let score = 0;
+  if(provaCount>=8) score+=30; else if(provaCount>=4) score+=15; else if(provaCount>=2) score+=5;
+  if(provaPositiva>=5) score+=25; else if(provaPositiva>=3) score+=12;
+  if(temDesc) score+=15;
+  if(temValores>=3) score+=15; else if(temValores>=1) score+=8;
+  if(temAdm) score+=10;
+  if(temSal) score+=5;
+
+  if(score>=70) return {label:'Alta', cor:'#166534', margem:'±5 pts'};
+  if(score>=40) return {label:'Média', cor:'#92400E', margem:'±12 pts'};
+  return {label:'Baixa', cor:'#B91C1C', margem:'±20 pts'};
+}
+
+function getBenchmarkBR(rescisao, salario, anos) {
+  if(!rescisao||!salario||!anos) return null;
+  const benchmarks = {
+    indireta: { min: 0.60, max: 0.90, ref: 'TST — acordos em rescisão indireta costumam variar entre 60-90% do valor calculado' },
+    sem_causa: { min: 0.50, max: 0.80, ref: 'TRTs — acordos em dispensa sem justa causa: 50-80% conforme força probatória' },
+    com_causa: { min: 0.20, max: 0.50, ref: 'TST — acordos com justa causa contestada: 20-50% conforme grau de prova' },
+    acordo: { min: 0.40, max: 0.70, ref: 'art. 855-B CLT — acordos extrajudiciais homologados: 40-70% do total pleiteado' }
+  };
+  return benchmarks[rescisao]||null;
 }
 
 function renderVerbasListBR() {
@@ -3350,6 +3567,30 @@ function calcScore() {
   document.getElementById('sc-cen-agr').textContent=fmtBRL(totalAgr);
   document.getElementById('sc-cen-agr-pct').textContent='Agressivo — '+Math.round(totalAgr/totalPleiteado*100)+'% do pleiteado';
   document.getElementById('sc-recomendacao').innerHTML=rec;
+
+  // Confiabilidade
+  const conf = calcConfiabilidade();
+  const confEl = document.getElementById('sc-confiabilidade');
+  const margemEl = document.getElementById('sc-margem-erro');
+  if(confEl) { confEl.textContent=conf.label; confEl.style.color=conf.cor; }
+  if(margemEl) margemEl.textContent=conf.margem;
+
+  // Benchmark
+  const rescisao = document.getElementById('sc-rescisao')?.value;
+  const salario = parseFloat(document.getElementById('sc-salario')?.value)||0;
+  const admStr2 = document.getElementById('sc-adm')?.value;
+  const anos2 = admStr2?(new Date()-new Date(admStr2))/(1000*60*60*24*365):0;
+  const bench = getBenchmarkBR(rescisao, salario, anos2);
+  const benchEl = document.getElementById('sc-benchmark');
+  if(benchEl && bench) {
+    const benchMin = fmtBRL(totalPleiteado*bench.min);
+    const benchMax = fmtBRL(totalPleiteado*bench.max);
+    benchEl.style.display='block';
+    benchEl.textContent='📊 Benchmark: '+bench.ref+' — faixa estimada: '+benchMin+' a '+benchMax;
+  }
+
+  // Reavaliar proposta da parte contrária
+  avaliarPropostaContraria();
 }
 
 // ============================================================
@@ -3505,6 +3746,28 @@ const CHECKLIST_ES = [
     {id:'esn24',label:'Trabajador aceptó la modificación por escrito',pts:-22},
     {id:'esn25',label:'Causa organizativa o productiva acreditada',pts:-18},
     {id:'esn26',label:'Período de consultas realizado correctamente',pts:-15}
+  ]},
+  {cat:'ERE / ERTE — Extinción Colectiva', items:[
+    {id:'es42',label:'ERE sin período de consultas de buena fe',pts:25},
+    {id:'es43',label:'Criterios de selección no justificados o discriminatorios',pts:22},
+    {id:'es44',label:'Empresa no acreditó causa económica, técnica u organizativa',pts:20},
+    {id:'esn27',label:'ERE con acuerdo sindical — dificulta impugnación individual',pts:-22},
+    {id:'esn28',label:'ERTE por fuerza mayor debidamente autorizado',pts:-20},
+    {id:'esn29',label:'Indemnización pactada en ERE aceptada por el trabajador',pts:-25}
+  ]},
+  {cat:'Situación de IT / Baja Médica durante el Despido', items:[
+    {id:'es45',label:'Despido durante incapacidad temporal — nulidad (L.O. 1/2025)',pts:32},
+    {id:'es46',label:'IT relacionada con el trabajo o accidente laboral',pts:28},
+    {id:'es47',label:'Empresa conocía la IT en el momento del despido',pts:22},
+    {id:'esn30',label:'IT por enfermedad común de larga duración sin conexión laboral',pts:-10},
+    {id:'esn31',label:'Despido objetivo por absentismo — art. 52 d) ET (admitido por TS)',pts:-15}
+  ]},
+  {cat:'Trabajadores Fijos Discontinuos', items:[
+    {id:'es48',label:'Falta de llamamiento sin justificación — despido tácito',pts:25},
+    {id:'es49',label:'Período de inactividad superior al previsto en convenio',pts:18},
+    {id:'es50',label:'Cambio de modalidad contractual sin acuerdo',pts:20},
+    {id:'esn32',label:'Llamamiento regular documentado conforme a convenio',pts:-18},
+    {id:'esn33',label:'Actividad estacional que justifica la no reanudación',pts:-15}
   ]}
 ];
 
@@ -3595,6 +3858,32 @@ const CHECKLIST_PT = [
     {id:'ptn26',label:'Ausência de notificação prévia ao empregador',pts:-15},
     {id:'ptn27',label:'Comportamento do empregador justificado por razões objectivas',pts:-18},
     {id:'ptn28',label:'Trabalhador pediu demissão voluntariamente antes da resolução',pts:-25}
+  ]},
+  {cat:'Lay-off Simplificado', items:[
+    {id:'pt46',label:'Lay-off aplicado sem comunicação prévia à DGERT e trabalhadores',pts:22},
+    {id:'pt47',label:'Redução salarial superior ao limite legal durante lay-off',pts:20},
+    {id:'pt48',label:'Despedimento durante período de lay-off sem fundamento',pts:28},
+    {id:'ptn29',label:'Lay-off regularmente comunicado e homologado',pts:-18},
+    {id:'ptn30',label:'Trabalhador aceitou os termos do lay-off por escrito',pts:-15}
+  ]},
+  {cat:'Trabalhador Estudante', items:[
+    {id:'pt49',label:'Horário incompatível com frequência a estabelecimento de ensino (art. 90.º CT)',pts:20},
+    {id:'pt50',label:'Recusa de adaptação horária sem justificação da entidade patronal',pts:18},
+    {id:'pt51',label:'Penalização por faltas justificadas a exames',pts:15},
+    {id:'ptn31',label:'Estatuto de trabalhador-estudante não requerido formalmente',pts:-15}
+  ]},
+  {cat:'Parentalidade (Protecção Absoluta)', items:[
+    {id:'pt52',label:'Despedimento durante licença parental — nulidade absoluta (art. 63.º CT)',pts:38},
+    {id:'pt53',label:'Dispensa de amamentação não concedida (art. 47.º CT)',pts:20},
+    {id:'pt54',label:'Redução de horário por parentalidade não autorizada',pts:22},
+    {id:'ptn32',label:'Pedido de demissão voluntário durante licença — afasta nulidade',pts:-25}
+  ]},
+  {cat:'Teletrabalho (Regime Especial — Lei 2021)', items:[
+    {id:'pt55',label:'Alteração unilateral do regime de teletrabalho sem acordo (art. 166.º CT)',pts:20},
+    {id:'pt56',label:'Fornecimento de equipamentos e despesas não cumprido',pts:15},
+    {id:'pt57',label:'Vigilância electrónica em domicílio — violação de privacidade',pts:22},
+    {id:'ptn33',label:'Acordo escrito de teletrabalho com todas as condições',pts:-15},
+    {id:'ptn34',label:'Regressão ao presencial por acordo mútuo documentado',pts:-12}
   ]}
 ];
 
@@ -3686,6 +3975,9 @@ const VERBAS_ES = [
   {id:'ves5', label:'Acoso laboral / Sexual',            catIdx:4},
   {id:'ves6', label:'Salarios e indem. pendientes',      catIdx:5},
   {id:'ves7', label:'Modificación sustancial / Traslado',catIdx:6},
+  {id:'ves8', label:'ERE / ERTE — Extinción colectiva',  catIdx:7},
+  {id:'ves9', label:'Baja médica / IT durante despido',  catIdx:8},
+  {id:'ves10',label:'Fijo discontinuo — llamamiento',    catIdx:9},
 ];
 
 const VERBAS_PT = [
@@ -3696,6 +3988,10 @@ const VERBAS_PT = [
   {id:'vpt5', label:'Assédio moral / Sexual',            catIdx:4},
   {id:'vpt6', label:'Créditos salariais',                catIdx:5},
   {id:'vpt7', label:'Resolução c/ justa causa',          catIdx:6},
+  {id:'vpt8', label:'Lay-off simplificado',              catIdx:7},
+  {id:'vpt9', label:'Trabalhador estudante',             catIdx:8},
+  {id:'vpt10',label:'Parentalidade — protecção absoluta',catIdx:9},
+  {id:'vpt11',label:'Teletrabalho — regime especial',    catIdx:10},
 ];
 
 function getVerbasPacto() { return pactoCountry==='pt' ? VERBAS_PT : VERBAS_ES; }
@@ -3912,32 +4208,166 @@ function calcPacto() {
 async function simularPacto() {
   const desc = document.getElementById('pa-desc')?.value||'';
   calcPacto();
+  const iaEl = document.getElementById('pa-ia-analise');
+
   if(!desc) {
-    document.getElementById('pa-ia-analise').textContent = pactoCountry==='es'
-      ? 'Añada una descripción del caso para el análisis de IA.'
-      : 'Adicione uma descrição do caso para a análise de IA.';
+    iaEl.textContent = pactoCountry==='es'
+      ? 'Añada una descripción del caso para el análisis de IA especializada.'
+      : 'Adicione uma descrição do caso para a análise de IA especializada.';
     return;
   }
-  const pais = pactoCountry==='es'?'español':'português europeo';
-  const iaEl = document.getElementById('pa-ia-analise');
-  iaEl.textContent = pactoCountry==='es' ? 'Analizando...' : 'A analisar...';
+
+  iaEl.innerHTML = '<em style="opacity:.6">'+(pactoCountry==='es'?'Analizando con IA jurídica especialista en derecho laboral español...':'A analisar com IA jurídica especialista em direito laboral português...')+'</em>';
+
+  const scoreNum = document.getElementById('pa-score-num')?.textContent||'0';
+  const cons = document.getElementById('pa-cen-cons')?.textContent||'—';
+  const prov = document.getElementById('pa-cen-prov')?.textContent||'—';
+  const agr = document.getElementById('pa-cen-agr')?.textContent||'—';
+  const base = document.getElementById('pa-base')?.textContent||'—';
+  const anos = document.getElementById('pa-anos')?.textContent||'—';
+  const contrato = document.getElementById('pa-contrato')?.value||'indefinido';
+  const tipo = document.getElementById('pa-tipo')?.value||'improcedente';
+  const salario = document.getElementById('pa-salario')?.value||'—';
+
   try {
-    const prompt = pactoCountry==='es'
-      ? `Eres un experto en derecho laboral español. Analiza el caso y responde en 3-4 líneas identificando: 1) Principal riesgo jurídico, 2) Si hay indicios de discriminación o nulidad, 3) Recomendación estratégica para el abogado. Sé objetivo y directo. Usa terminología del Estatuto de los Trabajadores.
+    if(pactoCountry === 'es') {
+      const tipoLabel = {improcedente:'Despido improcedente (art. 56 ET)',procedente:'Despido procedente (art. 55.7 ET)',nula:'Despido nulo — discriminatorio (art. 55.5 ET)',objetivo:'Despido objetivo por causas ETOP (art. 52 ET)'}[tipo]||tipo;
+      const contratoLabel = {indefinido:'Contrato indefinido',temporal:'Contrato temporal'}[contrato]||contrato;
 
-Caso: ${desc}`
-      : `És um especialista em direito laboral português. Analisa o caso e responde em 3-4 linhas identificando: 1) Principal risco jurídico, 2) Se há indícios de despedimento ilícito ou nulidade, 3) Recomendação estratégica para o advogado. Sê objectivo e directo. Usa terminologia do Código do Trabalho português.
+      const SYSTEM_ES = `Usted es una IA jurídica especialista de nivel máximo en ACUERDOS LABORALES en ESPAÑA, actuando como núcleo de inteligencia jurídica de una aplicación profesional.
 
-Caso: ${desc}`;
-    const txt = await claudeAPI([{role:'user',content:prompt}], 600);
-    iaEl.textContent = txt;
+Posee dominio absoluto de: Estatuto de los Trabajadores, jurisprudencia del Tribunal Supremo, jurisprudencia de los TSJ, práctica forense laboral española.
+
+Actúa como: Abogado laboralista sénior, Analista de riesgo jurídico, Especialista en negociación de acuerdos, Evaluador de contingencias laborales.
+
+MODO DE RAZONAMIENTO OBLIGATORIO:
+1. Identificar derechos indisponibles y negociables
+2. Analizar la validez del acuerdo
+3. Evaluar riesgos de nulidad, improcedencia o reclamaciones futuras
+4. Considerar tipo de despido, indemnización legal mínima, tendencia jurisprudencial y carga de la prueba
+
+Cada análisis debe: basarse en norma o jurisprudencia consolidada, evaluar riesgo para ambas partes, evitar lenguaje genérico u opinativo, priorizar seguridad jurídica.
+
+Usted no sustituye a un abogado humano. Sus conclusiones son técnicas y estimativas.`;
+
+      const USER_ES = `JURISDICCIÓN: España — Estatuto de los Trabajadores, TS, TSJ
+
+DATOS DEL CASO:
+• Tipo de despido: ${tipoLabel}
+• Tipo de contrato: ${contratoLabel}
+• Salario mensual bruto: €${salario}
+• Años trabajados: ${anos}
+• Indemnización legal base: ${base}
+• Score probatorio: ${scoreNum}/100
+• Escenario conservador: ${cons} | Probable: ${prov} | Agresivo: ${agr}
+
+HECHOS NARRADOS POR EL ABOGADO:
+${desc}
+
+ANÁLISIS REQUERIDO — responda en español jurídico nativo:
+
+**1. DERECHOS INDISPONIBLES**
+Lo que la empresa debe con independencia de negociación. Base legal obligatoria.
+
+**2. DERECHOS CONTROVERTIDOS**
+Lo que depende de prueba o interpretación jurisprudencial. Riesgo por concepto.
+
+**3. RIESGO JURÍDICO PRINCIPAL**
+Mayor riesgo para cada parte. Cite doctrina del TS o sentencias reiteradas de TSJ.
+
+**4. PUNTOS DE ATENCIÓN ESPECÍFICOS**
+Nulidad del acuerdo SMAC, prescripción de acciones (art. 59 ET), carga de la prueba, riesgo de reclamación futura.
+
+**5. FRANJA DE ACUERDO RECOMENDADA**
+Valor mínimo, probable y máximo con justificación jurisprudencial. Referencia a criterios del TSJ.
+
+**6. RECOMENDACIÓN ESTRATÉGICA**
+Qué debe hacer el abogado antes de aceptar o proponer el acuerdo.`;
+
+      const txt = await claudeAPI([{role:'user', content: SYSTEM_ES + '
+
+' + USER_ES}], 2000);
+      iaEl.innerHTML = txt
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#EA580C">$1</strong>')
+        .replace(/
+
+/g, '<br/><br/>')
+        .replace(/
+/g, '<br/>');
+
+    } else {
+      // PORTUGAL
+      const tipoLabel = {improcedente:'Despedimento ilícito (art. 381.º CT)',procedente:'Despedimento lícito',nula:'Despedimento nulo — discriminatório (art. 53.º CT)',objetivo:'Despedimento colectivo (art. 359.º CT)'}[tipo]||tipo;
+      const contratoLabel = {indefinido:'Contrato sem termo',temporal:'Contrato a termo certo/incerto'}[contrato]||contrato;
+
+      const SYSTEM_PT = `Você é uma IA jurídica especialista de nível máximo em ACORDOS LABORAIS em PORTUGAL, atuando como núcleo de inteligência jurídica de um aplicativo profissional.
+
+Domina profundamente: Código do Trabalho português, atuação e fiscalização da ACT, jurisprudência dos Tribunais da Relação, jurisprudência do STJ, prática forense laboral portuguesa.
+
+Atua como: Advogado laboralista sénior, Analista de risco jurídico, Consultor de negociação laboral, Avaliador de risco contratual e indemnizatório.
+
+MODO DE RACIOCÍNIO OBRIGATÓRIO:
+1. Identificar direitos indisponíveis do trabalhador
+2. Avaliar validade e limites da transação
+3. Verificar riscos de invalidade, coação, desequilíbrio contratual ou intervenção da ACT
+4. Considerar natureza do vínculo, causa da cessação, indemnizações legais e tendência jurisprudencial
+
+Toda análise deve: fundamentar em norma legal ou jurisprudência, avaliar risco bilateral, considerar o princípio da protecção do trabalhador, evitar conclusões absolutas.
+
+Você não substitui advogado humano. Suas análises são técnicas, probabilísticas e não vinculativas.`;
+
+      const USER_PT = `JURISDIÇÃO: Portugal — Código do Trabalho, STJ, Tribunais da Relação
+
+DADOS DO CASO:
+• Tipo de despedimento: ${tipoLabel}
+• Tipo de contrato: ${contratoLabel}
+• Salário mensal bruto: €${salario}
+• Anos trabalhados: ${anos}
+• Compensação base calculada: ${base}
+• Score probatório: ${scoreNum}/100
+• Cenário conservador: ${cons} | Provável: ${prov} | Agressivo: ${agr}
+
+FACTOS NARRADOS PELO ADVOGADO:
+${desc}
+
+ANÁLISE REQUERIDA — responda em português europeu jurídico nativo:
+
+**1. DIREITOS INCONTROVERTIDOS**
+O que a entidade patronal deve independentemente de negociação. Base legal obrigatória (artigos do CT).
+
+**2. DIREITOS CONTROVERTIDOS**
+O que depende de prova ou interpretação jurisprudencial. Risco por item.
+
+**3. RISCO JURÍDICO PRINCIPAL**
+Maior risco para cada parte. Cite acórdãos do STJ ou Tribunais da Relação.
+
+**4. PONTOS DE ATENÇÃO ESPECÍFICOS**
+Invalidade do acordo, prescrição de créditos (art. 337.º CT), intervenção da ACT, risco de reclamação futura.
+
+**5. FAIXA DE ACORDO RECOMENDADA**
+Valor mínimo, provável e máximo com justificação jurisprudencial.
+
+**6. RECOMENDAÇÃO ESTRATÉGICA**
+O que o advogado deve fazer antes de aceitar ou propor o acordo.`;
+
+      const txt = await claudeAPI([{role:'user', content: SYSTEM_PT + '
+
+' + USER_PT}], 2000);
+      iaEl.innerHTML = txt
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#EA580C">$1</strong>')
+        .replace(/
+
+/g, '<br/><br/>')
+        .replace(/
+/g, '<br/>');
+    }
   } catch(e) {
     iaEl.textContent = pactoCountry==='es'
       ? 'Error en el análisis. Verifique su conexión.'
       : 'Erro na análise. Verifique a sua ligação.';
+    console.error('simularPacto:', e);
   }
 }
-
 function switchPactoTab(tab, btn) {
   document.querySelectorAll('.pacto-tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.pacto-tab').forEach(el=>el.classList.remove('active'));
@@ -4391,6 +4821,131 @@ function exportPactoPDF() {
   }
 }
 
+
+
+// ============================================================
+// ACORDAI BRASIL — ANÁLISE DE IA ESPECIALISTA
+// ============================================================
+async function analisarCasoBR() {
+  const desc = document.getElementById('sc-desc')?.value?.trim();
+  if(!desc) { alert('Descreva os fatos do caso antes de analisar.'); return; }
+
+  const iaEl = document.getElementById('sc-ia-analise');
+  const btn = document.getElementById('btn-analisar-br');
+  iaEl.style.display = 'block';
+  iaEl.innerHTML = '<em style="color:var(--gy)">Analisando com IA jurídica especialista em direito trabalhista brasileiro...</em>';
+  btn.disabled = true;
+
+  const verbas = VERBAS_BR.filter(v => document.getElementById('chk_'+v.id)?.checked);
+  const salario = document.getElementById('sc-salario')?.value;
+  const admStr = document.getElementById('sc-adm')?.value;
+  const ajuizStr = document.getElementById('sc-ajuiz')?.value;
+  const rescisao = document.getElementById('sc-rescisao')?.value;
+  const setor = document.getElementById('sc-setor')?.value;
+  const estabilidade = document.getElementById('sc-estabilidade')?.value;
+  const scoreNum = document.getElementById('sc-score-num')?.textContent;
+  const totalProv = document.getElementById('sc-cen-prov')?.textContent;
+  const totalCons = document.getElementById('sc-cen-cons')?.textContent;
+  const conf = calcConfiabilidade();
+
+  const rescLabel = {indireta:'Rescisão indireta por falta grave do empregador (art. 483 CLT)',sem_causa:'Dispensa imotivada sem justa causa',com_causa:'Dispensa por justa causa (art. 482 CLT)',acordo:'Acordo entre as partes (art. 484-A CLT)'}[rescisao]||rescisao||'não informado';
+  const setorLabel = {bancario:'Bancário',construcao:'Construção civil',telemarketing:'Telemarketing/Call center',saude:'Saúde',comercio:'Comércio',industria:'Indústria',domestico:'Trabalho doméstico',rural:'Rural/Agronegócio',transporte:'Transporte/Logística',outro:'Outro'}[setor]||'não informado';
+  const estabLabel = {nenhuma:'Nenhuma',gestante:'Gestante (art. 10 II ADCT)',cipa:'Membro da CIPA (Súmula 339 TST)',acidente:'Acidente de trabalho (Súmula 378 TST)',pre_apo:'Pré-aposentadoria',sindical:'Dirigente sindical (art. 543 CLT)'}[estabilidade]||'Nenhuma';
+
+  // Anos de empresa
+  let anosEmpresa = '—';
+  if(admStr) {
+    const ref = ajuizStr ? new Date(ajuizStr) : new Date();
+    anosEmpresa = ((ref-new Date(admStr))/(1000*60*60*24*365)).toFixed(1)+' anos';
+  }
+
+  const SYSTEM_BR = `Você é uma IA jurídica especialista de nível máximo em ACORDOS TRABALHISTAS no BRASIL, atuando como núcleo de inteligência jurídica de um aplicativo profissional.
+
+Seu conhecimento é profundo, técnico e prático, com domínio absoluto de:
+• CLT
+• Constituição Federal
+• Jurisprudência consolidada do TST
+• Jurisprudência recorrente dos TRTs
+• Súmulas, OJs e precedentes relevantes
+• Acordos judiciais e extrajudiciais (art. 855-B a 855-E da CLT)
+
+Você atua simultaneamente como:
+• Advogado trabalhista sênior
+• Analista de risco jurídico
+• Especialista em negociação trabalhista
+• Avaliador de passivo trabalhista
+
+MODO DE RACIOCÍNIO OBRIGATÓRIO:
+1. Identificar direitos incontroversos e irrenunciáveis
+2. Identificar direitos controvertidos e negociáveis
+3. Avaliar riscos de: nulidade do acordo, quitação geral ou parcial, passivo futuro
+4. Considerar: provas documentais, ônus da prova, tendência jurisprudencial do TST, postura comum da Justiça do Trabalho
+
+Toda análise deve:
+• Citar base legal ou entendimento consolidado (Súmulas, OJs, artigos CLT/CF)
+• Avaliar risco para empregador e empregado
+• Evitar conclusões genéricas
+• Priorizar segurança jurídica e previsibilidade
+
+Você não substitui advogado humano. Suas conclusões são técnicas, estimativas e probabilísticas.`;
+
+  const USER_BR = `JURISDIÇÃO: Brasil — CLT, TST, TRTs
+
+DADOS SISTEMATIZADOS DO CASO:
+• Tipo de rescisão: ${rescLabel}
+• Setor econômico: ${setorLabel}
+• Salário mensal: ${salario ? 'R$ '+parseFloat(salario).toLocaleString('pt-BR') : 'não informado'}
+• Tempo de empresa: ${anosEmpresa}
+• Admissão: ${admStr||'não informada'} | Ajuizamento/dispensa: ${ajuizStr||'não informado'}
+• Estabilidade provisória: ${estabLabel}
+• Verbas pleiteadas: ${verbas.map(v=>v.label).join(', ')||'não informadas'}
+• Score probatório apurado: ${scoreNum}/100 (Confiabilidade: ${conf.label})
+• Cenário conservador: ${totalCons} | Cenário provável: ${totalProv}
+
+FATOS NARRADOS PELO ADVOGADO:
+${desc}
+
+ANÁLISE REQUERIDA — responda em linguagem técnica jurídica trabalhista, estruturada nas seguintes seções:
+
+**1. DIREITOS INCONTROVERSOS**
+Verbas que a empresa claramente deve, independente de prova adicional. Base legal obrigatória.
+
+**2. DIREITOS CONTROVERTIDOS**
+O que depende de prova, perícia ou interpretação jurisprudencial. Risco real por item.
+
+**3. RISCO JURÍDICO PRINCIPAL**
+Maior risco do processo para cada parte. Cite Súmula, OJ ou jurisprudência dominante do TST.
+
+**4. PONTOS DE ATENÇÃO ESPECÍFICOS**
+Prescrição, decadência, estabilidade provisória, julgamento extra/ultra petita, quitação geral vs. parcial.
+
+**5. FAIXA DE ACORDO RECOMENDADA**
+Valor mínimo, provável e máximo com justificativa jurisprudencial. Referência aos TRTs da região quando possível.
+
+**6. SIMULAÇÃO DE HOMOLOGAÇÃO (art. 855-B CLT)**
+O acordo tem risco de não homologação? O que o juiz vai verificar? Quitação parcial ou geral?
+
+**7. RECOMENDAÇÃO ESTRATÉGICA**
+O que o advogado deve fazer agora para fortalecer a posição antes de aceitar ou propor acordo.`;
+
+  try {
+    const txt = await claudeAPI([{role:'user', content: SYSTEM_BR + '
+
+' + USER_BR}], 2000);
+    iaEl.innerHTML = txt
+      .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--or)">$1</strong>')
+      .replace(/
+
+/g, '<br/><br/>')
+      .replace(/
+/g, '<br/>');
+  } catch(e) {
+    iaEl.textContent = 'Erro na análise. Verifique sua conexão e tente novamente.';
+    console.error('analisarCasoBR:', e);
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 // ============================================================
 // GLOBAL HISTORY// ============================================================
