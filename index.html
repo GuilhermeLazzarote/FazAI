@@ -1069,6 +1069,20 @@ a{color:var(--or);text-decoration:none}
             <div>
               <div class="panel">
                 <div class="ptitle">Dados do caso</div>
+                <!-- Seletor de posição processual -->
+                <div style="display:flex;gap:10px;margin-bottom:16px">
+                  <button id="btn-reclamante" onclick="setPosicao('reclamante')"
+                    style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--or);background:var(--or);color:#fff;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s">
+                    ⚖️ Reclamante / Trabalhador
+                  </button>
+                  <button id="btn-reclamada" onclick="setPosicao('reclamada')"
+                    style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--bd);background:transparent;color:var(--gy);font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s">
+                    🏢 Reclamada / Empresa
+                  </button>
+                </div>
+                <div id="sc-posicao-info" style="font-size:12px;color:var(--gy);margin-bottom:12px;padding:8px 12px;background:var(--lt);border-radius:6px;border-left:3px solid var(--or)">
+                  Modo: <strong>Reclamante</strong> — análise orientada à maximização do valor do acordo com segurança jurídica.
+                </div>
                 <div class="g2">
                   <div class="field"><label>Salário mensal (R$)</label><input type="number" id="sc-salario" placeholder="Ex: 3000" oninput="calcScore()"/></div>
                   <div class="field"><label>Tipo de rescisão</label>
@@ -1141,12 +1155,12 @@ a{color:var(--or);text-decoration:none}
             <div>
               <div id="sc-empty" style="text-align:center;padding:60px 20px;color:var(--gy)">
                 <div style="font-size:40px;margin-bottom:12px">⚖️</div>
-                <div style="font-size:14px">Selecione as verbas e informe os valores</div>
+                <div style="font-size:14px">Selecione os pedidos/verbas e informe os valores</div>
               </div>
               <div id="sc-resultado" style="display:none">
                 <!-- Score geral -->
                 <div class="panel" style="border:2px solid var(--or)">
-                  <div class="ptitle">Score ponderado do caso</div>
+                  <div class="ptitle">Score jurídico do caso</div>
                   <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
                     <div style="font-size:52px;font-weight:800;color:var(--or);line-height:1" id="sc-score-num">0</div>
                     <div style="flex:1">
@@ -1165,7 +1179,7 @@ a{color:var(--or);text-decoration:none}
                 </div>
                 <!-- Tabela verba a verba -->
                 <div class="panel" style="margin-top:12px">
-                  <div class="ptitle">Análise por verba</div>
+                  <div class="ptitle">Análise por pedido/verba</div>
                   <div style="overflow-x:auto">
                     <table class="rtable" id="sc-verbas-table" style="font-size:12px">
                       <thead><tr>
@@ -1197,7 +1211,7 @@ a{color:var(--or);text-decoration:none}
                   </div>
                 </div>
                 <div class="panel" style="background:var(--orp);border-color:#FED7AA;margin-top:12px">
-                  <div class="ptitle" style="color:var(--or)">Recomendação de negociação</div>
+                  <div class="ptitle" style="color:var(--or)">Análise de negociação</div>
                   <div id="sc-recomendacao" style="font-size:13px;line-height:1.6"></div>
                 </div>
                 <div class="panel" style="background:#F0F9FF;border:1px solid #BAE6FD;margin-top:12px">
@@ -1291,6 +1305,16 @@ a{color:var(--or);text-decoration:none}
                 <div class="pacto-panel">
                   <div class="pacto-panel-title" id="pp-title-verbas">Conceptos reclamados — valor por concepto</div>
                   <div id="pa-verbas-list"></div>
+                </div>
+                <div class="pacto-panel">
+                  <div class="pacto-panel-title" id="pp-title-pos">Posición procesal</div>
+                  <div style="display:flex;gap:10px;margin-bottom:12px">
+                    <button id="pa-btn-trabajador" onclick="setPactoPosicion('trabajador')" style="flex:1;padding:9px;border-radius:8px;border:2px solid #EA580C;background:#EA580C;color:#fff;font-weight:700;cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s">⚖️ Trabajador / Trabalhador</button>
+                    <button id="pa-btn-empresa" onclick="setPactoPosicion('empresa')" style="flex:1;padding:9px;border-radius:8px;border:2px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.5);font-weight:600;cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s">🏢 Empresa / Empleador</button>
+                  </div>
+                  <div id="pa-posicao-info" style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:12px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:6px;border-left:3px solid #EA580C">
+                    Modo: <strong style="color:#fff">Trabajador / Trabalhador</strong>
+                  </div>
                 </div>
                 <div class="pacto-panel">
                   <div class="pacto-panel-title" id="pp-title-desc">Descripción del caso</div>
@@ -3407,6 +3431,26 @@ function getBenchmarkBR(rescisao, salario, anos) {
   return benchmarks[rescisao]||null;
 }
 
+let posicaoAtual = 'reclamante';
+
+function setPosicao(p) {
+  posicaoAtual = p;
+  const btnR = document.getElementById('btn-reclamante');
+  const btnE = document.getElementById('btn-reclamada');
+  const info = document.getElementById('sc-posicao-info');
+  if(p === 'reclamante') {
+    if(btnR) { btnR.style.background='var(--or)'; btnR.style.borderColor='var(--or)'; btnR.style.color='#fff'; }
+    if(btnE) { btnE.style.background='transparent'; btnE.style.borderColor='var(--bd)'; btnE.style.color='var(--gy)'; }
+    if(info) info.innerHTML = 'Modo: <strong>Reclamante / Trabalhador</strong> — análise orientada à maximização do valor do acordo com segurança jurídica.';
+  } else {
+    if(btnE) { btnE.style.background='var(--or)'; btnE.style.borderColor='var(--or)'; btnE.style.color='#fff'; }
+    if(btnR) { btnR.style.background='transparent'; btnR.style.borderColor='var(--bd)'; btnR.style.color='var(--gy)'; }
+    if(info) info.innerHTML = 'Modo: <strong>Reclamada / Empresa</strong> — análise orientada à minimização da exposição e identificação de teses defensivas.';
+  }
+  renderChecklistBR();
+  calcScore();
+}
+
 function renderVerbasListBR() {
   const el = document.getElementById('sc-verbas-list');
   if(!el) return;
@@ -3437,18 +3481,28 @@ function renderChecklistBR() {
   if(selected.length===0) { panel.style.display='none'; el.innerHTML=''; return; }
   panel.style.display='block';
 
+  const isReclamante = posicaoAtual === 'reclamante';
+
   el.innerHTML = selected.map(v => {
     const cat = CHECKLIST_BR[v.catIdx];
     if(!cat) return '';
     return `
       <div style="margin-bottom:18px">
         <div style="font-size:11px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--or)">${cat.cat}</div>
-        ${cat.items.map(item => `
-          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start">
-            <input type="checkbox" id="${item.id}" onchange="calcScore()" ${item.pts<0?'style="accent-color:#B91C1C"':''}/>
+        ${cat.items.map(item => {
+          // Determinar favorecimento da prova
+          const favRec = item.pts > 0;
+          const favLabel = favRec ? '▲ Trabalhador' : '▼ Empresa';
+          const favCor = favRec ? '#166534' : '#B91C1C';
+          // Highlight se favorece a posição atual
+          const isRelevante = (isReclamante && item.pts > 0) || (!isReclamante && item.pts < 0);
+          return `
+          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start;${isRelevante?'':'opacity:.65'}">
+            <input type="checkbox" id="${item.id}" onchange="calcScore()"/>
             <label for="${item.id}" style="flex:1;font-size:12px;line-height:1.4">${item.label}</label>
-            <span style="font-size:10px;font-weight:700;color:${item.pts>0?'var(--or)':'#B91C1C'};min-width:32px;text-align:right">${item.pts>0?'+':''  }${item.pts}</span>
-          </div>`).join('')}
+            <span style="font-size:9px;font-weight:600;color:${favCor};min-width:70px;text-align:right;white-space:nowrap">${favLabel}</span>
+          </div>`;
+        }).join('')}
       </div>`;
   }).join('');
 }
@@ -3545,14 +3599,25 @@ function calcScore() {
   const scoreLabels = ['Caso fraco','Caso moderado','Caso favorável','Caso sólido','Caso muito sólido'];
   const scoreIdx = scorePonderado<=20?0:scorePonderado<=40?1:scorePonderado<=60?2:scorePonderado<=80?3:4;
 
-  // Recomendação
+  // Recomendação neutra por posição
+  const isRec = posicaoAtual === 'reclamante';
   let rec;
   if(alertas.length>0) {
-    rec = `⚠ <strong>${alertas.length} verba(s) com score baixo</strong>. Negociar o valor total considerando apenas as verbas com boa probabilidade de êxito. Valor provável esperado: <strong>${fmtBRL(totalProv)}</strong>.`;
-  } else if(scorePonderado<=50) {
-    rec = `Posição moderada. Negociar entre <strong>${fmtBRL(totalCons)}</strong> e <strong>${fmtBRL(totalProv)}</strong>. Reforce o acervo probatório antes de recusar propostas.`;
+    rec = isRec
+      ? `⚠ <strong>${alertas.length} verba(s) com baixa sustentação probatória.</strong> Considere negociar focando nas verbas com maior força jurídica. Valor provável das verbas sólidas: <strong>${fmtBRL(totalProv)}</strong>.`
+      : `✅ <strong>${alertas.length} verba(s) com baixa sustentação do reclamante.</strong> Boa posição defensiva. Contra-proponha próximo de <strong>${fmtBRL(totalCons)}</strong> para estas verbas.`;
+  } else if(scorePonderado<=30) {
+    rec = isRec
+      ? `Caso com baixa sustentação probatória. Avalie proposta de acordo próxima de <strong>${fmtBRL(totalCons)}</strong>. Reforce o acervo probatório antes de recusar.`
+      : `Posição defensiva forte. Ofereça entre <strong>${fmtBRL(totalCons*0.5)}</strong> e <strong>${fmtBRL(totalCons)}</strong>. O risco de condenação é baixo conforme elementos apresentados.`;
+  } else if(scorePonderado<=60) {
+    rec = isRec
+      ? `Posição moderada. Busque acordo entre <strong>${fmtBRL(totalCons)}</strong> e <strong>${fmtBRL(totalProv)}</strong>. Fortaleça a prova documental para sustentar o cenário provável.`
+      : `Exposição moderada. Negocie entre <strong>${fmtBRL(totalCons)}</strong> e <strong>${fmtBRL(totalProv)}</strong>. Evite o risco de condenação no cenário agressivo de <strong>${fmtBRL(totalAgr)}</strong>.`;
   } else {
-    rec = `Posição forte. Não aceite menos de <strong>${fmtBRL(totalProv)}</strong>. Com as provas atuais, o valor agressivo de <strong>${fmtBRL(totalAgr)}</strong> é plenamente sustentável.`;
+    rec = isRec
+      ? `Caso com forte sustentação. Não aceite menos de <strong>${fmtBRL(totalProv)}</strong>. O cenário agressivo de <strong>${fmtBRL(totalAgr)}</strong> é sustentável com o acervo probatório atual.`
+      : `Alta exposição ao risco. Considere acordo até <strong>${fmtBRL(totalProv)}</strong> para evitar condenação no cenário agressivo de <strong>${fmtBRL(totalAgr)}</strong>.`;
   }
 
   document.getElementById('sc-empty').style.display='none';
@@ -3888,6 +3953,26 @@ const CHECKLIST_PT = [
 ];
 
 let pactoCountry = 'es';
+let pactoPosicao = 'trabajador';
+
+function setPactoPosicion(pos) {
+  pactoPosicao = pos;
+  const t = PACTO_I18N[pactoCountry];
+  const btnT = document.getElementById('pa-btn-trabajador');
+  const btnE = document.getElementById('pa-btn-empresa');
+  const info = document.getElementById('pa-posicao-info');
+  const isTrabajador = pos === 'trabajador';
+  if(btnT) { btnT.style.background=isTrabajador?'#EA580C':'transparent'; btnT.style.borderColor=isTrabajador?'#EA580C':'rgba(255,255,255,.2)'; btnT.style.color=isTrabajador?'#fff':'rgba(255,255,255,.5)'; }
+  if(btnE) { btnE.style.background=!isTrabajador?'#EA580C':'transparent'; btnE.style.borderColor=!isTrabajador?'#EA580C':'rgba(255,255,255,.2)'; btnE.style.color=!isTrabajador?'#fff':'rgba(255,255,255,.5)'; }
+  if(info) {
+    const label = isTrabajador
+      ? (pactoCountry==='es'?'Trabajador — análisis orientado a maximizar el acuerdo':'Trabalhador — análise orientada a maximizar o acordo')
+      : (pactoCountry==='es'?'Empresa — análisis orientado a minimizar la exposición':'Empresa — análise orientada a minimizar a exposição');
+    info.innerHTML = 'Modo: <strong style="color:#fff">'+label+'</strong>';
+  }
+  // Atualizar checklist para destacar provas relevantes à posição
+  renderChecklistPactoByVerbas();
+}
 
 function setPactoCountry(country) {
   pactoCountry = country;
@@ -4027,18 +4112,25 @@ function renderChecklistPactoByVerbas() {
   const lista = getChecklistPacto();
   const selected = verbas.filter(v=>document.getElementById('chk_'+v.id)?.checked);
   if(selected.length===0) { el.innerHTML=''; return; }
+  const isTrab = pactoPosicao === 'trabajador';
   el.innerHTML = selected.map(v=>{
     const cat = lista[v.catIdx];
     if(!cat) return '';
     return `
       <div style="margin-bottom:18px">
         <div style="font-size:10px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(234,88,12,.3)">${cat.cat}</div>
-        ${cat.items.map(item=>`
-          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start">
+        ${cat.items.map(item=>{
+          const favTrab = item.pts > 0;
+          const favLabel = favTrab ? (pactoCountry==='es'?'▲ Trabajador':'▲ Trabalhador') : (pactoCountry==='es'?'▼ Empresa':'▼ Empresa');
+          const favCor = favTrab ? '#86efac' : '#fca5a5';
+          const isRelevante = (isTrab && item.pts>0) || (!isTrab && item.pts<0);
+          return `
+          <div class="chk-row" style="margin-bottom:6px;align-items:flex-start;${isRelevante?'':'opacity:.5'}">
             <input type="checkbox" id="${item.id}" onchange="calcPacto()" style="margin-top:2px;flex-shrink:0"/>
-            <label for="${item.id}" style="flex:1;font-size:12px;color:rgba(255,255,255,.65);line-height:1.4">${item.label}</label>
-            <span style="font-size:10px;font-weight:700;color:#EA580C;min-width:30px;text-align:right;flex-shrink:0">+${item.pts}</span>
-          </div>`).join('')}
+            <label for="${item.id}" style="flex:1;font-size:12px;color:rgba(255,255,255,.75);line-height:1.4">${item.label}</label>
+            <span style="font-size:9px;font-weight:600;color:${favCor};min-width:65px;text-align:right;flex-shrink:0;white-space:nowrap">${favLabel}</span>
+          </div>`;
+        }).join('')}
       </div>`;
   }).join('');
 }
@@ -4176,19 +4268,20 @@ function calcPacto() {
     : ['Caso fraco','Caso moderado','Caso favorável','Caso sólido','Caso muito sólido'];
   const scoreIdx=scorePonderado<=20?0:scorePonderado<=40?1:scorePonderado<=60?2:scorePonderado<=80?3:4;
 
+  const isTrabajadorPacto = pactoPosicao === 'trabajador';
   let rec;
   if(alertas.length>0) {
     rec = isES
-      ? `⚠ <strong>${alertas.length} concepto(s) con score bajo</strong>. Negociar considerando solo los conceptos con buena probabilidad de éxito. Valor probable esperado: <strong>${fmtEur(totalProv)}</strong>.`
-      : `⚠ <strong>${alertas.length} verba(s) com score baixo</strong>. Negociar considerando apenas as verbas com boa probabilidade. Valor provável esperado: <strong>${fmtEur(totalProv)}</strong>.`;
+      ? (isTrabajadorPacto ? `⚠ <strong>${alertas.length} concepto(s) con baja sustentación.</strong> Negocie focando en los conceptos sólidos. Valor probable: <strong>${fmtEur(totalProv)}</strong>.` : `✅ <strong>${alertas.length} concepto(s) con baja sustentación del demandante.</strong> Ofrezca entre <strong>${fmtEur(totalCons*0.5)}</strong> y <strong>${fmtEur(totalCons)}</strong>.`)
+      : (isTrabajadorPacto ? `⚠ <strong>${alertas.length} verba(s) com baixa sustentação.</strong> Negociar focando nas verbas sólidas. Valor provável: <strong>${fmtEur(totalProv)}</strong>.` : `✅ <strong>${alertas.length} verba(s) com baixa sustentação do requerente.</strong> Proponha entre <strong>${fmtEur(totalCons*0.5)}</strong> e <strong>${fmtEur(totalCons)}</strong>.`);
   } else if(scorePonderado<=50) {
     rec = isES
-      ? `Posición moderada. Negocie entre <strong>${fmtEur(totalCons)}</strong> y <strong>${fmtEur(totalProv)}</strong>.`
-      : `Posição moderada. Negocear entre <strong>${fmtEur(totalCons)}</strong> e <strong>${fmtEur(totalProv)}</strong>.`;
+      ? (isTrabajadorPacto ? `Posición moderada. Busque acuerdo entre <strong>${fmtEur(totalCons)}</strong> y <strong>${fmtEur(totalProv)}</strong>.` : `Exposición moderada. Negocie entre <strong>${fmtEur(totalCons)}</strong> y <strong>${fmtEur(totalProv)}</strong> para evitar condena.`)
+      : (isTrabajadorPacto ? `Posição moderada. Negociar entre <strong>${fmtEur(totalCons)}</strong> e <strong>${fmtEur(totalProv)}</strong>.` : `Exposição moderada. Negocear entre <strong>${fmtEur(totalCons)}</strong> e <strong>${fmtEur(totalProv)}</strong> para evitar condenação.`);
   } else {
     rec = isES
-      ? `Posición fuerte. No acepte menos de <strong>${fmtEur(totalProv)}</strong>. Objetivo agresivo: <strong>${fmtEur(totalAgr)}</strong>.`
-      : `Posição forte. Não aceite menos de <strong>${fmtEur(totalProv)}</strong>. Objectivo agressivo: <strong>${fmtEur(totalAgr)}</strong>.`;
+      ? (isTrabajadorPacto ? `Posición fuerte. No acepte menos de <strong>${fmtEur(totalProv)}</strong>. Objetivo agresivo sostenible: <strong>${fmtEur(totalAgr)}</strong>.` : `Alta exposición. Considere acuerdo hasta <strong>${fmtEur(totalProv)}</strong> para evitar condena en el escenario agresivo de <strong>${fmtEur(totalAgr)}</strong>.`)
+      : (isTrabajadorPacto ? `Posição forte. Não aceite menos de <strong>${fmtEur(totalProv)}</strong>. Objectivo agressivo: <strong>${fmtEur(totalAgr)}</strong>.` : `Alta exposição. Considere acordo até <strong>${fmtEur(totalProv)}</strong> para evitar condenação no cenário agressivo de <strong>${fmtEur(totalAgr)}</strong>.`);
   }
 
   document.getElementById('pa-empty-state').style.display='none';
@@ -4252,6 +4345,8 @@ Usted no sustituye a un abogado humano. Sus conclusiones son técnicas y estimat
 
       const USER_ES = `JURISDICCIÓN: España — Estatuto de los Trabajadores, TS, TSJ
 
+PERSPECTIVA: El abogado representa ${pactoPosicao==='trabajador'?'al TRABAJADOR — orientar análisis a maximizar el acuerdo y proteger los derechos laborales':'a la EMPRESA — orientar análisis a minimizar la exposición e identificar teses defensivas'}.
+
 DATOS DEL CASO:
 • Tipo de despido: ${tipoLabel}
 • Tipo de contrato: ${contratoLabel}
@@ -4282,7 +4377,7 @@ Nulidad del acuerdo SMAC, prescripción de acciones (art. 59 ET), carga de la pr
 Valor mínimo, probable y máximo con justificación jurisprudencial. Referencia a criterios del TSJ.
 
 **6. RECOMENDACIÓN ESTRATÉGICA**
-Qué debe hacer el abogado antes de aceptar o proponer el acuerdo.`;
+Considerando que representa ${pactoPosicao==='trabajador'?'al trabajador':'a la empresa'}: valor mínimo aceptable o máximo a ofrecer, con argumento jurídico sólido.`;
 
       const txt = await claudeAPI([{role:'user', content: SYSTEM_ES + '\n\n' + USER_ES}], 2000);
       iaEl.innerHTML = txt
@@ -4312,6 +4407,8 @@ Toda análise deve: fundamentar em norma legal ou jurisprudência, avaliar risco
 Você não substitui advogado humano. Suas análises são técnicas, probabilísticas e não vinculativas.`;
 
       const USER_PT = `JURISDIÇÃO: Portugal — Código do Trabalho, STJ, Tribunais da Relação
+
+PERSPECTIVA: O advogado representa ${pactoPosicao==='trabajador'?'o TRABALHADOR — orientar análise a maximizar o acordo e proteger os direitos laborais':'a EMPRESA — orientar análise a minimizar a exposição e identificar teses defensivas'}.
 
 DADOS DO CASO:
 • Tipo de despedimento: ${tipoLabel}
@@ -4343,7 +4440,7 @@ Invalidade do acordo, prescrição de créditos (art. 337.º CT), intervenção 
 Valor mínimo, provável e máximo com justificação jurisprudencial.
 
 **6. RECOMENDAÇÃO ESTRATÉGICA**
-O que o advogado deve fazer antes de aceitar ou propor o acordo.`;
+Considerando que representa ${pactoPosicao==='trabajador'?'o trabalhador':'a empresa'}: valor mínimo aceitável ou máximo a propor, com argumento jurídico fundamentado.`;
 
       const txt = await claudeAPI([{role:'user', content: SYSTEM_PT + '\n\n' + USER_PT}], 2000);
       iaEl.innerHTML = txt
@@ -4515,10 +4612,13 @@ function exportScorePDF() {
     }});
 
   const yAv=doc.lastAutoTable.finalY+8;
-  doc.setFillColor(254,242,242);doc.rect(ml,yAv,pw-28,14,'F');
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(185,28,28);
-  doc.text('⚠ AVISO LEGAL: Relatório de apoio à negociação. Valores e probabilidades são estimativas. Não constituem garantia de resultado judicial.',ml+3,yAv+5);
-  doc.text('Consulte sempre um advogado especializado antes de tomar decisões.',ml+3,yAv+10);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');
+  const avisoTxtBR='AVISO LEGAL: Relatorio de apoio a negociacao. Os valores e probabilidades sao estimativas tecnicas. Nao constituem garantia de resultado judicial. Consulte sempre um advogado especializado antes de tomar decisoes.';
+  const avisoLnsBR=doc.splitTextToSize(avisoTxtBR,pw-36);
+  const avisoHBR=Math.max(14,avisoLnsBR.length*4.5+8);
+  doc.setFillColor(254,242,242);doc.rect(ml,yAv,pw-28,avisoHBR,'F');
+  doc.setTextColor(185,28,28);
+  doc.text(avisoLnsBR,ml+4,yAv+5.5);
 
   addFooter();
   doc.save('AcordAI_Brasil_Score'+scoreNum+'.pdf');
@@ -4577,21 +4677,21 @@ function exportPactoPDF() {
     doc.text('AI',29,18);
     doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
     doc.text('PactoAI Europa — '+paisNome,22,23);
-    // Badge país
+    // Badge país — canto superior direito bem dentro da margem
     doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
-    doc.roundedRect(pw-58,7,50,12,2,2,'F');
+    doc.roundedRect(pw-52,8,40,10,2,2,'F');
     doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.3);
-    doc.roundedRect(pw-58,7,50,12,2,2);
-    doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
-    doc.text((isES?'ESPANA':'PORTUGAL'),pw-33,14,{align:'center'});
-    // LCA
-    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-    doc.text('LCA — Legal Calculation Associate',pw-14,20,{align:'right'});
+    doc.roundedRect(pw-52,8,40,10,2,2);
+    doc.setFontSize(7);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
+    doc.text((isES?'ESPANA':'PORTUGAL'),pw-32,14,{align:'center'});
+    // LCA — abaixo do badge, alinhado à direita
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    doc.text('LCA — Legal Calculation Associate',pw-12,20.5,{align:'right'});
     // Linha separadora
-    doc.setDrawColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.setLineWidth(0.3);doc.line(10,27,pw-10,27);
+    doc.setDrawColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.setLineWidth(0.3);doc.line(10,26,pw-10,26);
     // Título
-    doc.setFontSize(10.5);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
-    doc.text(titulo,105,35,{align:'center'});
+    doc.setFontSize(10);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
+    doc.text(titulo,105,34,{align:'center'});
   }
 
   function addFooter() {
@@ -4661,32 +4761,33 @@ function exportPactoPDF() {
     columnStyles:{0:{fontStyle:'bold',cellWidth:52,textColor:GRAY},1:{textColor:WHITE}}
   }));
 
-  // Score card — altura 32 para caber número grande
+  // Score card — altura 38 para caber tudo sem cortar
   const yS=doc.lastAutoTable.finalY+8;
   doc.setFillColor(PANEL[0],PANEL[1],PANEL[2]);
-  doc.roundedRect(ml,yS,pw-28,32,3,3,'F');
+  doc.roundedRect(ml,yS,pw-28,38,3,3,'F');
   doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.5);
-  doc.roundedRect(ml,yS,pw-28,32,3,3);
+  doc.roundedRect(ml,yS,pw-28,38,3,3);
 
-  // Número grande à direita — dentro do card
-  doc.setFontSize(20);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
-  doc.text(scoreNum+'',pw-50,yS+18);
-  doc.setFontSize(10);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text('/100',pw-50+(doc.getTextWidth(scoreNum+'')+2),yS+18);
+  // Número grande à direita com /100 bem separado
+  const scoreStr = scoreNum+'';
+  doc.setFontSize(22);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
+  doc.text(scoreStr,pw-48,yS+20);
+  doc.setFontSize(9);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text(' /100',pw-48+doc.getTextWidth(scoreStr),yS+20);
 
   // Barra de score — lado esquerdo
-  const bW=pw-28-75, bH=5, bX=ml+8, bY=yS+10;
+  const bW=pw-28-72, bH=5, bX=ml+8, bY=yS+12;
   doc.setFillColor(LGRAY[0],LGRAY[1],LGRAY[2]);doc.rect(bX,bY,bW,bH,'F');
   doc.setFillColor(OR[0],OR[1],OR[2]);doc.rect(bX,bY,(bW*scoreNum/100),bH,'F');
 
-  // Label
-  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
-  doc.text(scoreLabel,bX,bY-3);
-  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+6);
+  // Label e prob dentro do card
+  doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
+  doc.text(scoreLabel,bX,bY-4);
+  doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text((isES?'Prob. de éxito: ':'Prob. de êxito: ')+pctProv,bX,bY+bH+7);
 
-  // Tabela por conceito
-  const yV=yS+32;
+  // Tabela por conceito — espaço extra após o card
+  const yV=yS+46;
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(OR[0],OR[1],OR[2]);
   doc.text(isES?'ANÁLISIS POR CONCEPTO':'ANÁLISE POR VERBA',ml,yV);
   doc.setDrawColor(OR[0],OR[1],OR[2]);doc.setLineWidth(0.4);doc.line(ml,yV+1.5,ml+55,yV+1.5);
@@ -4897,6 +4998,8 @@ ${desc}
 
 ANÁLISE REQUERIDA — responda em linguagem técnica jurídica trabalhista, estruturada nas seguintes seções:
 
+**PERSPECTIVA DA ANÁLISE:** ${posicaoAtual==='reclamante'?'Representando o RECLAMANTE (trabalhador) — foco em maximizar o valor e a segurança jurídica do acordo.':'Representando a RECLAMADA (empresa) — foco em minimizar a exposição e identificar teses defensivas.'}
+
 **1. DIREITOS INCONTROVERSOS**
 Verbas que a empresa claramente deve, independente de prova adicional. Base legal obrigatória.
 
@@ -4916,7 +5019,7 @@ Valor mínimo, provável e máximo com justificativa jurisprudencial. Referênci
 O acordo tem risco de não homologação? O que o juiz vai verificar? Quitação parcial ou geral?
 
 **7. RECOMENDAÇÃO ESTRATÉGICA**
-O que o advogado deve fazer agora para fortalecer a posição antes de aceitar ou propor acordo.`;
+Considerando que o advogado representa ${posicaoAtual==='reclamante'?'o RECLAMANTE (trabalhador)':'a RECLAMADA (empresa)'}, qual a melhor estratégia agora? Valor mínimo aceitável ou máximo a oferecer, com argumento jurídico.`;
 
   try {
     const txt = await claudeAPI([{role:'user', content: SYSTEM_BR + '\n\n' + USER_BR}], 2000);
