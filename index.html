@@ -1645,8 +1645,9 @@ async function showApp() {
   document.getElementById('u-av').textContent = name[0].toUpperCase();
   if(currentUser && !userProfile) {
     try {
-      const {data} = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-      if(data) userProfile = data;
+      const {data, error} = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+      if(data && !error) userProfile = data;
+      else userProfile = { plan: currentUser.email === ADMIN_EMAIL ? 'office' : 'free' };
     } catch(e) {
       userProfile = { plan: currentUser.email === ADMIN_EMAIL ? 'office' : 'free' };
     }
