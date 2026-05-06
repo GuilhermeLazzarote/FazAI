@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Faz AI — Inteligência Jurídica Trabalhista</title>
 <meta name="google-site-verification" content="eL1ArQXsDgvR85QDX6DEVg2qdrgl9QkPrRXF86EOLzA"/>
-<meta name="description" content="Plataforma de perícia contábil trabalhista com IA. LiquidaAI, PontoAI e AcordAI para advogados e peritos. 7 dias grátis."/>
+<meta name="description" content="Plataforma de cálculos trabalhistas com IA. LiquidaAI, PontoAI e AcordAI para advogados. 7 dias grátis."/>
 <meta name="keywords" content="liquidação trabalhista, espelho de ponto, Faz AI Calc, perito contábil, acordo trabalhista, IA jurídica"/>
 <meta property="og:title" content="Faz AI — Inteligência Jurídica Trabalhista"/>
 <meta property="og:description" content="Liquidação judicial, extração de ponto e cálculo de acordos com IA. 7 dias grátis."/>
@@ -574,12 +574,12 @@ a{color:var(--or);text-decoration:none}
           <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag">LiquidaAI</div>
             <h3 class="lp-panel-title">Liquidação judicial com IA</h3>
-            <p class="lp-panel-desc">Envie a petição inicial em PDF. A IA lê o documento, identifica as verbas, aplica ADC 58 e gera o laudo pericial completo em menos de 60 segundos.</p>
+            <p class="lp-panel-desc">Envie a petição inicial em PDF. A IA lê o documento, identifica as verbas, aplica ADC 58 e gera o relatório de liquidação completo em menos de 60 segundos.</p>
             <div class="lp-panel-features">
               <div class="lp-feat"><span class="lp-feat-dot"></span>ADC 58 + Lei 14.905/2024</div>
               <div class="lp-feat"><span class="lp-feat-dot"></span>INSS E-Social mês a mês</div>
               <div class="lp-feat"><span class="lp-feat-dot"></span>IRRF regime RRA</div>
-              <div class="lp-feat"><span class="lp-feat-dot"></span>Laudo PDF profissional</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Relatório PDF profissional</div>
             </div>
             <button class="lp-panel-cta" onclick="showPage('auth');showAuthMode('register')">Testar grátis →</button>
           </div>
@@ -662,7 +662,7 @@ a{color:var(--or);text-decoration:none}
           <div>✓ 10 liquidações/mês</div>
           <div>✓ PontoAI ilimitado</div>
           <div>✓ AcordAI ilimitado</div>
-          <div>✓ Laudo PDF profissional</div>
+          <div>✓ Relatório PDF profissional</div>
         </div>
         <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
       </div>
@@ -808,7 +808,7 @@ a{color:var(--or);text-decoration:none}
         </div>
         <div id="liq-tab-novo" class="tab-content active">
           <div class="panel">
-            <div class="ptitle">Parâmetros periciais</div>
+            <div class="ptitle">Parâmetros do cálculo</div>
             <div class="g3">
               <div class="field"><label>Salário base identificado (R$) — opcional</label><input type="number" id="liq-sal" placeholder="Ex: 2500" step="0.01"/></div>
               <div class="field"><label>Valor da causa (R$) — opcional</label><input type="number" id="liq-val-ini" placeholder="Ex: 50000" step="0.01"/></div>
@@ -821,8 +821,8 @@ a{color:var(--or);text-decoration:none}
                 <div class="chk-row"><input type="checkbox" id="liq-cm" checked/><label for="liq-cm">Aplicar correção monetária — ADC 58 STF + Lei 14.905/2024 (IPCA-E pré-judicial + SELIC judicial)</label></div>
                 <div class="chk-row"><input type="checkbox" id="liq-jur" checked/><label for="liq-jur">Aplicar juros de mora (SELIC acumulada pós-ajuizamento)</label></div>
               </div>
-              <div class="field"><label>Diretrizes periciais (opcional)</label><textarea id="liq-obs" placeholder="Ex: Aplicar norma coletiva de 2022, considerar adicional de insalubridade grau médio..."></textarea></div>
-            <div class="field"><label>Observações adicionais</label><textarea id="liq-obs2" placeholder="Informações complementares para o laudo..."></textarea></div>
+              <div class="field"><label>Diretrizes adicionais (opcional)</label><textarea id="liq-obs" placeholder="Ex: Aplicar norma coletiva de 2022, considerar adicional de insalubridade grau médio..."></textarea></div>
+            <div class="field"><label>Observações adicionais</label><textarea id="liq-obs2" placeholder="Informações complementares para o cálculo..."></textarea></div>
           </div>
           <input type="file" id="liq-file" accept=".pdf" style="display:none" onchange="onLiqFileSelect(this.files[0])"/>
           <div class="upload-zone" id="liq-upload" onclick="document.getElementById('liq-file').click()"
@@ -838,7 +838,7 @@ a{color:var(--or);text-decoration:none}
           <div id="liq-loading" style="display:none">
             <div class="panel" style="text-align:center;padding:48px">
               <div class="spin" style="width:22px;height:22px;margin:0 auto 12px"></div>
-              <div id="liq-load-lbl" style="font-size:14px;color:var(--gy)">Realizando perícia contábil...</div>
+              <div id="liq-load-lbl" style="font-size:14px;color:var(--gy)">Realizando liquidação trabalhista...</div>
               <div class="prog-bar" style="max-width:360px;margin:12px auto 0"><div class="prog-fill" id="liq-prog" style="width:0%"></div></div>
             </div>
           </div>
@@ -862,7 +862,7 @@ a{color:var(--or);text-decoration:none}
                 <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
                   <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo cálculo</button>
                   <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSX()">Exportar XLSX</button>
-                  <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Laudo PDF</button>
+                  <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Relatório PDF</button>
                 </div>
               </div>
 
@@ -951,7 +951,7 @@ a{color:var(--or);text-decoration:none}
                     <tfoot id="liq-memoria-tfoot"></tfoot>
                   </table>
                 </div>
-                <div class="pjc-obs">⚠ Demonstrativo proporcional — total condenado dividido igualmente pelo número de meses do contrato. Para cálculo oficial utilize o laudo em PDF.</div>
+                <div class="pjc-obs">⚠ Demonstrativo proporcional — total condenado dividido igualmente pelo número de meses do contrato. Para cálculo oficial utilize o relatório em PDF.</div>
               </div>
 
             </div><!-- fim pjc-doc -->
@@ -1553,7 +1553,7 @@ a{color:var(--or);text-decoration:none}
             <div style="font-size:15px;font-weight:700;margin-bottom:4px">Starter</div>
             <div style="font-size:32px;font-weight:800;color:var(--or);margin:12px 0 4px">R$197</div>
             <div style="font-size:12px;color:var(--gy);margin-bottom:16px">/mês · 1 usuário</div>
-            <div style="text-align:left;font-size:13px;color:var(--gy);line-height:2;margin-bottom:16px">✓ 10 liquidações/mês<br>✓ PontoAI ilimitado<br>✓ AcordAI ilimitado<br>✓ Laudo PDF profissional<br>✓ Protocolo único</div>
+            <div style="text-align:left;font-size:13px;color:var(--gy);line-height:2;margin-bottom:16px">✓ 10 liquidações/mês<br>✓ PontoAI ilimitado<br>✓ AcordAI ilimitado<br>✓ Relatório PDF profissional<br>✓ Protocolo único</div>
             <a href="https://pay.kirvano.com/a0deaf3d-cf87-4db2-85ed-dac859445d0d" target="_blank" class="btn btn-outline" style="width:100%;display:block">Assinar Starter</a>
           </div>
           <div class="panel" style="border:2px solid var(--or);text-align:center;position:relative">
@@ -2010,7 +2010,7 @@ async function processLiquida() {
     setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Calculando verbas...'; },5000);
     setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Aplicando ADC 58...'; },15000);
     setTimeout(()=>{ document.getElementById('liq-load-lbl').textContent = 'Calculando INSS e IRRF...'; },25000);
-    const prompt = `### PROTOCOLO DE PERÍCIA CONTÁBIL JUDICIAL — FAZ AI
+    const prompt = `### PROTOCOLO DE LIQUIDAÇÃO TRABALHISTA — FAZ AI
 Você é um Perito Judicial Contábil nomeado pelo juízo. Liquide INTEGRAL e EXAUSTIVAMENTE todos os pedidos da petição inicial (TODAS as alíneas, de "a" até o final, sem pular nenhuma).
 
 ### REGRA ABSOLUTA — PROIBIÇÃO DE CÓPIA:
@@ -2130,7 +2130,7 @@ AVISO PRÉVIO: sempre indenizado, 30 dias + 3 dias/ano trabalhado (máx 90 dias)
 
 FÉRIAS e 13º: apuração anual → multiplicar pelos anos trabalhados
 
-OBSERVAÇÕES PERICIAIS: ${obs||'Nenhuma'}
+OBSERVAÇÕES: ${obs||'Nenhuma'}
 OBSERVAÇÕES ADICIONAIS: ${obs2||'Nenhuma'}
 
 Retorne APENAS JSON válido sem markdown, sem comentários:
@@ -2340,8 +2340,10 @@ function exportLiquidaXLSX() {
   if(!liquidaResult) return;
   const r = liquidaResult;
   const wb = XLSX.utils.book_new();
+
+  // ── ABA 1: RESUMO ────────────────────────────────────────
   const rows = [
-    ['LAUDO PERICIAL TRABALHISTA — FAZ AI'],[''],
+    ['LIQUIDAÇÃO TRABALHISTA — FAZ AI'],[''],
     ['Reclamante',r.reclamante],['Reclamada',r.reclamada],['Processo',r.numeroProcesso],
     ['Período',r.periodoCalculoInicio+' a '+r.periodoCalculoFim],[''],
     ['VERBAS LIQUIDADAS'],
@@ -2355,7 +2357,69 @@ function exportLiquidaXLSX() {
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:50},{wch:60},{wch:15},{wch:18},{wch:18},{wch:18},{wch:18},{wch:12}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Liquidação');
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
+
+  // ── ABA 2: MEMÓRIA MENSAL POR VERBA ──────────────────────
+  const parseP = p => { if(!p) return null; const s=p.replace(/(\d{2})\/(\d{4})/,'$2-$1'); const d=new Date(s.length===7?s+'-01':s); return isNaN(d)?null:d; };
+  const dtIni = parseP(r.periodoCalculoInicio) || parseP(document.getElementById('liq-adm')?.value?.substring(0,7));
+  const dtFim = parseP(r.periodoCalculoFim)    || parseP(document.getElementById('liq-ajuiz')?.value?.substring(0,7));
+
+  if(dtIni && dtFim) {
+    const meses = (dtFim.getFullYear()-dtIni.getFullYear())*12+(dtFim.getMonth()-dtIni.getMonth())+1;
+    if(meses>=1 && meses<=360) {
+      const mem = [
+        ['MEMÓRIA DE CÁLCULO — APURAÇÃO MENSAL POR VERBA'],
+        ['Período: ' + String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear() + ' a ' + String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear() + ' (' + meses + ' meses)'],
+        [''],
+        ['Competência','Verba','Total Bruto','(-) INSS','(-) IRRF','Líquido','Fator Correção','Valor Corrigido'],
+      ];
+
+      const verbas = r.verbas || [];
+      let dt2 = new Date(dtIni);
+
+      for(let i=0; i<meses; i++) {
+        const mes  = dt2.getMonth()+1;
+        const ano  = dt2.getFullYear();
+        const comp = String(mes).padStart(2,'0')+'/'+ano;
+        const fator = getFatorCorrecao(ano, mes);
+
+        verbas.forEach(v => {
+          const vBruto = (v.total || v.valorCorrigido || v.valor || 0) / meses;
+          const vInss  = (r.inss  || 0) / meses / verbas.length;
+          const vIrrf  = (r.irrf  || 0) / meses / verbas.length;
+          const vLiq   = vBruto - vInss - vIrrf;
+          const vCorrig = vBruto * fator;
+          mem.push([comp, v.descricao,
+            parseFloat(vBruto.toFixed(2)),
+            parseFloat((-vInss).toFixed(2)),
+            parseFloat((-vIrrf).toFixed(2)),
+            parseFloat(vLiq.toFixed(2)),
+            parseFloat(fator.toFixed(4)),
+            parseFloat(vCorrig.toFixed(2))
+          ]);
+        });
+
+        dt2.setMonth(dt2.getMonth()+1);
+      }
+
+      // Linha de total
+      mem.push(['']);
+      const totalCorrig = verbas.reduce((s,v)=>s+(v.total||v.valorCorrigido||v.valor||0),0);
+      mem.push(['TOTAL', 'TODAS AS VERBAS',
+        parseFloat((r.totalBruto||0).toFixed(2)),
+        parseFloat((-(r.inss||0)).toFixed(2)),
+        parseFloat((-(r.irrf||0)).toFixed(2)),
+        parseFloat(((r.totalBruto||0)-(r.inss||0)-(r.irrf||0)).toFixed(2)),
+        '—',
+        parseFloat(totalCorrig.toFixed(2))
+      ]);
+
+      const ws2 = XLSX.utils.aoa_to_sheet(mem);
+      ws2['!cols']=[{wch:14},{wch:40},{wch:16},{wch:14},{wch:14},{wch:16},{wch:14},{wch:16}];
+      XLSX.utils.book_append_sheet(wb, ws2, 'Memória Mensal');
+    }
+  }
+
   XLSX.writeFile(wb, `Liquidacao_${(r.reclamante||'proc').replace(/\s/g,'_')}.xlsx`);
 }
 
@@ -2379,7 +2443,7 @@ function exportLiquidaPDF() {
     doc.setTextColor(234,88,12);
     doc.text('AI',29,18);
     doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-    doc.text('Plataforma de Perícia Contábil Trabalhista',22,23);
+    doc.text('Plataforma de Liquidação Trabalhista',22,23);
     // LCA lado direito
     doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
     doc.text('LC',185,15);doc.setTextColor(234,88,12);doc.text('A',191,15);
@@ -2399,7 +2463,7 @@ function exportLiquidaPDF() {
   // ══════════════════════════════════
   // PÁGINA 1 — RESUMO DAS VERBAS
   // ══════════════════════════════════
-  addHeader(doc, 'LAUDO PERICIAL TRABALHISTA — RESUMO DAS VERBAS');
+  addHeader(doc, 'LIQUIDAÇÃO TRABALHISTA — RESUMO DAS VERBAS');
 
   // Dados do processo completos
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
@@ -2458,7 +2522,7 @@ function exportLiquidaPDF() {
   // PÁGINA 2 — MEMÓRIA DE CÁLCULO
   // ══════════════════════════════════
   doc.addPage();
-  addHeader(doc, 'LAUDO PERICIAL TRABALHISTA — MEMÓRIA DE CÁLCULO');
+  addHeader(doc, 'LIQUIDAÇÃO TRABALHISTA — MEMÓRIA DE CÁLCULO');
 
   const y2=50;
   doc.setFontSize(7.5);doc.setFont(undefined,'bold');doc.setTextColor(107,114,128);
@@ -2478,7 +2542,7 @@ function exportLiquidaPDF() {
   // PÁGINA 3 — RESUMO TRIBUTÁRIO
   // ══════════════════════════════════
   doc.addPage();
-  addHeader(doc, 'LAUDO PERICIAL TRABALHISTA — RESUMO TRIBUTÁRIO');
+  addHeader(doc, 'LIQUIDAÇÃO TRABALHISTA — RESUMO TRIBUTÁRIO');
 
   const totalCorr=(r.verbas||[]).reduce((s,v)=>s+(v.total||0),0)||r.totalBruto;
   const liqCorr=totalCorr-(r.inss||0)-(r.irrf||0);
@@ -2606,7 +2670,7 @@ function exportLiquidaPDF() {
     doc.text('LCA — Legal Calculation Associate  ·  (11) 97329-4795  ·  (11) 96449-6270  ·  linkedin.com/in/lca-legal-calculation-associate  ·  Pág. '+i+'/'+pages,105,288,{align:'center'});
   }
 
-  doc.save('Laudo_'+(r.reclamante||'proc').replace(/\s/g,'_')+'.pdf');
+  doc.save('Liquidacao_'+(r.reclamante||'proc').replace(/\s/g,'_')+'.pdf');
 }
 // Liquida History
 function renderLiqHist() {
@@ -3319,7 +3383,7 @@ function exportAcPDF() {
   doc.setTextColor(17,24,39);doc.setFontSize(13);doc.setFont(undefined,'bold');
   doc.text('Faz AI',14,12);
   doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
-  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.text('Plataforma de Liquidação Trabalhista',14,19);
   doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(17,24,39);
   doc.text('LC',pw-21,12);doc.setTextColor(234,88,12);doc.text('A',pw-17,12);
   doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
@@ -3327,7 +3391,7 @@ function exportAcPDF() {
   doc.setTextColor(17,24,39);doc.setFontSize(12);doc.setFont(undefined,'bold');
   doc.text('CÁLCULO DE ACORDO TRABALHISTA — AcordAI',pw/2,38,{align:'center'});
   doc.setFontSize(8); doc.setFont(undefined,'normal');
-  doc.text('Plataforma de Perícia Contábil Trabalhista',14,19);
+  doc.text('Plataforma de Liquidação Trabalhista',14,19);
   doc.setTextColor(0,0,0);
   doc.autoTable({startY:44,head:[['Dados','']],
     body:[['Processo',document.getElementById('ac-proc').value],['Reclamante',name],['Reclamada',document.getElementById('ac-recld').value],['Meses apurados',r.meses]],
@@ -3435,33 +3499,49 @@ function renderMemoriaMensal(result, periodoInicio, periodoFim) {
   tbody.innerHTML = '';
   let somaCorrigido = 0;
   let dt = new Date(dtIni);
+  const verbas = result.verbas || [];
 
   for (let i = 0; i < meses; i++) {
     const mes   = dt.getMonth() + 1;
     const ano   = dt.getFullYear();
     const comp  = String(mes).padStart(2,'0') + '/' + ano;
     const fator = getFatorCorrecao(ano, mes);
-    const corrig = brutoPorMes * fator;
-    somaCorrigido += corrig;
 
-    const tr = document.createElement('tr');
-    tr.style.background = i%2===0 ? '' : 'var(--lt)';
-    tr.innerHTML = `
-      <td style="font-weight:600;font-family:'Courier New',monospace">${comp}</td>
-      <td style="text-align:right;font-weight:600">${fmtBRL(brutoPorMes)}</td>
-      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(inssPorMes)}</td>
-      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(irrfPorMes)}</td>
-      <td style="text-align:right">${fmtBRL(brutoPorMes - inssPorMes - irrfPorMes)}</td>
-      <td style="text-align:right;color:var(--gy);font-family:'Courier New',monospace">${fator.toFixed(4)}</td>
-      <td style="text-align:right;font-weight:700;color:var(--or)">${fmtBRL(corrig)}</td>
-    `;
-    tbody.appendChild(tr);
+    // Linha de separação de mês
+    const trMes = document.createElement('tr');
+    trMes.style.cssText = 'background:#1E3A5F';
+    trMes.innerHTML = `<td colspan="7" style="color:#fff;font-weight:700;font-family:'Courier New',monospace;padding:4px 10px;font-size:11px;letter-spacing:.06em">${comp}</td>`;
+    tbody.appendChild(trMes);
+
+    // Uma linha por verba
+    verbas.forEach((v, vi) => {
+      const vBruto = (v.total || v.valorCorrigido || v.valor || 0) / meses;
+      const vInss  = inssPorMes / Math.max(verbas.length, 1);
+      const vIrrf  = irrfPorMes / Math.max(verbas.length, 1);
+      const vLiq   = vBruto - vInss - vIrrf;
+      const vCorrig = vBruto * fator;
+      somaCorrigido += vCorrig;
+
+      const tr = document.createElement('tr');
+      tr.style.background = vi%2===0 ? '#FAFAFA' : '#FFFFFF';
+      tr.innerHTML = `
+        <td style="font-size:10px;color:#374151;padding-left:20px">${v.descricao||'Verba '+(vi+1)}</td>
+        <td style="text-align:right;font-weight:600">${fmtBRL(vBruto)}</td>
+        <td style="text-align:right;color:#B91C1C">- ${fmtBRL(vInss)}</td>
+        <td style="text-align:right;color:#B91C1C">- ${fmtBRL(vIrrf)}</td>
+        <td style="text-align:right">${fmtBRL(vLiq)}</td>
+        <td style="text-align:right;color:var(--gy);font-family:'Courier New',monospace">${fator.toFixed(4)}</td>
+        <td style="text-align:right;font-weight:700;color:var(--or)">${fmtBRL(vCorrig)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
     dt.setMonth(dt.getMonth()+1);
   }
 
   tfoot.innerHTML = `
     <tr style="background:var(--orp);font-weight:700;font-size:12px">
-      <td style="font-family:'Courier New',monospace">TOTAL (${meses} meses)</td>
+      <td style="font-family:'Courier New',monospace">TOTAL GERAL (${meses} meses)</td>
       <td style="text-align:right">${fmtBRL(totalBruto)}</td>
       <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalInss)}</td>
       <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalIrrf)}</td>
