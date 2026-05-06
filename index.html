@@ -388,8 +388,8 @@ a{color:var(--or);text-decoration:none}
 
 /* Painel */
 .lp-panel{position:relative}
-.lp-panel-content{display:none;grid-template-columns:1fr 1fr;gap:0;height:100%}
-.lp-panel-content.active{display:grid}
+.lp-panel-content{display:none;padding:40px 24px}
+.lp-panel-content.active{display:block}
 .lp-panel-video{background:#0A0A0A;position:relative}
 .lp-video-wrap{width:100%;height:100%;min-height:320px;position:relative}
 .lp-video-placeholder{width:100%;height:100%;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(135deg,#0d0d0d,#1a0a00);cursor:pointer}
@@ -403,10 +403,10 @@ a{color:var(--or);text-decoration:none}
 .lp-panel-tag{display:inline-block;background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:4px 12px;border-radius:20px;margin-bottom:16px}
 .lp-panel-title{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#111;letter-spacing:-.5px;margin-bottom:12px;line-height:1.2}
 .lp-panel-desc{font-size:15px;color:#6B7280;line-height:1.7;margin-bottom:24px}
-.lp-panel-features{display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.lp-panel-features{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px;justify-content:center}
 .lp-feat{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:#374151}
 .lp-feat-dot{width:6px;height:6px;border-radius:50%;background:#EA580C;flex-shrink:0}
-.lp-panel-cta{background:#EA580C;border:none;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s;align-self:flex-start;letter-spacing:.03em}
+.lp-panel-cta{background:#EA580C;border:none;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s;display:block;margin:0 auto;letter-spacing:.03em}
 .lp-panel-cta:hover{background:#C2410C}
 
 /* Pricing */
@@ -433,6 +433,39 @@ a{color:var(--or);text-decoration:none}
 .lp-footer-text{font-size:12px;color:rgba(255,255,255,.3)}
 .lp-wa-btn{display:flex;align-items:center;gap:8px;color:#25D366;font-size:13px;font-weight:600;text-decoration:none;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.2);padding:8px 16px;border-radius:8px;transition:all .2s}
 .lp-wa-btn:hover{background:rgba(37,211,102,.15)}
+
+
+/* ── PJE-CALC LAYOUT ──────────────────────────────────────── */
+.pjc-doc{background:#fff;border:1px solid #D1D5DB;border-radius:8px;overflow:hidden;font-family:'Courier New',Consolas,monospace;font-size:12px}
+.pjc-header{background:#1E3A5F;color:#fff;padding:18px 22px}
+.pjc-sistema{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#93C5FD;margin-bottom:4px}
+.pjc-titulo{font-size:18px;font-weight:700;letter-spacing:.05em;margin-bottom:14px;text-align:center;color:#fff}
+.pjc-partes{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.pjc-label{font-size:10px;font-weight:700;color:#93C5FD;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.pjc-nome{font-size:13px;font-weight:700;color:#fff}
+.pjc-datas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:#BFDBFE;padding-top:8px;border-top:1px solid rgba(255,255,255,.15)}
+.pjc-section{border-top:2px solid #E5E7EB;padding:0}
+.pjc-section-title{background:#1E3A5F;color:#fff;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:6px 16px}
+.pjc-dois-blocos{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.pjc-bloco{border-right:1px solid #E5E7EB;padding:0}
+.pjc-bloco:last-child{border-right:none}
+.pjc-bloco-titulo{background:#F1F5F9;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;padding:5px 14px;border-bottom:1px solid #E2E8F0}
+.pjc-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'Courier New',Consolas,monospace}
+.pjc-table th{background:#F8FAFC;color:#374151;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:5px 10px;border-bottom:1.5px solid #CBD5E1;text-align:right}
+.pjc-table th:first-child{text-align:left}
+.pjc-table td{padding:4px 10px;border-bottom:1px solid #F1F5F9;color:#1F2937;text-align:right;white-space:nowrap}
+.pjc-table td:first-child{text-align:left;color:#374151}
+.pjc-table tr:last-child td{border-bottom:none}
+.pjc-table tfoot td{background:#EFF6FF;font-weight:700;color:#1E3A5F;border-top:2px solid #1E3A5F;padding:6px 10px}
+.pjc-table tr.pjc-bold td{font-weight:700;color:#1E3A5F;background:#F8FAFC}
+.pjc-table tr.pjc-neg td:last-child{color:#B91C1C}
+.pjc-table tr.pjc-total td{background:#EFF6FF;font-weight:700;color:#1E3A5F;border-top:1.5px solid #1E3A5F}
+.pjc-verba-header{background:#F0FDF4;border-left:4px solid #16A34A;padding:10px 16px;margin:0}
+.pjc-verba-nome{font-size:13px;font-weight:700;color:#15803D;text-transform:uppercase;letter-spacing:.04em}
+.pjc-verba-meta{font-size:11px;color:#6B7280;margin-top:2px}
+.pjc-verba-formula{background:#FFFBEB;border:1px solid #FDE68A;padding:6px 12px;font-size:11px;color:#92400E;font-family:'Courier New',monospace;margin:0}
+.pjc-verba-incid{font-size:10px;color:#6B7280;padding:4px 16px;background:#F9FAFB;border-bottom:1px solid #E5E7EB}
+.pjc-obs{font-size:10px;color:#9CA3AF;padding:8px 16px;font-style:italic;background:#FFFBEB;border-top:1px solid #FDE68A}
 
 </style>
 <!-- Google Analytics -->
@@ -538,17 +571,7 @@ a{color:var(--or);text-decoration:none}
       <div class="lp-panel">
         <!-- LiquidaAI -->
         <div class="lp-panel-content active" id="panel-liquidaai">
-          <div class="lp-panel-video">
-            <div class="lp-video-wrap" id="video-liquidaai">
-              <div class="lp-video-placeholder">
-                <div class="lp-play-btn" onclick="loadVideo('liquidaai','SEU_VIDEO_ID_AQUI')">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                </div>
-                <div class="lp-video-label">Ver demonstração — LiquidaAI</div>
-              </div>
-            </div>
-          </div>
-          <div class="lp-panel-info">
+          <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag">LiquidaAI</div>
             <h3 class="lp-panel-title">Liquidação judicial com IA</h3>
             <p class="lp-panel-desc">Envie a petição inicial em PDF. A IA lê o documento, identifica as verbas, aplica ADC 58 e gera o laudo pericial completo em menos de 60 segundos.</p>
@@ -564,17 +587,7 @@ a{color:var(--or);text-decoration:none}
 
         <!-- PontoAI -->
         <div class="lp-panel-content" id="panel-pontoai">
-          <div class="lp-panel-video">
-            <div class="lp-video-wrap" id="video-pontoai">
-              <div class="lp-video-placeholder">
-                <div class="lp-play-btn" onclick="loadVideo('pontoai','SEU_VIDEO_ID_AQUI')">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                </div>
-                <div class="lp-video-label">Ver demonstração — PontoAI</div>
-              </div>
-            </div>
-          </div>
-          <div class="lp-panel-info">
+          <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag">PontoAI</div>
             <h3 class="lp-panel-title">OCR inteligente de espelho de ponto</h3>
             <p class="lp-panel-desc">Jogue qualquer modelo de espelho de ponto em PDF. O sistema extrai todos os horários automaticamente e exporta CSV formatado para o PJe-Calc.</p>
@@ -590,17 +603,7 @@ a{color:var(--or);text-decoration:none}
 
         <!-- AcordAI -->
         <div class="lp-panel-content" id="panel-acordai">
-          <div class="lp-panel-video">
-            <div class="lp-video-wrap" id="video-acordai">
-              <div class="lp-video-placeholder">
-                <div class="lp-play-btn" onclick="loadVideo('acordai','SEU_VIDEO_ID_AQUI')">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                </div>
-                <div class="lp-video-label">Ver demonstração — AcordAI</div>
-              </div>
-            </div>
-          </div>
-          <div class="lp-panel-info">
+          <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag">AcordAI Brasil</div>
             <h3 class="lp-panel-title">Simulador inteligente de acordos</h3>
             <p class="lp-panel-desc">Score probatório por verba, três cenários de negociação e checklist de provas. Saiba exatamente quanto vale cada pedido antes de entrar numa audiência.</p>
@@ -616,17 +619,7 @@ a{color:var(--or);text-decoration:none}
 
         <!-- PactoAI -->
         <div class="lp-panel-content" id="panel-pactoai">
-          <div class="lp-panel-video">
-            <div class="lp-video-wrap" id="video-pactoai">
-              <div class="lp-video-placeholder" style="background:linear-gradient(135deg,#0d0d0d,#1a0800)">
-                <div class="lp-play-btn" onclick="loadVideo('pactoai','SEU_VIDEO_ID_AQUI')">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                </div>
-                <div class="lp-video-label">Ver demonstração — PactoAI Europa</div>
-              </div>
-            </div>
-          </div>
-          <div class="lp-panel-info">
+          <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag" style="background:rgba(234,88,12,.15);color:#EA580C;border-color:rgba(234,88,12,.3)">PactoAI Europa 🇪🇸 🇵🇹</div>
             <h3 class="lp-panel-title">Acordos laborais na Europa</h3>
             <p class="lp-panel-desc">Simulador de acordos para España e Portugal com legislação local, terminologia jurídica nativa e análise de IA do risco jurídico do caso.</p>
@@ -850,35 +843,150 @@ a{color:var(--or);text-decoration:none}
             </div>
           </div>
           <div id="liq-result" style="display:none">
-            <div class="metrics">
-              <div class="mc"><div class="mc-label">Reclamante</div><div class="mc-value" id="lr-rec" style="font-size:13px">—</div></div>
-              <div class="mc"><div class="mc-label">Reclamada</div><div class="mc-value" id="lr-recld" style="font-size:13px">—</div></div>
-              <div class="mc"><div class="mc-label">Processo</div><div class="mc-value" id="lr-proc" style="font-size:13px">—</div></div>
-              <div class="mc"><div class="mc-label">Período</div><div class="mc-value" id="lr-per" style="font-size:13px">—</div></div>
-              <div class="mc"><div class="mc-label">Salário base identificado</div><div class="mc-value" id="lr-sal" style="font-size:12px;color:var(--or)">—</div></div>
-              <div class="mc"><div class="mc-label">Bruto total (c/ correção)</div><div class="mc-value" id="lr-bruto">R$ 0</div></div>
-              <div class="mc"><div class="mc-label">INSS reclamante</div><div class="mc-value" id="lr-inss" style="font-size:13px">R$ 0</div></div>
-              <div class="mc"><div class="mc-label">Honorários</div><div class="mc-value" id="lr-hon" style="font-size:13px">R$ 0</div></div>
-              <div class="mc hi"><div class="mc-label">Líquido reclamante (c/ correção)</div><div class="mc-value" id="lr-liq">R$ 0</div></div>
-            </div>
-            <div class="panel">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                <div class="ptitle" style="margin:0">Verbas liquidadas</div>
-                <div style="display:flex;gap:6px">
-                  <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo</button>
-                  <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSX()">XLSX</button>
+
+            <!-- ── CABEÇALHO PJE-CALC ── -->
+            <div class="pjc-doc">
+              <div class="pjc-header">
+                <div class="pjc-sistema">PJe-Calc — Sistema de Cálculos Trabalhistas · Faz AI</div>
+                <div class="pjc-titulo">PLANILHA DE CÁLCULO</div>
+                <div class="pjc-partes">
+                  <div><span class="pjc-label">RECLAMANTE:</span> <span id="lr-rec" class="pjc-nome">—</span></div>
+                  <div><span class="pjc-label">RECLAMADO:</span> <span id="lr-recld" class="pjc-nome">—</span></div>
+                  <div><span class="pjc-label">PROCESSO:</span> <span id="lr-proc">—</span></div>
+                </div>
+                <div class="pjc-datas">
+                  <div><span class="pjc-label">Período do Cálculo:</span> <span id="lr-per">—</span></div>
+                  <div><span class="pjc-label">Data de Ajuizamento:</span> <span id="lr-ajuiz">—</span></div>
+                  <div><span class="pjc-label">Salário Base:</span> <span id="lr-sal" style="color:var(--or);font-weight:600">—</span></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo cálculo</button>
+                  <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSX()">Exportar XLSX</button>
                   <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Laudo PDF</button>
                 </div>
               </div>
-              <div id="liq-verbas-list"></div>
-            </div>
-            <div class="panel">
-              <div class="ptitle">Resumo tributário</div>
-              <table class="rtable"><tbody id="liq-tax"></tbody></table>
-            </div>
+
+              <!-- SEÇÃO 1 — RESUMO -->
+              <div class="pjc-section">
+                <div class="pjc-section-title">SEÇÃO 1 — RESUMO DO CÁLCULO</div>
+                <table class="pjc-table">
+                  <thead><tr>
+                    <th style="text-align:left">Descrição — Bruto Devido ao Reclamante</th>
+                    <th>Valor Corrigido</th>
+                    <th>Juros</th>
+                    <th>Total</th>
+                  </tr></thead>
+                  <tbody id="liq-resumo-tbody"></tbody>
+                  <tfoot id="liq-resumo-tfoot"></tfoot>
+                </table>
+                <div id="lr-pct-rem" style="font-size:11px;color:var(--gy);margin-top:6px"></div>
+              </div>
+
+              <!-- SEÇÃO 2 — CRÉDITOS E DÉBITOS -->
+              <div class="pjc-section">
+                <div class="pjc-section-title">SEÇÃO 2 — CRÉDITOS, DESCONTOS E DÉBITOS</div>
+                <div class="pjc-dois-blocos">
+                  <div class="pjc-bloco">
+                    <div class="pjc-bloco-titulo">Créditos e Descontos do Reclamante</div>
+                    <table class="pjc-table">
+                      <tbody id="liq-creditos-tbody"></tbody>
+                    </table>
+                  </div>
+                  <div class="pjc-bloco">
+                    <div class="pjc-bloco-titulo">Débitos do Reclamado por Credor</div>
+                    <table class="pjc-table">
+                      <tbody id="liq-debitos-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SEÇÃO 3 — FUNDAMENTAÇÃO LEGAL -->
+              <div class="pjc-section" id="liq-obs-panel" style="display:none">
+                <div class="pjc-section-title">SEÇÃO 3 — CRITÉRIO DE CÁLCULO E FUNDAMENTAÇÃO LEGAL</div>
+                <div id="liq-obs-text" style="font-size:12px;line-height:1.8;color:var(--dk);white-space:pre-wrap"></div>
+              </div>
+
+              <!-- SEÇÃO 4 — DADOS DO CÁLCULO -->
+              <div class="pjc-section">
+                <div class="pjc-section-title">SEÇÃO 4 — DADOS DO CÁLCULO</div>
+                <div class="pjc-dois-blocos">
+                  <div class="pjc-bloco">
+                    <div class="pjc-bloco-titulo">Identificação</div>
+                    <table class="pjc-table"><tbody id="liq-dados-id"></tbody></table>
+                  </div>
+                  <div class="pjc-bloco">
+                    <div class="pjc-bloco-titulo">Parâmetros</div>
+                    <table class="pjc-table"><tbody id="liq-dados-param"></tbody></table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SEÇÃO 7 — DEMONSTRATIVO POR VERBA -->
+              <div class="pjc-section">
+                <div class="pjc-section-title">SEÇÃO 7 — DEMONSTRATIVO DE VERBAS</div>
+                <div id="liq-verbas-list"></div>
+              </div>
+
+              <!-- SEÇÃO 10 — INSS MENSAL -->
+              <div class="pjc-section" id="liq-memoria-panel" style="display:none">
+                <div class="pjc-section-title">SEÇÃO 10 — DEMONSTRATIVO DE CONTRIBUIÇÃO SOCIAL (INSS)</div>
+                <div class="pjc-verba-header">
+                  <div class="pjc-verba-nome">CONTRIBUIÇÃO SOCIAL SEGURADO</div>
+                  <div class="pjc-verba-meta" id="pjc-inss-periodo">—</div>
+                  <div class="pjc-verba-meta">Destino: DESCONTAR DO PRINCIPAL</div>
+                </div>
+                <div style="overflow-x:auto">
+                  <table class="pjc-table" id="liq-memoria-table" style="min-width:700px">
+                    <thead><tr>
+                      <th>Período Mensal</th>
+                      <th style="text-align:right">Sal. Base</th>
+                      <th style="text-align:right">Verbas Variáveis</th>
+                      <th style="text-align:right">Total Bruto</th>
+                      <th style="text-align:right">Alíquota INSS</th>
+                      <th style="text-align:right">(-) INSS</th>
+                      <th style="text-align:right">(-) IRRF</th>
+                      <th style="text-align:right">Líquido</th>
+                      <th style="text-align:right">Índice Correção</th>
+                      <th style="text-align:right">Valor Corrigido</th>
+                    </tr></thead>
+                    <tbody id="liq-memoria-tbody"></tbody>
+                    <tfoot id="liq-memoria-tfoot"></tfoot>
+                  </table>
+                </div>
+                <div class="pjc-obs">⚠ Demonstrativo proporcional para fins de visualização. Valores mensais são estimativas baseadas no total apurado dividido pelo período. Para cálculo oficial utilize o laudo em PDF.</div>
+              </div>
+
+            </div><!-- fim pjc-doc -->
             <div class="panel" id="liq-obs-panel" style="display:none">
               <div class="ptitle">Memória de cálculo — metodologia geral</div>
               <div id="liq-obs-text" style="font-size:13px;line-height:1.7;color:var(--gy)"></div>
+            </div>
+            <div class="panel" id="liq-memoria-panel" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div class="ptitle" style="margin:0">Memória de cálculo — apuração mensal</div>
+                <span style="font-size:11px;color:var(--gy)">Demonstrativo proporcional · metodologia PJe-Calc</span>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="rtable" id="liq-memoria-table" style="font-size:11px;min-width:700px">
+                  <thead>
+                    <tr>
+                      <th>Competência</th>
+                      <th style="text-align:right">Sal. Base</th>
+                      <th style="text-align:right">Verbas Variáveis</th>
+                      <th style="text-align:right">Total Bruto</th>
+                      <th style="text-align:right">(-) INSS</th>
+                      <th style="text-align:right">(-) IRRF</th>
+                      <th style="text-align:right">Líquido</th>
+                      <th style="text-align:right">Fator Correção</th>
+                      <th style="text-align:right">Total Corrigido</th>
+                    </tr>
+                  </thead>
+                  <tbody id="liq-memoria-tbody"></tbody>
+                  <tfoot id="liq-memoria-tfoot"></tfoot>
+                </table>
+              </div>
+              <p style="font-size:10px;color:var(--gy);margin-top:10px">⚠ Demonstrativo proporcional para fins de visualização. Os valores mensais são estimativas baseadas no total apurado dividido pelo período. Para cálculo oficial utilize o laudo em PDF.</p>
             </div>
           </div>
         </div>
@@ -2089,58 +2197,158 @@ function renderLiquidaResult() {
   const r = liquidaResult;
   document.getElementById('liq-loading').style.display='none';
   document.getElementById('liq-result').style.display='block';
-  document.getElementById('lr-rec').textContent = r.reclamante||'—';
-  // Mostrar salário identificado se disponível
+  const fB = v => v!=null ? fmtBRL(v) : '—';
+  const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v||'—'; };
+
+  // ── CABEÇALHO ──────────────────────────────────────────────
+  set('lr-rec',   r.reclamante);
+  set('lr-recld', r.reclamada);
+  set('lr-proc',  r.numeroProcesso);
+  set('lr-per',   (r.periodoCalculoInicio||'—') + ' a ' + (r.periodoCalculoFim||'—'));
+  set('lr-ajuiz', document.getElementById('liq-ajuiz')?.value || '—');
   const salEl = document.getElementById('lr-sal');
-  if(salEl) salEl.textContent = r.salarioBaseIdentificado ? fmtBRL(r.salarioBaseIdentificado)+(r.adicionaisIdentificados?' + '+r.adicionaisIdentificados:'') : '—';
-  document.getElementById('lr-recld').textContent = r.reclamada||'—';
-  document.getElementById('lr-proc').textContent = r.numeroProcesso||'—';
-  document.getElementById('lr-per').textContent = r.periodoCalculoInicio && r.periodoCalculoFim ? r.periodoCalculoInicio+' a '+r.periodoCalculoFim : '—';
-  // Calcular totais com correção monetária e juros (soma dos totais de cada verba)
-  const totalCorrigido = (r.verbas||[]).reduce((s,v)=>s+(v.total||0),0);
+  if(salEl) salEl.textContent = r.salarioBaseIdentificado ? fB(r.salarioBaseIdentificado)+(r.adicionaisIdentificados?' + '+r.adicionaisIdentificados:'') : '—';
+
+  const totalCorrigido = (r.verbas||[]).reduce((s,v)=>s+(v.total||0),0) || r.totalBruto || 0;
   const totalLiqCorrigido = totalCorrigido - (r.inss||0) - (r.irrf||0);
-  document.getElementById('lr-bruto').textContent = fmtBRL(totalCorrigido||r.totalBruto);
-  document.getElementById('lr-liq').textContent = fmtBRL(totalLiqCorrigido||r.totalLiquido);
-  const inssEl=document.getElementById('lr-inss'); if(inssEl) inssEl.textContent=fmtBRL(r.inss||0);
-  const honEl=document.getElementById('lr-hon'); if(honEl) honEl.textContent=fmtBRL(r.valorHonorarios||0);
+  const hon = r.valorHonorarios || totalCorrigido * ((r.honorariosPercentual||0)/100);
+  const inssEl=document.getElementById('lr-inss'); if(inssEl) inssEl.textContent=fB(r.inss||0);
+  const honEl=document.getElementById('lr-hon'); if(honEl) honEl.textContent=fB(hon);
 
-  // Render verbas as cards
+  // ── SEÇÃO 1 — RESUMO ───────────────────────────────────────
+  const tbody1 = document.getElementById('liq-resumo-tbody');
+  const tfoot1 = document.getElementById('liq-resumo-tfoot');
+  if(tbody1) {
+    tbody1.innerHTML = (r.verbas||[]).map((v,i) => {
+      const base = v.valorCorrigido||v.valor||0, juros = v.juros||0, tot = v.total||(base+juros);
+      return `<tr style="${i%2?'background:#F9FAFB':''}">
+        <td style="text-align:left">${v.descricao||'Verba '+(i+1)}</td>
+        <td>${fB(base)}</td><td>${juros?fB(juros):'—'}</td>
+        <td style="font-weight:700">${fB(tot)}</td></tr>`;
+    }).join('');
+    if(tfoot1) tfoot1.innerHTML = `<tr><td style="text-align:left">TOTAL</td><td>${fB(totalCorrigido)}</td><td>—</td><td>${fB(totalCorrigido)}</td></tr>`;
+    const pctEl = document.getElementById('lr-pct-rem');
+    if(pctEl) pctEl.textContent = 'Percentual de Parcelas Remuneratórias e Tributáveis: ' + (r.percentualRemuneratorio||100).toFixed(2).replace('.',',') + '%';
+  }
+
+  // ── SEÇÃO 2 — CRÉDITOS / DÉBITOS ──────────────────────────
+  const tcred = document.getElementById('liq-creditos-tbody');
+  const tdeb  = document.getElementById('liq-debitos-tbody');
+  if(tcred) tcred.innerHTML = [
+    ['VERBAS (bruto total)',         totalCorrigido,  false,false],
+    ['FGTS',                          r.fgts||0,      false,false],
+    ['Bruto Devido ao Reclamante',    totalCorrigido,  true, false],
+    ['(-) Contribuição Social (INSS)',r.inss||0,       false,true],
+    ['(-) IRPF (IRRF)',               r.irrf||0,       false,true],
+    ['Total de Descontos',           (r.inss||0)+(r.irrf||0), true,true],
+    ['LÍQUIDO DEVIDO AO RECLAMANTE', totalLiqCorrigido, true,false],
+  ].map(([d,v,bold,neg])=>`<tr class="${bold?'pjc-bold':''} ${neg?'pjc-neg':''}">
+    <td style="text-align:left">${d}</td><td>${neg?'('+fB(v)+')':fB(v)}</td></tr>`).join('');
+
+  if(tdeb) tdeb.innerHTML = [
+    ['LÍQUIDO DEVIDO AO RECLAMANTE',       totalLiqCorrigido,       true],
+    ['Contribuição Social sobre Salários', r.inssReclamada||0,      false],
+    ['Honorários Líquidos Adv. Reclamante',hon,                     false],
+    ['IRRF sobre Honorários',              hon*0.10,                false],
+    ['IRPF Devido pelo Reclamante',        r.irrf||0,               false],
+    ['TOTAL DEVIDO PELO RECLAMADO',        r.valorTotalGeral||(totalLiqCorrigido+(r.inssReclamada||0)+hon), true],
+  ].map(([d,v,bold])=>`<tr class="${bold?'pjc-total':''}">
+    <td style="text-align:left">${d}</td><td>${fB(v)}</td></tr>`).join('');
+
+  // ── SEÇÃO 4 — DADOS DO CÁLCULO ────────────────────────────
+  const dadosId    = document.getElementById('liq-dados-id');
+  const dadosParam = document.getElementById('liq-dados-param');
+  if(dadosId) dadosId.innerHTML = [
+    ['Período Início',  r.periodoCalculoInicio||'—'],
+    ['Período Fim',     r.periodoCalculoFim||'—'],
+    ['Admissão',        document.getElementById('liq-adm')?.value||'—'],
+    ['Ajuizamento',     document.getElementById('liq-ajuiz')?.value||'—'],
+    ['Regime',          'CLT'],
+    ['Carga Horária',   '220h/mês (padrão)'],
+  ].map(([k,v])=>`<tr><td style="text-align:left;color:var(--gy)">${k}</td><td>${v}</td></tr>`).join('');
+  if(dadosParam) dadosParam.innerHTML = [
+    ['Maior Remuneração',       r.salarioBaseIdentificado?fB(r.salarioBaseIdentificado):'—'],
+    ['Prescrição Quinquenal',   'Sim'],
+    ['Correção Monetária',      'IPCA-E + SELIC (ADC 58)'],
+    ['INSS',                    'E-Social mês a mês'],
+    ['IRRF',                    'Regime RRA'],
+    ['Honorários',              r.honorariosPercentual?r.honorariosPercentual+'%':'—'],
+    ['INSS Patronal Reclamada', r.percentualInssReclamada?r.percentualInssReclamada+'%':'20%'],
+  ].map(([k,v])=>`<tr><td style="text-align:left;color:var(--gy)">${k}</td><td>${v}</td></tr>`).join('');
+
+  // ── SEÇÃO 7 — DEMONSTRATIVO POR VERBA ─────────────────────
   const vl = document.getElementById('liq-verbas-list');
-  vl.innerHTML = (r.verbas||[]).map((v,i) => `
-    <div class="vcard ${v.status==='contestada'?'contestada':v.status==='reconhecida'?'reconhecida':''}" id="vc-${i}">
-      <div class="vcard-header">
-        <span class="vcard-desc">${v.descricao}</span>
-        <span class="badge ${v.natureza==='salarial'?'badge-or':'badge-green'}">${v.natureza}</span>
-      </div>
-      <div class="vcard-meta">${v.metodologia||''}</div>
-      <div class="vcard-values">
-        <div class="vcard-val-item"><div class="vcard-val-label">Principal</div><div class="vcard-val-num">${fmtBRL(v.valor)}</div></div>
-        <div class="vcard-val-item"><div class="vcard-val-label">Corrigido</div><div class="vcard-val-num">${fmtBRL(v.valorCorrigido)}</div></div>
-        <div class="vcard-val-item"><div class="vcard-val-label">Juros</div><div class="vcard-val-num">${fmtBRL(v.juros)}</div></div>
-        <div class="vcard-val-item"><div class="vcard-val-label">Total</div><div class="vcard-val-num" style="color:var(--or)">${fmtBRL(v.total)}</div></div>
-      </div>
-      <div class="vcard-actions">
-        <button class="btn btn-green btn-sm" onclick="setVerbaStatus(${i},'reconhecida')">✓ Reconhecida</button>
-        <button class="btn btn-danger btn-sm" onclick="setVerbaStatus(${i},'contestada')">✗ Contestada</button>
-        <button class="btn btn-ghost btn-sm" onclick="setVerbaStatus(${i},'normal')">Limpar</button>
-      </div>
-    </div>`).join('');
+  if(vl) {
+    const incMap = {salarial:'FGTS / Contribuição Social / IRPF', indenizatoria:'Não há.', indefinida:'FGTS / Contribuição Social'};
+    vl.innerHTML = (r.verbas||[]).map((v,i) => {
+      const base=v.valorCorrigido||v.valor||0, juros=v.juros||0, tot=v.total||(base+juros);
+      const inc = incMap[v.natureza?.toLowerCase()]||'FGTS / Contribuição Social / IRPF';
+      const formula = v.metodologia ? `(${v.metodologia})` : '(Conforme metodologia apurada pela IA)';
+      const stat = v.status||'normal';
+      const statCor = stat==='contestada'?'#B91C1C':stat==='reconhecida'?'#166534':'#6B7280';
+      return `<div style="border:1px solid #E5E7EB;border-radius:4px;margin-bottom:12px;overflow:hidden" id="vc-${i}">
+        <div class="pjc-verba-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="pjc-verba-nome">${v.descricao||'Verba '+(i+1)}</div>
+              <div class="pjc-verba-meta">Período: ${r.periodoCalculoInicio||'—'} a ${r.periodoCalculoFim||'—'}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-green btn-sm" onclick="setVerbaStatus(${i},'reconhecida')">✓</button>
+              <button class="btn btn-danger btn-sm" onclick="setVerbaStatus(${i},'contestada')">✗</button>
+              <button class="btn btn-ghost btn-sm" onclick="setVerbaStatus(${i},'normal')">—</button>
+            </div>
+          </div>
+        </div>
+        <div class="pjc-verba-incid">Incidência(s): ${inc} &nbsp;·&nbsp; Natureza: <strong>${v.natureza||'—'}</strong> &nbsp;·&nbsp; <span style="color:${statCor};font-weight:600">${stat.toUpperCase()}</span></div>
+        <div class="pjc-verba-formula">Fórmula: ${formula}</div>
+        <div style="padding:0 0 0 0;overflow-x:auto">
+          <table class="pjc-table" style="font-size:11px">
+            <thead><tr>
+              <th style="text-align:left">Competência</th>
+              <th>Base</th><th>Divisor</th><th>Multiplicador</th>
+              <th>Qtd</th><th>Devido</th><th>Pago</th><th>Diferença</th>
+            </tr></thead>
+            <tbody>
+              <tr class="pjc-bold">
+                <td style="text-align:left">${r.periodoCalculoInicio||'—'} a ${r.periodoCalculoFim||'—'}</td>
+                <td>${fB(v.baseCalculo||base)}</td>
+                <td>${v.divisor||'—'}</td>
+                <td>${v.quantidade?parseFloat(v.quantidade).toFixed(8):'1,00000000'}</td>
+                <td>${v.quantidade||'—'}</td>
+                <td>${fB(base)}</td>
+                <td>—</td>
+                <td style="color:var(--or)">${fB(tot)}</td>
+              </tr>
+            </tbody>
+            <tfoot><tr>
+              <td style="text-align:left">SUBTOTAL</td>
+              <td colspan="5"></td>
+              <td style="font-weight:700">${fB(base)}</td>
+              <td style="font-weight:700;color:var(--or)">${fB(tot)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
-  // Tax summary
-  document.getElementById('liq-tax').innerHTML = [
-    ['Total bruto',r.totalBruto],['(-) INSS empregado',r.inss],['(-) IRRF',r.irrf],
-    ['FGTS',r.fgts||0],['(=) Líquido reclamante',r.totalLiquido],
-    ['Honorários sucumbência (' + (r.honorariosPercentual||0)+'%)',r.valorHonorarios],
-    ['INSS reclamada ('+r.percentualInssReclamada+'%)',r.inssReclamada],
-    ['Total geral (custo reclamada)',r.valorTotalGeral]
-  ].map(([k,v])=>`<tr><td>${k}</td><td>${fmtBRL(v)}</td></tr>`).join('');
-
-  // Observation/methodology
+  // ── SEÇÃO 3 — FUNDAMENTAÇÃO ───────────────────────────────
   if(r.observation) {
     document.getElementById('liq-obs-panel').style.display='block';
     document.getElementById('liq-obs-text').textContent = r.observation;
   }
+
+  // ── SEÇÃO 10 — MEMÓRIA MENSAL ─────────────────────────────
+  const periodoIni = r.periodoCalculoInicio || document.getElementById('liq-adm')?.value?.substring(0,7);
+  const periodoFim2 = r.periodoCalculoFim  || document.getElementById('liq-ajuiz')?.value?.substring(0,7);
+  if(periodoIni && periodoFim2) {
+    const pjcPer = document.getElementById('pjc-inss-periodo');
+    if(pjcPer) pjcPer.textContent = 'Período: '+periodoIni+' a '+periodoFim2;
+    renderMemoriaMensal(r, periodoIni, periodoFim2);
+  }
 }
+
 
 function setVerbaStatus(i, status) {
   if(!liquidaResult) return;
@@ -2158,6 +2366,7 @@ function clearLiquida() {
   document.getElementById('liq-file-ok').style.display='none';
   const btn=document.getElementById('liq-btn');if(btn){btn.disabled=true;btn.style.display='block';}
   document.getElementById('liq-obs-panel').style.display='none';
+  document.getElementById('liq-memoria-panel').style.display='none';
 }
 
 function exportLiquidaXLSX() {
@@ -3127,6 +3336,121 @@ function loadAcHist(i) {
   showMod('acordos');
   switchTab('ac','calc',document.querySelector('#mod-acordos .tab-btn'));
   renderAcordoResult();
+}
+
+
+// ============================================================
+// LIQUIDAAI — MEMÓRIA DE CÁLCULO MENSAL (DEMONSTRATIVO)
+// ============================================================
+
+// Fatores IPCA-E aproximados por ano (base: jan/2025 = 1.0)
+// Para fins demonstrativos — não substitui tabela oficial do PJe-Calc
+const FATOR_CORRECAO = {
+  '2016': 1.612, '2017': 1.541, '2018': 1.479, '2019': 1.412,
+  '2020': 1.365, '2021': 1.285, '2022': 1.178, '2023': 1.089,
+  '2024': 1.038, '2025': 1.005, '2026': 1.000
+};
+
+function getFatorCorrecao(ano, mes) {
+  const fBase = FATOR_CORRECAO[String(ano)] || 1.0;
+  // Interpolação linear simples dentro do ano
+  const fProx = FATOR_CORRECAO[String(ano+1)] || fBase * 0.97;
+  return fBase + (fProx - fBase) * ((mes - 1) / 12);
+}
+
+function renderMemoriaMensal(result, periodoInicio, periodoFim) {
+  const panel = document.getElementById('liq-memoria-panel');
+  const tbody = document.getElementById('liq-memoria-tbody');
+  const tfoot = document.getElementById('liq-memoria-tfoot');
+  if (!panel || !tbody || !tfoot) return;
+
+  // Detectar período
+  let dtIni, dtFim;
+  if (periodoInicio && periodoFim) {
+    dtIni = new Date(periodoInicio + '-01');
+    dtFim = new Date(periodoFim + '-01');
+  } else if (result.periodoCalculoInicio && result.periodoCalculoFim) {
+    // Tenta extrair datas do JSON da IA (formato MM/YYYY ou YYYY-MM)
+    const pi = result.periodoCalculoInicio.replace(/(\d{2})\/(\d{4})/,'$2-$1');
+    const pf = result.periodoCalculoFim.replace(/(\d{2})\/(\d{4})/,'$2-$1');
+    dtIni = new Date(pi + (pi.length===7?'-01':''));
+    dtFim = new Date(pf + (pf.length===7?'-01':''));
+  }
+
+  if (!dtIni || isNaN(dtIni) || !dtFim || isNaN(dtFim)) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  // Calcular número de meses
+  const meses = (dtFim.getFullYear() - dtIni.getFullYear()) * 12
+    + (dtFim.getMonth() - dtIni.getMonth()) + 1;
+  if (meses < 1 || meses > 360) { panel.style.display='none'; return; }
+
+  // Totais da IA
+  const totalBruto   = result.totalBruto || 0;
+  const totalInss    = result.inss || 0;
+  const totalIrrf    = result.irrf || 0;
+  const totalLiquido = result.totalLiquido || 0;
+  const salario      = result.salarioBaseIdentificado || (totalBruto / meses * 0.6);
+
+  // Verba variável total = bruto - (salario * meses)
+  const salarioMensal = salario;
+  const totalVerbaVar = Math.max(0, totalBruto - salarioMensal * meses);
+  const verbaMensal   = totalVerbaVar / meses;
+  const inssMensal    = totalInss / meses;
+  const irrfMensal    = totalIrrf / meses;
+
+  // Gerar linhas
+  tbody.innerHTML = '';
+  let somaCorrigido = 0;
+  let dt = new Date(dtIni);
+
+  for (let i = 0; i < meses; i++) {
+    const mes  = dt.getMonth() + 1;
+    const ano  = dt.getFullYear();
+    const comp = String(mes).padStart(2,'0') + '/' + ano;
+    const fator = getFatorCorrecao(ano, mes);
+
+    const brutoMes   = salarioMensal + verbaMensal;
+    const liqMes     = brutoMes - inssMensal - irrfMensal;
+    const corrigido  = liqMes * fator;
+    somaCorrigido   += corrigido;
+
+    const tr = document.createElement('tr');
+    tr.style.background = i%2===0 ? '' : 'var(--lt)';
+    tr.innerHTML = `
+      <td style="font-weight:600">${comp}</td>
+      <td style="text-align:right">${fmtBRL(salarioMensal)}</td>
+      <td style="text-align:right;color:var(--or)">${fmtBRL(verbaMensal)}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(brutoMes)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(inssMensal)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(irrfMensal)}</td>
+      <td style="text-align:right">${fmtBRL(liqMes)}</td>
+      <td style="text-align:right;color:var(--gy)">${fator.toFixed(4)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--or)">${fmtBRL(corrigido)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    dt.setMonth(dt.getMonth() + 1);
+  }
+
+  // Totalizador
+  tfoot.innerHTML = `
+    <tr style="background:var(--orp);font-weight:700;font-size:12px">
+      <td>TOTAL (${meses} meses)</td>
+      <td style="text-align:right">${fmtBRL(salarioMensal * meses)}</td>
+      <td style="text-align:right;color:var(--or)">${fmtBRL(totalVerbaVar)}</td>
+      <td style="text-align:right">${fmtBRL(totalBruto)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalInss)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalIrrf)}</td>
+      <td style="text-align:right">${fmtBRL(totalLiquido)}</td>
+      <td style="text-align:right;color:var(--gy)">—</td>
+      <td style="text-align:right;color:var(--or)">${fmtBRL(somaCorrigido)}</td>
+    </tr>
+  `;
+
+  panel.style.display = 'block';
 }
 
 // ============================================================
