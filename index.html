@@ -6,7 +6,7 @@
 <title>Faz AI — Inteligência Jurídica Trabalhista</title>
 <meta name="google-site-verification" content="eL1ArQXsDgvR85QDX6DEVg2qdrgl9QkPrRXF86EOLzA"/>
 <meta name="description" content="Plataforma de perícia contábil trabalhista com IA. LiquidaAI, PontoAI e AcordAI para advogados e peritos. 7 dias grátis."/>
-<meta name="keywords" content="liquidação trabalhista, espelho de ponto, PJe-Calc, perito contábil, acordo trabalhista, IA jurídica"/>
+<meta name="keywords" content="liquidação trabalhista, espelho de ponto, Faz AI Calc, perito contábil, acordo trabalhista, IA jurídica"/>
 <meta property="og:title" content="Faz AI — Inteligência Jurídica Trabalhista"/>
 <meta property="og:description" content="Liquidação judicial, extração de ponto e cálculo de acordos com IA. 7 dias grátis."/>
 <meta property="og:url" content="https://faz-ai-one.vercel.app"/>
@@ -590,10 +590,10 @@ a{color:var(--or);text-decoration:none}
           <div class="lp-panel-info" style="max-width:680px;margin:0 auto;text-align:center">
             <div class="lp-panel-tag">PontoAI</div>
             <h3 class="lp-panel-title">OCR inteligente de espelho de ponto</h3>
-            <p class="lp-panel-desc">Jogue qualquer modelo de espelho de ponto em PDF. O sistema extrai todos os horários automaticamente e exporta CSV formatado para o PJe-Calc.</p>
+            <p class="lp-panel-desc">Jogue qualquer modelo de espelho de ponto em PDF. O sistema extrai todos os horários automaticamente e exporta CSV formatado para o Faz AI Calc.</p>
             <div class="lp-panel-features">
               <div class="lp-feat"><span class="lp-feat-dot"></span>12 formatos suportados</div>
-              <div class="lp-feat"><span class="lp-feat-dot"></span>Exporta CSV para PJe-Calc</div>
+              <div class="lp-feat"><span class="lp-feat-dot"></span>Exporta CSV para Faz AI Calc</div>
               <div class="lp-feat"><span class="lp-feat-dot"></span>Detecta ausências e faltas</div>
               <div class="lp-feat"><span class="lp-feat-dot"></span>400 páginas em minutos</div>
             </div>
@@ -847,7 +847,7 @@ a{color:var(--or);text-decoration:none}
             <!-- ── CABEÇALHO PJE-CALC ── -->
             <div class="pjc-doc">
               <div class="pjc-header">
-                <div class="pjc-sistema">PJe-Calc — Sistema de Cálculos Trabalhistas · Faz AI</div>
+                <div class="pjc-sistema">Faz AI — Sistema de Cálculos Trabalhistas</div>
                 <div class="pjc-titulo">PLANILHA DE CÁLCULO</div>
                 <div class="pjc-partes">
                   <div><span class="pjc-label">RECLAMANTE:</span> <span id="lr-rec" class="pjc-nome">—</span></div>
@@ -930,64 +930,31 @@ a{color:var(--or);text-decoration:none}
 
               <!-- SEÇÃO 10 — INSS MENSAL -->
               <div class="pjc-section" id="liq-memoria-panel" style="display:none">
-                <div class="pjc-section-title">SEÇÃO 10 — DEMONSTRATIVO DE CONTRIBUIÇÃO SOCIAL (INSS)</div>
+                <div class="pjc-section-title">SEÇÃO 10 — MEMÓRIA DE CÁLCULO MENSAL — APURAÇÃO PROPORCIONAL</div>
                 <div class="pjc-verba-header">
-                  <div class="pjc-verba-nome">CONTRIBUIÇÃO SOCIAL SEGURADO</div>
+                  <div class="pjc-verba-nome">DEMONSTRATIVO POR COMPETÊNCIA</div>
                   <div class="pjc-verba-meta" id="pjc-inss-periodo">—</div>
-                  <div class="pjc-verba-meta">Destino: DESCONTAR DO PRINCIPAL</div>
+                  <div class="pjc-verba-meta">Divisão proporcional do total apurado pelo período do contrato</div>
                 </div>
                 <div style="overflow-x:auto">
-                  <table class="pjc-table" id="liq-memoria-table" style="min-width:700px">
+                  <table class="pjc-table" id="liq-memoria-table" style="min-width:600px">
                     <thead><tr>
-                      <th>Período Mensal</th>
-                      <th style="text-align:right">Sal. Base</th>
-                      <th style="text-align:right">Verbas Variáveis</th>
+                      <th style="text-align:left">Competência</th>
                       <th style="text-align:right">Total Bruto</th>
-                      <th style="text-align:right">Alíquota INSS</th>
                       <th style="text-align:right">(-) INSS</th>
                       <th style="text-align:right">(-) IRRF</th>
                       <th style="text-align:right">Líquido</th>
-                      <th style="text-align:right">Índice Correção</th>
+                      <th style="text-align:right">Fator Correção</th>
                       <th style="text-align:right">Valor Corrigido</th>
                     </tr></thead>
                     <tbody id="liq-memoria-tbody"></tbody>
                     <tfoot id="liq-memoria-tfoot"></tfoot>
                   </table>
                 </div>
-                <div class="pjc-obs">⚠ Demonstrativo proporcional para fins de visualização. Valores mensais são estimativas baseadas no total apurado dividido pelo período. Para cálculo oficial utilize o laudo em PDF.</div>
+                <div class="pjc-obs">⚠ Demonstrativo proporcional — total condenado dividido igualmente pelo número de meses do contrato. Para cálculo oficial utilize o laudo em PDF.</div>
               </div>
 
             </div><!-- fim pjc-doc -->
-            <div class="panel" id="liq-obs-panel" style="display:none">
-              <div class="ptitle">Memória de cálculo — metodologia geral</div>
-              <div id="liq-obs-text" style="font-size:13px;line-height:1.7;color:var(--gy)"></div>
-            </div>
-            <div class="panel" id="liq-memoria-panel" style="display:none">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                <div class="ptitle" style="margin:0">Memória de cálculo — apuração mensal</div>
-                <span style="font-size:11px;color:var(--gy)">Demonstrativo proporcional · metodologia PJe-Calc</span>
-              </div>
-              <div style="overflow-x:auto">
-                <table class="rtable" id="liq-memoria-table" style="font-size:11px;min-width:700px">
-                  <thead>
-                    <tr>
-                      <th>Competência</th>
-                      <th style="text-align:right">Sal. Base</th>
-                      <th style="text-align:right">Verbas Variáveis</th>
-                      <th style="text-align:right">Total Bruto</th>
-                      <th style="text-align:right">(-) INSS</th>
-                      <th style="text-align:right">(-) IRRF</th>
-                      <th style="text-align:right">Líquido</th>
-                      <th style="text-align:right">Fator Correção</th>
-                      <th style="text-align:right">Total Corrigido</th>
-                    </tr>
-                  </thead>
-                  <tbody id="liq-memoria-tbody"></tbody>
-                  <tfoot id="liq-memoria-tfoot"></tfoot>
-                </table>
-              </div>
-              <p style="font-size:10px;color:var(--gy);margin-top:10px">⚠ Demonstrativo proporcional para fins de visualização. Os valores mensais são estimativas baseadas no total apurado dividido pelo período. Para cálculo oficial utilize o laudo em PDF.</p>
-            </div>
           </div>
         </div>
         <div id="liq-tab-hist" class="tab-content">
@@ -1056,7 +1023,7 @@ a{color:var(--or);text-decoration:none}
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
                   <button class="btn btn-ghost btn-sm" onclick="clearPonto()">Limpar</button>
                   <button class="btn btn-ghost btn-sm" onclick="exportPontoXLSX()">XLSX</button>
-                  <button class="btn btn-primary btn-sm" onclick="exportPontoCSV()">CSV PJe-Calc</button>
+                  <button class="btn btn-primary btn-sm" onclick="exportPontoCSV()">CSV Faz AI Calc</button>
                 </div>
               </div>
             </div>
@@ -2556,6 +2523,80 @@ function exportLiquidaPDF() {
       styles:{fontSize:7.5,cellPadding:{top:2,bottom:2,left:0,right:0},textColor:[80,80,80]}});
   }
 
+  // ── MEMÓRIA DE CÁLCULO MENSAL ──────────────────────────────
+  const periodoIniPDF = r.periodoCalculoInicio || document.getElementById('liq-adm')?.value?.substring(0,7);
+  const periodoFimPDF = r.periodoCalculoFim    || document.getElementById('liq-ajuiz')?.value?.substring(0,7);
+  if(periodoIniPDF && periodoFimPDF) {
+    const parseP = p => { if(!p) return null; const s=p.replace(/(\d{2})\/(\d{4})/,'$2-$1'); const d=new Date(s.length===7?s+'-01':s); return isNaN(d)?null:d; };
+    const dtIni = parseP(periodoIniPDF);
+    const dtFim = parseP(periodoFimPDF);
+    if(dtIni && dtFim) {
+      const meses = (dtFim.getFullYear()-dtIni.getFullYear())*12+(dtFim.getMonth()-dtIni.getMonth())+1;
+      if(meses>=1 && meses<=360) {
+        doc.addPage();
+        addHeader(doc, 'MEMÓRIA DE CÁLCULO — APURAÇÃO MENSAL');
+
+        const totalBrutoPDF = r.totalBruto||0;
+        const inssPDF  = r.inss||0;
+        const irrfPDF  = r.irrf||0;
+        const brutoMes = totalBrutoPDF/meses;
+        const inssMes  = inssPDF/meses;
+        const irrfMes  = irrfPDF/meses;
+
+        // Subtítulo
+        const yM = 48;
+        doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(107,114,128);
+        doc.text('Total apurado dividido proporcionalmente por '+meses+' meses — '+
+          String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear()+
+          ' a '+String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear(), ml, yM);
+
+        // Montar linhas
+        const rows = [];
+        let dt2 = new Date(dtIni);
+        let somaCorrig = 0;
+        for(let i=0;i<meses;i++){
+          const m = dt2.getMonth()+1, a = dt2.getFullYear();
+          const comp = String(m).padStart(2,'0')+'/'+a;
+          const fator = getFatorCorrecao(a,m);
+          const corrig = brutoMes * fator;
+          somaCorrig += corrig;
+          rows.push([comp, fmtBRL(brutoMes), '- '+fmtBRL(inssMes), '- '+fmtBRL(irrfMes),
+            fmtBRL(brutoMes-inssMes-irrfMes), fator.toFixed(4), fmtBRL(corrig)]);
+          dt2.setMonth(dt2.getMonth()+1);
+        }
+        rows.push(['TOTAL ('+meses+' meses)', fmtBRL(totalBrutoPDF), '- '+fmtBRL(inssPDF),
+          '- '+fmtBRL(irrfPDF), fmtBRL(totalBrutoPDF-inssPDF-irrfPDF), '—', fmtBRL(somaCorrig)]);
+
+        doc.autoTable({
+          startY: yM+5,
+          margin:{left:ml,right:14},
+          head:[['Competência','Total Bruto','(-) INSS','(-) IRRF','Líquido','Fator Corr.','Valor Corrigido']],
+          body: rows,
+          theme:'grid',
+          headStyles:{fillColor:[234,88,12],textColor:255,fontSize:8,fontStyle:'bold',halign:'center'},
+          bodyStyles:{fontSize:8,halign:'right'},
+          columnStyles:{0:{halign:'left',fontStyle:'bold'}},
+          alternateRowStyles:{fillColor:[249,250,251]},
+          didParseCell: function(data){
+            if(data.row.index===rows.length-1){
+              data.cell.styles.fillColor=[255,247,237];
+              data.cell.styles.fontStyle='bold';
+              data.cell.styles.textColor=[234,88,12];
+            }
+            if(data.column.index===6 && data.section==='body'){
+              data.cell.styles.textColor=[234,88,12];
+              data.cell.styles.fontStyle='bold';
+            }
+          }
+        });
+
+        doc.setFontSize(7);doc.setFont(undefined,'italic');doc.setTextColor(156,163,175);
+        doc.text('⚠ Demonstrativo proporcional — total apurado dividido igualmente pelo número de meses do contrato.',
+          ml, doc.lastAutoTable.finalY+5);
+      }
+    }
+  }
+
   // Rodapé em todas as páginas
   const pages=doc.internal.getNumberOfPages();
   for(let i=1;i<=pages;i++){
@@ -2845,7 +2886,7 @@ FORMATO 9 — Ficha manual com coluna "Refeição Início / Término" para inter
 
 ──────────────────────────────────────
 FORMATO 10 — Exportação de sistema digital — TOTAL em formato "NNhNNm" (laranja ou colorido)
-(PJe-Calc, sistemas de RH exportados, relatórios online)
+(Faz AI Calc, sistemas de RH exportados, relatórios online)
 ──────────────────────────────────────
   DATA       | ENTRADA | SAÍDA INT. | RETORNO | SAÍDA  | TOTAL
   15/04/2015 | 07:02   | 12:02      | 13:01   | 19:04  | 11h03m
@@ -3344,7 +3385,7 @@ function loadAcHist(i) {
 // ============================================================
 
 // Fatores IPCA-E aproximados por ano (base: jan/2025 = 1.0)
-// Para fins demonstrativos — não substitui tabela oficial do PJe-Calc
+// Para fins demonstrativos — não substitui tabela oficial do Faz AI Calc
 const FATOR_CORRECAO = {
   '2016': 1.612, '2017': 1.541, '2018': 1.479, '2019': 1.412,
   '2020': 1.365, '2021': 1.285, '2022': 1.178, '2023': 1.089,
@@ -3366,92 +3407,80 @@ function renderMemoriaMensal(result, periodoInicio, periodoFim) {
 
   // Detectar período
   let dtIni, dtFim;
-  if (periodoInicio && periodoFim) {
-    dtIni = new Date(periodoInicio + '-01');
-    dtFim = new Date(periodoFim + '-01');
-  } else if (result.periodoCalculoInicio && result.periodoCalculoFim) {
-    // Tenta extrair datas do JSON da IA (formato MM/YYYY ou YYYY-MM)
-    const pi = result.periodoCalculoInicio.replace(/(\d{2})\/(\d{4})/,'$2-$1');
-    const pf = result.periodoCalculoFim.replace(/(\d{2})\/(\d{4})/,'$2-$1');
-    dtIni = new Date(pi + (pi.length===7?'-01':''));
-    dtFim = new Date(pf + (pf.length===7?'-01':''));
-  }
+  const parseP = p => {
+    if(!p) return null;
+    const s = p.replace(/(\d{2})\/(\d{4})/,'$2-$1');
+    const d = new Date(s.length===7 ? s+'-01' : s);
+    return isNaN(d) ? null : d;
+  };
+  dtIni = parseP(periodoInicio) || parseP(result.periodoCalculoInicio);
+  dtFim = parseP(periodoFim)    || parseP(result.periodoCalculoFim);
 
-  if (!dtIni || isNaN(dtIni) || !dtFim || isNaN(dtFim)) {
-    panel.style.display = 'none';
-    return;
-  }
+  if (!dtIni || !dtFim) { panel.style.display='none'; return; }
 
-  // Calcular número de meses
-  const meses = (dtFim.getFullYear() - dtIni.getFullYear()) * 12
-    + (dtFim.getMonth() - dtIni.getMonth()) + 1;
+  const meses = (dtFim.getFullYear()-dtIni.getFullYear())*12
+              + (dtFim.getMonth()-dtIni.getMonth()) + 1;
   if (meses < 1 || meses > 360) { panel.style.display='none'; return; }
 
-  // Totais da IA
-  const totalBruto   = result.totalBruto || 0;
-  const totalInss    = result.inss || 0;
-  const totalIrrf    = result.irrf || 0;
-  const totalLiquido = result.totalLiquido || 0;
-  const salario      = result.salarioBaseIdentificado || (totalBruto / meses * 0.6);
+  // Base: total condenado dividido igualmente pelos meses
+  const totalBruto   = result.totalBruto  || 0;
+  const totalInss    = result.inss        || 0;
+  const totalIrrf    = result.irrf        || 0;
+  const totalLiquido = totalBruto - totalInss - totalIrrf;
 
-  // Verba variável total = bruto - (salario * meses)
-  const salarioMensal = salario;
-  const totalVerbaVar = Math.max(0, totalBruto - salarioMensal * meses);
-  const verbaMensal   = totalVerbaVar / meses;
-  const inssMensal    = totalInss / meses;
-  const irrfMensal    = totalIrrf / meses;
+  const brutoPorMes = totalBruto / meses;
+  const inssPorMes  = totalInss  / meses;
+  const irrfPorMes  = totalIrrf  / meses;
 
-  // Gerar linhas
   tbody.innerHTML = '';
   let somaCorrigido = 0;
   let dt = new Date(dtIni);
 
   for (let i = 0; i < meses; i++) {
-    const mes  = dt.getMonth() + 1;
-    const ano  = dt.getFullYear();
-    const comp = String(mes).padStart(2,'0') + '/' + ano;
+    const mes   = dt.getMonth() + 1;
+    const ano   = dt.getFullYear();
+    const comp  = String(mes).padStart(2,'0') + '/' + ano;
     const fator = getFatorCorrecao(ano, mes);
-
-    const brutoMes   = salarioMensal + verbaMensal;
-    const liqMes     = brutoMes - inssMensal - irrfMensal;
-    const corrigido  = liqMes * fator;
-    somaCorrigido   += corrigido;
+    const corrig = brutoPorMes * fator;
+    somaCorrigido += corrig;
 
     const tr = document.createElement('tr');
     tr.style.background = i%2===0 ? '' : 'var(--lt)';
     tr.innerHTML = `
-      <td style="font-weight:600">${comp}</td>
-      <td style="text-align:right">${fmtBRL(salarioMensal)}</td>
-      <td style="text-align:right;color:var(--or)">${fmtBRL(verbaMensal)}</td>
-      <td style="text-align:right;font-weight:600">${fmtBRL(brutoMes)}</td>
-      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(inssMensal)}</td>
-      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(irrfMensal)}</td>
-      <td style="text-align:right">${fmtBRL(liqMes)}</td>
-      <td style="text-align:right;color:var(--gy)">${fator.toFixed(4)}</td>
-      <td style="text-align:right;font-weight:700;color:var(--or)">${fmtBRL(corrigido)}</td>
+      <td style="font-weight:600;font-family:'Courier New',monospace">${comp}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(brutoPorMes)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(inssPorMes)}</td>
+      <td style="text-align:right;color:#B91C1C">- ${fmtBRL(irrfPorMes)}</td>
+      <td style="text-align:right">${fmtBRL(brutoPorMes - inssPorMes - irrfPorMes)}</td>
+      <td style="text-align:right;color:var(--gy);font-family:'Courier New',monospace">${fator.toFixed(4)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--or)">${fmtBRL(corrig)}</td>
     `;
     tbody.appendChild(tr);
-
-    dt.setMonth(dt.getMonth() + 1);
+    dt.setMonth(dt.getMonth()+1);
   }
 
-  // Totalizador
   tfoot.innerHTML = `
     <tr style="background:var(--orp);font-weight:700;font-size:12px">
-      <td>TOTAL (${meses} meses)</td>
-      <td style="text-align:right">${fmtBRL(salarioMensal * meses)}</td>
-      <td style="text-align:right;color:var(--or)">${fmtBRL(totalVerbaVar)}</td>
+      <td style="font-family:'Courier New',monospace">TOTAL (${meses} meses)</td>
       <td style="text-align:right">${fmtBRL(totalBruto)}</td>
       <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalInss)}</td>
       <td style="text-align:right;color:#B91C1C">- ${fmtBRL(totalIrrf)}</td>
-      <td style="text-align:right">${fmtBRL(totalLiquido)}</td>
+      <td style="text-align:right">${fmtBRL(totalBruto - totalInss - totalIrrf)}</td>
       <td style="text-align:right;color:var(--gy)">—</td>
       <td style="text-align:right;color:var(--or)">${fmtBRL(somaCorrigido)}</td>
     </tr>
   `;
 
+  // Atualizar cabeçalho da seção 10
+  const pjcPer = document.getElementById('pjc-inss-periodo');
+  if(pjcPer) pjcPer.textContent = 'Período: ' + String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear()
+    + ' a ' + String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear()
+    + ' · ' + meses + ' meses';
+
   panel.style.display = 'block';
 }
+
+
 
 // ============================================================
 // ACORDAI BRASIL — SCORE POR VERBA + CHECKLIST
