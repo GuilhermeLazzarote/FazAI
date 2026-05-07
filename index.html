@@ -2554,23 +2554,25 @@ function exportLiquidaPDF() {
   y = secTitle('Resumo do Cálculo', y);
 
   const verbas = r.verbas || [];
-  const totalCorrigido = verbas.reduce((s,v)=>s+(v.total||0),0) || r.totalBruto || 0;
+  const totalValCorrigido = verbas.reduce((s,v)=>s+(v.valorCorrigido||v.valor||0),0);
+  const totalJuros        = verbas.reduce((s,v)=>s+(v.juros||0),0);
+  const totalCorrigido    = verbas.reduce((s,v)=>s+(v.total||0),0) || r.totalBruto || 0;
 
   const rBody = verbas.map(v => [
-    {content: v.descricao||'–',                   styles:{halign:'left'}},
-    {content: fB(v.valorCorrigido||v.valor),       styles:{halign:'right'}},
-    {content: (v.juros&&v.juros>0) ? fB(v.juros) : '0,00', styles:{halign:'right'}},
-    {content: fB(v.total),                         styles:{halign:'right'}},
+    {content: v.descricao||'–',                              styles:{halign:'left'}},
+    {content: fB(v.valorCorrigido||v.valor),                 styles:{halign:'right'}},
+    {content: (v.juros&&v.juros>0) ? fB(v.juros) : '0,00',  styles:{halign:'right'}},
+    {content: fB(v.total),                                   styles:{halign:'right'}},
   ]);
   rBody.push([
-    {content:'Total', styles:{halign:'center',fontStyle:'bold'}},
-    {content:fB(totalCorrigido), styles:{halign:'right',fontStyle:'bold'}},
-    {content:'0,00',             styles:{halign:'right',fontStyle:'bold'}},
-    {content:fB(totalCorrigido), styles:{halign:'right',fontStyle:'bold'}},
+    {content:'Total',               styles:{halign:'center',fontStyle:'bold'}},
+    {content:fB(totalValCorrigido), styles:{halign:'right', fontStyle:'bold'}},
+    {content:fB(totalJuros),        styles:{halign:'right', fontStyle:'bold'}},
+    {content:fB(totalCorrigido),    styles:{halign:'right', fontStyle:'bold'}},
   ]);
 
   doc.autoTable({
-    startY: y, margin:{left:ML,right:MR}, tableWidth:TW,
+    startY: y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
     head:[[
       {content:'Descrição do Bruto Devido ao Reclamante', styles:{halign:'center'}},
       {content:'Valor Corrigido', styles:{halign:'center'}},
@@ -2619,7 +2621,7 @@ function exportLiquidaPDF() {
   ];
 
   doc.autoTable({
-    startY:y, margin:{left:ML,right:ML+halfW+4}, tableWidth:halfW,
+    startY:y, margin:{top:48,left:ML,right:ML+halfW+4}, tableWidth:halfW,
     head:[[{content:'Descrição de Créditos e Descontos do Reclamante',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
     body:cBody,
     columnStyles:{0:{cellWidth:halfW*0.66},1:{cellWidth:halfW*0.34}},
@@ -2645,7 +2647,7 @@ function exportLiquidaPDF() {
   ];
 
   doc.autoTable({
-    startY:y, margin:{left:ML+halfW+4,right:MR}, tableWidth:halfW,
+    startY:y, margin:{top:48,left:ML+halfW+4,right:MR}, tableWidth:halfW,
     head:[[{content:'Descrição de Débitos do Reclamado por Credor',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
     body:dBody,
     columnStyles:{0:{cellWidth:halfW*0.66},1:{cellWidth:halfW*0.34}},
@@ -2696,7 +2698,7 @@ function exportLiquidaPDF() {
   y = secTitle('Dados do Cálculo', y);
 
   doc.autoTable({
-    startY:y, margin:{left:ML,right:MR}, tableWidth:TW,
+    startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
     body:[
       [{content:'Estado:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'SP'},
        {content:'Admissão:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:r.periodoCalculoInicio||'–'}],
@@ -2728,48 +2730,51 @@ function exportLiquidaPDF() {
   };
 
   verbas.forEach(v => {
-    if(y+40>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
+    if(y+50>PH-20){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
 
     // ── Faixa laranja nome da verba ──
     doc.setFillColor(...C.hBg);
-    doc.rect(ML,y,TW,6.5,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.hTxt);
-    // Trunca nome se muito longo para não sair da faixa
+    doc.rect(ML,y,TW,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...C.hTxt);
     const nomeUp = (v.descricao||'–').toUpperCase();
-    doc.text(nomeUp, ML+3, y+4.5, {maxWidth:TW-6});
-    y += 6.5;
+    doc.text(nomeUp, ML+3, y+4.8, {maxWidth:TW-6});
+    y += 7;
 
-    // ── Metadados — cada campo numa linha própria ──
-    doc.setFontSize(7.5); doc.setTextColor(...C.dark);
+    // ── Fundo cinza claro para o bloco de metadados ──
+    const metaStartY = y;
+    doc.setFillColor(250,250,250);
 
     // Linha 1: Período
-    doc.setFont('helvetica','bold');  doc.text('Período:', ML, y+5);
-    doc.setFont('helvetica','normal'); doc.text((r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'), ML+17, y+5);
-    y += 5.5;
+    doc.setFontSize(7.5); doc.setTextColor(...C.dark);
+    doc.setFont('helvetica','bold');  doc.text('Período:', ML+2, y+5);
+    doc.setFont('helvetica','normal'); doc.text((r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'), ML+19, y+5);
+    y += 6;
 
-    // Linha 2: Incidências (pode ser longa — usa splitTextToSize)
+    // Linha 2: Incidências
     const inc = incMap[(v.natureza||'').toLowerCase()] || 'FGTS / Contribuição Social / IRPF';
-    doc.setFont('helvetica','bold');  doc.text('Incidência(s):', ML, y+4);
+    doc.setFont('helvetica','bold');  doc.text('Incidência(s):', ML+2, y+5);
     doc.setFont('helvetica','normal');
-    const incLines = doc.splitTextToSize(inc, TW-28);
-    doc.text(incLines, ML+28, y+4);
-    y += Math.max(incLines.length, 1)*4.5 + 1;
+    const incLines = doc.splitTextToSize(inc, TW-32);
+    doc.text(incLines, ML+30, y+5);
+    y += Math.max(incLines.length,1)*5.5 + 1;
 
-    // Linha 3: Metodologia (itálico, pode ser longa)
+    // Linha 3: Metodologia / Fórmula
     if(v.metodologia){
-      doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...C.mid);
-      const fl = doc.splitTextToSize('Fórmula: '+v.metodologia, TW-4);
-      if(y+fl.length*4>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-      doc.text(fl, ML+2, y);
-      y += fl.length*4+1;
+      if(y+10>PH-20){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
+      doc.setFont('helvetica','italic'); doc.setFontSize(6.8); doc.setTextColor(...C.mid);
+      const fl = doc.splitTextToSize('Fórmula: '+v.metodologia, TW-6);
+      doc.text(fl, ML+2, y+4);
+      y += fl.length*4.2 + 5;
       doc.setFontSize(7.5); doc.setTextColor(...C.dark);
+    } else {
+      y += 2;
     }
 
     // ── Tabela da verba ──
     const base = v.valorCorrigido||v.valor||0;
     const tot  = v.total||(base+(v.juros||0));
     doc.autoTable({
-      startY:y, margin:{left:ML,right:MR}, tableWidth:TW,
+      startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
       head:[[
         {content:'Período Mensal', styles:{halign:'center'}},
         {content:'Base',          styles:{halign:'center'}},
@@ -2883,7 +2888,7 @@ function exportLiquidaPDF() {
         ]);
 
         doc.autoTable({
-          startY:y, margin:{left:ML,right:MR}, tableWidth:TW,
+          startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
           head:[[
             {content:'Competência',   styles:{halign:'center'}},
             {content:'Total Bruto',   styles:{halign:'center'}},
@@ -2909,7 +2914,7 @@ function exportLiquidaPDF() {
       // ── Linha TOTAL GERAL todas as verbas ──
       if(y+10>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
       doc.autoTable({
-        startY:y, margin:{left:ML,right:MR}, tableWidth:TW,
+        startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
         body:[[
           {content:'TOTAL GERAL — '+meses+' MESES',styles:{halign:'left',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
           {content:fB(r.totalBruto),              styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
