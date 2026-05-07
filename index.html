@@ -2653,7 +2653,7 @@ function exportLiquidaPDF() {
   y=doc.lastAutoTable.finalY+6;
 
   // ── SEÇÃO 10: MEMÓRIA MENSAL POR VERBA ───────────────────────
-  // (vai direto de Dados do Cálculo para cá — Seção 7 removida)
+  // UMA ÚNICA tabela com todas as verbas — elimina qualquer desync
   const dtIni=parseP(r.periodoCalculoInicio||document.getElementById('liq-adm')?.value?.substring(0,7));
   const dtFim=parseP(r.periodoCalculoFim||document.getElementById('liq-ajuiz')?.value?.substring(0,7));
   if(dtIni&&dtFim){
@@ -2664,46 +2664,39 @@ function exportLiquidaPDF() {
       const periStr=String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear()+
                     ' a '+String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear();
       doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MID);
-      doc.text('Total por verba dividido proporcionalmente por '+meses+' meses ('+periStr+'). Correção: IPCA-E+SELIC.',ML,y);
+      doc.text('Demonstrativo por verba | '+meses+' meses ('+periStr+') | Correção: IPCA-E + SELIC',ML,y);
       y+=7;
 
-      const COL={0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},2:{cellWidth:TW*0.13},
-                 3:{cellWidth:TW*0.13},4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},6:{cellWidth:TW*0.17}};
-      const HEAD_ROW=[[
-        {content:'Competência',styles:{halign:'center'}},
-        {content:'Total Bruto',styles:{halign:'center'}},
-        {content:'(-) INSS',styles:{halign:'center'}},
-        {content:'(-) IRRF',styles:{halign:'center'}},
-        {content:'Líquido',styles:{halign:'center'}},
-        {content:'Fator Corr.',styles:{halign:'center'}},
-        {content:'Valor Corrigido',styles:{halign:'center'}},
-      ]];
+      const COL={
+        0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},
+        2:{cellWidth:TW*0.13},3:{cellWidth:TW*0.13},
+        4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},
+        6:{cellWidth:TW*0.17},
+      };
 
+      // Monta TODOS os rows de todas as verbas num único array
+      const allRows=[];
       let somaGeral=0;
+      const vInssM=inss/meses/Math.max(verbas.length,1);
+      const vIrrfM=irrf/meses/Math.max(verbas.length,1);
 
-      verbas.forEach(v=>{
+      verbas.forEach((v,vi)=>{
         const vTot=getTot(v), vPM=vTot/meses;
-        const vInssM=inss/meses/Math.max(verbas.length,1);
-        const vIrrfM=irrf/meses/Math.max(verbas.length,1);
 
-        // ── 1. HEADER LARANJA — autoTable próprio (1 linha, nunca pagina) ──
-        if(y+16>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
-        doc.autoTable({
-          startY:y, margin:MG, tableWidth:TW,
-          body:[[{
+        // ── Linha header da verba (colSpan 7) ──
+        allRows.push({
+          _type:'header',
+          cells:[{
             content:(v.descricao||'–').toUpperCase()+'   ·   Total: '+fB(vTot),
             colSpan:7,
-            styles:{fillColor:OR,textColor:WHT,fontStyle:'bold',fontSize:7.5,
-                    halign:'left',cellPadding:{top:3.5,bottom:3.5,left:4,right:4}},
-          }]],
-          columnStyles:COL,
-          styles:{...BS,fontSize:7},
-          // SEM didDrawPage aqui — esta tabela não pagina
+            styles:{
+              fillColor:OR, textColor:WHT, fontStyle:'bold', fontSize:7.5,
+              halign:'left', cellPadding:{top:4,bottom:4,left:4,right:4},
+            },
+          }],
         });
-        y=doc.lastAutoTable.finalY; // imediatamente abaixo do header
 
-        // ── 2. TABELA DE MESES — paginação limpa sem interferência ──
-        const mRows=[];
+        // ── Linhas mensais ──
         let dt3=new Date(dtIni), somaV=0;
         for(let i=0;i<meses;i++){
           const mes=dt3.getMonth()+1, ano=dt3.getFullYear();
@@ -2711,58 +2704,104 @@ function exportLiquidaPDF() {
           const fator=getFatorCorrecao(ano,mes);
           const vCorr=vPM*fator, vLiq=vPM-vInssM-vIrrfM;
           somaV+=vCorr; somaGeral+=vCorr;
-          mRows.push([
-            {content:comp,            styles:{halign:'center',fontStyle:'bold'}},
-            {content:fB(vPM),         styles:{halign:'right'}},
-            {content:'- '+fB(vInssM), styles:{halign:'right',textColor:RED}},
-            {content:'- '+fB(vIrrfM), styles:{halign:'right',textColor:RED}},
-            {content:fB(vLiq),        styles:{halign:'right'}},
-            {content:fator.toFixed(4),styles:{halign:'right',textColor:MID}},
-            {content:fB(vCorr),       styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
-          ]);
+          allRows.push({
+            _type:'month', isEven:i%2===1,
+            cells:[
+              {content:comp,              styles:{halign:'center',fontStyle:'bold'}},
+              {content:fB(vPM),           styles:{halign:'right'}},
+              {content:'- '+fB(vInssM),   styles:{halign:'right',textColor:RED}},
+              {content:'- '+fB(vIrrfM),   styles:{halign:'right',textColor:RED}},
+              {content:fB(vLiq),          styles:{halign:'right'}},
+              {content:fator.toFixed(4),  styles:{halign:'right',textColor:MID}},
+              {content:fB(vCorr),         styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
+            ],
+          });
           dt3.setMonth(dt3.getMonth()+1);
         }
-        // Subtotal
-        mRows.push([
-          {content:'SUBTOTAL',styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
-          {content:fB(vTot),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
-          {content:'',styles:{fillColor:ORTL}},
-          {content:'',styles:{fillColor:ORTL}},
-          {content:fB(vTot-vInssM*meses-vIrrfM*meses),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
-          {content:'—',styles:{halign:'right',fillColor:ORTL}},
-          {content:fB(somaV),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL,textColor:[180,70,0]}},
-        ]);
 
-        doc.autoTable({
-          startY:y, margin:MG, tableWidth:TW,
-          head:HEAD_ROW, body:mRows,
-          columnStyles:COL,
-          styles:{...BS,fontSize:7}, headStyles:{...BH,fontSize:7},
-          alternateRowStyles:BA,
-          showHead:'firstPage', // cabeçalho só na 1ª pág desta tabela
-          ...onP,
+        // ── Linha subtotal ──
+        const vLiqTotal=vTot-vInssM*meses-vIrrfM*meses;
+        allRows.push({
+          _type:'subtotal',
+          cells:[
+            {content:'SUBTOTAL',     styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
+            {content:fB(vTot),       styles:{halign:'right', fontStyle:'bold',fillColor:ORTL}},
+            {content:'',             styles:{fillColor:ORTL}},
+            {content:'',             styles:{fillColor:ORTL}},
+            {content:fB(vLiqTotal),  styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+            {content:'—',            styles:{halign:'right',fillColor:ORTL}},
+            {content:fB(somaV),      styles:{halign:'right',fontStyle:'bold',fillColor:ORTL,textColor:[180,70,0]}},
+          ],
         });
-        y=doc.lastAutoTable.finalY+6;
+
+        // Espaçador visual entre verbas (exceto após a última)
+        if(vi < verbas.length-1){
+          allRows.push({
+            _type:'spacer',
+            cells:[{content:'',colSpan:7,styles:{fillColor:WHT,cellPadding:{top:2,bottom:2,left:0,right:0}}}],
+          });
+        }
       });
 
-      // ── TOTAL GERAL ──
-      if(y+10>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
-      doc.autoTable({startY:y,margin:MG,tableWidth:TW,
-        body:[[
-          {content:'TOTAL GERAL — '+meses+' MESES',styles:{halign:'left',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-          {content:fB(sumTotal),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-          {content:'- '+fB(inss),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
-          {content:'- '+fB(irrf),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
-          {content:fB(sumTotal-inss-irrf),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-          {content:'—',styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-          {content:fB(somaGeral),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-        ]],
-        columnStyles:COL,
-        styles:{...BS,fontSize:8},...onP,
+      // Linha total geral
+      allRows.push({
+        _type:'total',
+        cells:[
+          {content:'TOTAL GERAL — '+meses+' MESES', styles:{halign:'left', fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:fB(sumTotal),                    styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:'- '+fB(inss),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
+          {content:'- '+fB(irrf),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
+          {content:fB(sumTotal-inss-irrf),           styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:'—',                             styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:fB(somaGeral),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+        ],
       });
+
+      // Renderiza ÚNICA tabela
+      doc.autoTable({
+        startY:y, margin:MG, tableWidth:TW,
+        head:[[
+          {content:'Competência',    styles:{halign:'center'}},
+          {content:'Total Bruto',    styles:{halign:'center'}},
+          {content:'(-) INSS',       styles:{halign:'center'}},
+          {content:'(-) IRRF',       styles:{halign:'center'}},
+          {content:'Líquido',        styles:{halign:'center'}},
+          {content:'Fator Corr.',    styles:{halign:'center'}},
+          {content:'Valor Corrigido',styles:{halign:'center'}},
+        ]],
+        body: allRows.map(r2=>r2.cells),
+        columnStyles:COL,
+        styles:{...BS,fontSize:7,lineColor:BRD,lineWidth:0.15},
+        headStyles:{...BH,fontSize:7},
+        // Sem alternateRowStyles — controlado manualmente abaixo
+        didParseCell(d){
+          if(d.section!=='body') return;
+          const rowMeta=allRows[d.row.index];
+          if(!rowMeta) return;
+          if(rowMeta._type==='header'){
+            d.cell.styles.fillColor=OR;
+            d.cell.styles.textColor=WHT;
+            d.cell.styles.fontStyle='bold';
+          } else if(rowMeta._type==='subtotal'){
+            d.cell.styles.fillColor=ORTL;
+            d.cell.styles.fontStyle='bold';
+          } else if(rowMeta._type==='total'){
+            d.cell.styles.fillColor=OR;
+            d.cell.styles.textColor=WHT;
+            d.cell.styles.fontStyle='bold';
+          } else if(rowMeta._type==='spacer'){
+            d.cell.styles.fillColor=WHT;
+            d.cell.styles.lineWidth=0;
+          } else if(rowMeta.isEven){
+            d.cell.styles.fillColor=ORLT;
+          }
+        },
+        didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawHeader(pageNum);}},
+      });
+
       y=doc.lastAutoTable.finalY+4;
       doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...MID);
-      doc.text('Demonstrativo proporcional — total por verba dividido igualmente pelo nº de meses do contrato.',ML,y);
+      doc.text('Demonstrativo proporcional — total por verba dividido igualmente pelo número de meses do contrato.',ML,y);
     }
   }
 
