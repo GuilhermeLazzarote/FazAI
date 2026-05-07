@@ -2429,535 +2429,346 @@ function exportLiquidaPDF() {
   const {jsPDF} = jspdf;
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
 
-  // ── PALETA FAZ AI — LARANJA ──────────────────────────────────
-  const C = {
-    hBg:     [234, 88,  12],   // laranja Faz AI
-    hTxt:    [255,255,255],
-    rowAlt:  [255,247,237],    // laranja clarinho par
-    totalBg: [255,237,213],    // laranja total
-    boldBg:  [255,247,237],
-    border:  [210,180,160],
-    dark:    [60,  60,  60],
-    mid:     [120,120,120],
-    line:    [234, 88,  12],
-    foot:    [100,100,100],
-  };
+  // ── PALETA LARANJA FAZ AI ─────────────────────────────────────
+  const OR  = [234, 88,  12];
+  const WHT = [255,255,255];
+  const ORLT= [255,247,237];
+  const ORTL= [255,235,208];
+  const GRY = [232,236,242];
+  const BRD = [210,180,160];
+  const DRK = [50,  50,  50];
+  const MID = [110,110,110];
+  const RED = [185, 28,  28];
 
-  const PW=210, PH=297, ML=14, MR=14, TW=182;
-  const now = new Date();
+  const PW=210, PH=297, ML=14, MR=14, TW=182, YFOO=PH-12;
+  const now    = new Date();
   const nowStr = now.toLocaleDateString('pt-BR')+' às '+now.toLocaleTimeString('pt-BR');
 
-  // Helpers
-  const fB = v => (v!=null && !isNaN(parseFloat(v))) ? fmtBRL(parseFloat(v)) : '—';
+  // ── HELPERS ──────────────────────────────────────────────────
+  const fB = v => { const n=parseFloat(v); return !isNaN(n) ? fmtBRL(n) : '—'; };
+
+  const getJuros = v => {
+    if(v.juros!=null && !isNaN(parseFloat(v.juros))) return parseFloat(v.juros);
+    const tot=parseFloat(v.total)||0, cor=parseFloat(v.valorCorrigido||v.valor)||0;
+    const d=tot-cor; return d>0.005?d:0;
+  };
+  const getTot = v => {
+    if(v.total!=null && !isNaN(parseFloat(v.total))) return parseFloat(v.total);
+    return (parseFloat(v.valorCorrigido||v.valor)||0)+getJuros(v);
+  };
   const parseP = p => {
     if(!p) return null;
-    const s = p.replace(/(\d{2})\/(\d{4})/,'$2-$1');
-    const d = new Date(s.length===7 ? s+'-01' : s);
-    return isNaN(d) ? null : d;
+    const s=p.replace(/(\d{2})\/(\d{4})/,'$2-$1');
+    const d=new Date(s.length===7?s+'-01':s);
+    return isNaN(d)?null:d;
   };
 
-  // ── CABEÇALHO (repetido em cada página) ───────────────────
-  let pageNum = 1;
-  function drawPageHeader(pn) {
+  // ── CABEÇALHO ────────────────────────────────────────────────
+  let pageNum=1;
+  function drawHeader(pn) {
     doc.setPage(pn);
-    // Faixa laranja topo — 14mm para caber bem
-    doc.setFillColor(...C.hBg);
-    doc.rect(0,0,PW,14,'F');
-
-    // ── Lado esquerdo — centralizado verticalmente ──
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...C.hTxt);
-    doc.text('Faz AI', ML, 6.5);
+    doc.setFillColor(...OR); doc.rect(0,0,PW,14,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...WHT);
+    doc.text('Faz AI',ML,6.5);
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-    doc.text('Liquidação Trabalhista', ML, 11.5);
-
-    // ── Lado direito — label+valor numa string só, alinhado à direita ──
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.hTxt);
-    // "Processo:" normal + valor bold — renderiza separado mas bem espaçado
-    const proc = r.numeroProcesso||'–';
-    const dataLiq = now.toLocaleDateString('pt-BR');
-    // Mede largura do label para posicionar o valor corretamente
-    doc.setFont('helvetica','normal');
-    const wProc = doc.getTextWidth('Processo: ');
-    const wLiq  = doc.getTextWidth('Liquidação: ');
-    // Alinha todo o bloco pela direita: valor bold + label normal antes dele
+    doc.text('Liquidação Trabalhista',ML,11.5);
+    const proc=r.numeroProcesso||'–', dataLiq=now.toLocaleDateString('pt-BR');
+    doc.setFont('helvetica','normal'); doc.text('Processo: ',PW-MR,6.5,{align:'right'});
+    const wP=doc.getTextWidth('Processo: ');
+    doc.setFont('helvetica','bold'); doc.text(proc,PW-MR-wP,6.5,{align:'right'});
+    doc.setFont('helvetica','normal'); doc.text('Liquidação: ',PW-MR,11.5,{align:'right'});
+    const wL=doc.getTextWidth('Liquidação: ');
+    doc.setFont('helvetica','bold'); doc.text(dataLiq,PW-MR-wL,11.5,{align:'right'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...DRK);
+    doc.text('PLANILHA DE CÁLCULO',PW/2,22,{align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('Reclamante:',ML,29); doc.setFont('helvetica','normal');
+    doc.text(r.reclamante||'–',ML+25,29);
     doc.setFont('helvetica','bold');
-    doc.text(proc, PW-MR, 6.5, {align:'right'});
-    doc.setFont('helvetica','normal');
-    doc.text('Processo: ', PW-MR-doc.getTextWidth(proc), 6.5, {align:'right'});
-
-    doc.setFont('helvetica','bold');
-    doc.text(dataLiq, PW-MR, 11.5, {align:'right'});
-    doc.setFont('helvetica','normal');
-    doc.text('Liquidação: ', PW-MR-doc.getTextWidth(dataLiq), 11.5, {align:'right'});
-
-    // ── Título PLANILHA DE CÁLCULO ──
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...C.dark);
-    doc.text('PLANILHA DE CÁLCULO', PW/2, 23, {align:'center'});
-
-    // ── Info reclamante / reclamado ──
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...C.dark);
-    doc.text('Reclamante:', ML, 30);
-    doc.setFont('helvetica','normal');
-    doc.text(r.reclamante||'–', ML+24, 30);
-    doc.setFont('helvetica','bold');
-    doc.text('Reclamado:', ML, 35.5);
-    doc.setFont('helvetica','normal');
-    doc.text(r.reclamada||'–', ML+24, 35.5);
-
-    // ── Linha de datas ──
-    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...C.dark);
-    doc.text('Período do Cálculo:', ML, 41);
-    doc.setFont('helvetica','normal');
-    doc.text((r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'), ML+31, 41);
-    doc.setFont('helvetica','bold');
-    doc.text('Data Ajuizamento:', ML+88, 41);
-    doc.setFont('helvetica','normal');
-    doc.text(document.getElementById('liq-ajuiz')?.value || r.dataAjuizamento || '–', ML+116, 41);
-    doc.setFont('helvetica','bold');
-    doc.text('Data Liquidação:', ML+144, 41);
-    doc.setFont('helvetica','normal');
-    doc.text(now.toLocaleDateString('pt-BR'), ML+167, 41);
-
-    // ── Linha separadora ──
-    doc.setDrawColor(...C.line); doc.setLineWidth(0.4);
-    doc.line(ML, 44, PW-MR, 44);
+    doc.text('Reclamado:',ML,34.5); doc.setFont('helvetica','normal');
+    const rLines=doc.splitTextToSize(r.reclamada||'–',TW-28);
+    doc.text(rLines,ML+25,34.5);
+    doc.setFontSize(7.5); doc.setTextColor(...DRK);
+    doc.setFont('helvetica','bold'); doc.text('Período:',ML,41.5);
+    doc.setFont('helvetica','normal'); doc.text((r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'),ML+17,41.5);
+    doc.setFont('helvetica','bold'); doc.text('Ajuizamento:',ML+78,41.5);
+    doc.setFont('helvetica','normal'); doc.text(document.getElementById('liq-ajuiz')?.value||r.dataAjuizamento||'–',ML+100,41.5);
+    doc.setFont('helvetica','bold'); doc.text('Liquidação:',ML+136,41.5);
+    doc.setFont('helvetica','normal'); doc.text(dataLiq,ML+154,41.5);
+    doc.setDrawColor(...OR); doc.setLineWidth(0.5); doc.line(ML,44.5,PW-MR,44.5);
   }
 
-  // Título de seção (faixa azul)
-  function secTitle(title, y) {
-    doc.setFillColor(...C.hBg);
-    doc.rect(ML, y, TW, 7, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...C.hTxt);
-    doc.text(title, PW/2, y+5, {align:'center'});
-    return y+10;
-  }
-
-  // Rodapés
+  // ── RODAPÉ ───────────────────────────────────────────────────
   function drawFooters(n) {
     for(let i=1;i<=n;i++){
       doc.setPage(i);
-      doc.setDrawColor(...C.border); doc.setLineWidth(0.3);
-      doc.line(ML, PH-10, PW-MR, PH-10);
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.foot);
-      doc.text('Planilha gerada pelo Faz AI em '+nowStr+'.', ML, PH-6);
-      doc.text('Pág. '+i+' de '+n, PW-MR, PH-6, {align:'right'});
+      doc.setDrawColor(...BRD); doc.setLineWidth(0.3);
+      doc.line(ML,PH-10,PW-MR,PH-10);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MID);
+      doc.text('Planilha gerada pelo Faz AI em '+nowStr+'.',ML,PH-6);
+      doc.text('Pág. '+i+' de '+n,PW-MR,PH-6,{align:'right'});
     }
   }
 
-  // ── RENDERIZA PÁGINA 1 ────────────────────────────────────
-  drawPageHeader(1);
-  let y = 48;
+  // ── TÍTULO DE SEÇÃO ──────────────────────────────────────────
+  function secTitle(title,y) {
+    if(y+10>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+    doc.setFillColor(...OR); doc.rect(ML,y,TW,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...WHT);
+    doc.text(title,PW/2,y+5,{align:'center'});
+    return y+10;
+  }
 
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 1 — RESUMO DO CÁLCULO
-  // ════════════════════════════════════════════════════════
-  y = secTitle('Resumo do Cálculo', y);
+  // ── ESTILOS BASE ─────────────────────────────────────────────
+  const BS = {fontSize:8,cellPadding:{top:2,bottom:2,left:2.5,right:2.5},lineColor:BRD,lineWidth:0.2,textColor:DRK};
+  const BH = {fillColor:OR,textColor:WHT,fontStyle:'bold',fontSize:8};
+  const BA = {fillColor:ORLT};
+  const onP = {didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawHeader(pageNum);}}};
+  const MG  = {top:48,left:ML,right:MR};
+  const hfW = (TW-4)/2;
+  const MGL = {top:48,left:ML,right:ML+hfW+4};
+  const MGR = {top:48,left:ML+hfW+4,right:MR};
 
-  const verbas = r.verbas || [];
-  const totalValCorrigido = verbas.reduce((s,v)=>s+(v.valorCorrigido||v.valor||0),0);
-  const totalJuros        = verbas.reduce((s,v)=>s+(v.juros||0),0);
-  const totalCorrigido    = verbas.reduce((s,v)=>s+(v.total||0),0) || r.totalBruto || 0;
+  // ── DADOS PRÉ-CALCULADOS ──────────────────────────────────────
+  const verbas   = r.verbas||[];
+  const sumCorr  = verbas.reduce((s,v)=>s+(parseFloat(v.valorCorrigido||v.valor)||0),0);
+  const sumJuros = verbas.reduce((s,v)=>s+getJuros(v),0);
+  const sumTotal = verbas.reduce((s,v)=>s+getTot(v),0);
+  const inss     = parseFloat(r.inss)||0;
+  const irrf     = parseFloat(r.irrf)||0;
+  const fgts     = parseFloat(r.fgts)||0;
+  const bruto    = sumTotal+fgts;
+  const liq      = bruto-inss-irrf;
+  const hon      = parseFloat(r.valorHonorarios)||sumTotal*((parseFloat(r.honorariosPercentual)||0)/100);
+  const inssRec  = parseFloat(r.inssReclamada)||0;
+  const totalDev = parseFloat(r.valorTotalGeral)||(liq+inssRec+hon);
 
-  const rBody = verbas.map(v => [
-    {content: v.descricao||'–',                              styles:{halign:'left'}},
-    {content: fB(v.valorCorrigido||v.valor),                 styles:{halign:'right'}},
-    {content: (v.juros&&v.juros>0) ? fB(v.juros) : '0,00',  styles:{halign:'right'}},
-    {content: fB(v.total),                                   styles:{halign:'right'}},
+  // ════════════════════════════════════════════════════════════
+  // PÁGINA 1
+  // ════════════════════════════════════════════════════════════
+  drawHeader(1);
+  let y=48;
+
+  // ── SEÇÃO 1: RESUMO ──────────────────────────────────────────
+  y=secTitle('Resumo do Cálculo',y);
+  const rBody=verbas.map(v=>[
+    {content:v.descricao||'–',styles:{halign:'left'}},
+    {content:fB(v.valorCorrigido||v.valor),styles:{halign:'right'}},
+    {content:getJuros(v)>0?fB(getJuros(v)):'0,00',styles:{halign:'right'}},
+    {content:fB(getTot(v)),styles:{halign:'right'}},
   ]);
   rBody.push([
-    {content:'Total',               styles:{halign:'center',fontStyle:'bold'}},
-    {content:fB(totalValCorrigido), styles:{halign:'right', fontStyle:'bold'}},
-    {content:fB(totalJuros),        styles:{halign:'right', fontStyle:'bold'}},
-    {content:fB(totalCorrigido),    styles:{halign:'right', fontStyle:'bold'}},
+    {content:'Total',styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
+    {content:fB(sumCorr),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+    {content:sumJuros>0?fB(sumJuros):'0,00',styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+    {content:fB(sumTotal),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
   ]);
-
-  doc.autoTable({
-    startY: y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
+  doc.autoTable({startY:y,margin:MG,tableWidth:TW,
     head:[[
-      {content:'Descrição do Bruto Devido ao Reclamante', styles:{halign:'center'}},
-      {content:'Valor Corrigido', styles:{halign:'center'}},
-      {content:'Juros',           styles:{halign:'center'}},
-      {content:'Total',           styles:{halign:'center'}},
+      {content:'Descrição do Bruto Devido ao Reclamante',styles:{halign:'center'}},
+      {content:'Valor Corrigido',styles:{halign:'center'}},
+      {content:'Juros',styles:{halign:'center'}},
+      {content:'Total',styles:{halign:'center'}},
     ]],
-    body: rBody,
+    body:rBody,
     columnStyles:{0:{cellWidth:TW*0.52},1:{cellWidth:TW*0.16},2:{cellWidth:TW*0.16},3:{cellWidth:TW*0.16}},
-    styles:{fontSize:8,cellPadding:{top:1.8,bottom:1.8,left:2,right:2},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-    headStyles:{fillColor:C.hBg,textColor:C.hTxt,fontStyle:'bold',fontSize:8},
-    alternateRowStyles:{fillColor:C.rowAlt},
-    didParseCell(d){
-      if(d.row.index===rBody.length-1){d.cell.styles.fillColor=C.totalBg;d.cell.styles.fontStyle='bold';}
-    },
-    didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+    styles:BS,headStyles:BH,alternateRowStyles:BA,...onP,
   });
-  y = doc.lastAutoTable.finalY + 2;
-
-  // Percentual remuneratório
-  const pct = r.percentualRemuneratorio;
-  if(pct){
-    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(...C.mid);
-    doc.text('Percentual de Parcelas Remuneratórias e Tributáveis: '+
-      parseFloat(pct).toFixed(2).replace('.',',')+' %', PW-MR, y, {align:'right'});
-    y += 5;
+  y=doc.lastAutoTable.finalY+2;
+  if(r.percentualRemuneratorio){
+    doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(...MID);
+    doc.text('Percentual Remuneratório/Tributável: '+parseFloat(r.percentualRemuneratorio).toFixed(2).replace('.',',')+' %',PW-MR,y,{align:'right'});
+    y+=5;
   }
 
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 2 — CRÉDITOS E DÉBITOS (lado a lado)
-  // ════════════════════════════════════════════════════════
-  if(y+55>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-  y = secTitle('Descrição de Créditos, Descontos e Débitos', y);
-
-  const halfW = (TW-4)/2;
-  const liqCorr = totalCorrigido-(r.inss||0)-(r.irrf||0);
-  const hon = r.valorHonorarios || totalCorrigido*((r.honorariosPercentual||0)/100);
-
-  const cBody = [
-    ['VERBAS (bruto total)',   {content:fB(totalCorrigido),styles:{halign:'right'}}],
-    ['FGTS',                  {content:fB(r.fgts||0),     styles:{halign:'right'}}],
-    [{content:'Bruto Devido ao Reclamante',styles:{fontStyle:'bold'}},{content:fB(totalCorrigido+(r.fgts||0)),styles:{fontStyle:'bold',halign:'right'}}],
-    ['(-) Contribuição Social (INSS)',{content:'('+fB(r.inss||0)+')',styles:{halign:'right'}}],
-    ['(-) IRPF (IRRF)',              {content:'('+fB(r.irrf||0)+')',styles:{halign:'right'}}],
-    [{content:'Total de Descontos',styles:{fontStyle:'bold'}},{content:'('+fB((r.inss||0)+(r.irrf||0))+')',styles:{fontStyle:'bold',halign:'right'}}],
-    [{content:'Líquido Devido ao Reclamante',styles:{fontStyle:'bold'}},{content:fB(liqCorr),styles:{fontStyle:'bold',halign:'right'}}],
+  // ── SEÇÃO 2: CRÉDITOS / DÉBITOS ──────────────────────────────
+  if(y+55>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+  y=secTitle('Créditos, Descontos e Débitos',y);
+  const cBody=[
+    ['VERBAS (bruto total)',{content:fB(sumTotal),styles:{halign:'right'}}],
+    ['FGTS',{content:fB(fgts),styles:{halign:'right'}}],
+    [{content:'Bruto Devido ao Reclamante',styles:{fontStyle:'bold',fillColor:GRY}},{content:fB(bruto),styles:{fontStyle:'bold',halign:'right',fillColor:GRY}}],
+    ['(-) Contribuição Social (INSS)',{content:'('+fB(inss)+')',styles:{halign:'right'}}],
+    ['(-) IRPF (IRRF)',{content:'('+fB(irrf)+')',styles:{halign:'right'}}],
+    [{content:'Total de Descontos',styles:{fontStyle:'bold',fillColor:GRY}},{content:'('+fB(inss+irrf)+')',styles:{fontStyle:'bold',halign:'right',fillColor:GRY}}],
+    [{content:'Líquido Devido ao Reclamante',styles:{fontStyle:'bold',fillColor:ORTL}},{content:fB(liq),styles:{fontStyle:'bold',halign:'right',fillColor:ORTL}}],
   ];
-
-  doc.autoTable({
-    startY:y, margin:{top:48,left:ML,right:ML+halfW+4}, tableWidth:halfW,
-    head:[[{content:'Descrição de Créditos e Descontos do Reclamante',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
-    body:cBody,
-    columnStyles:{0:{cellWidth:halfW*0.66},1:{cellWidth:halfW*0.34}},
-    styles:{fontSize:7.5,cellPadding:{top:1.5,bottom:1.5,left:2,right:2},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-    headStyles:{fillColor:C.hBg,textColor:C.hTxt,fontStyle:'bold',fontSize:7.5},
-    alternateRowStyles:{fillColor:C.rowAlt},
-    didParseCell(d){
-      if(d.row.index===cBody.length-1){d.cell.styles.fillColor=C.totalBg;d.cell.styles.fontStyle='bold';}
-      if(d.row.index===cBody.length-2||d.row.index===2){d.cell.styles.fillColor=C.boldBg;}
-    },
-    didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+  doc.autoTable({startY:y,margin:MGL,tableWidth:hfW,
+    head:[[{content:'Créditos e Descontos do Reclamante',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
+    body:cBody,columnStyles:{0:{cellWidth:hfW*0.65},1:{cellWidth:hfW*0.35}},
+    styles:{...BS,fontSize:7.5},headStyles:{...BH,fontSize:7.5},alternateRowStyles:BA,...onP,
   });
-  const yLeft = doc.lastAutoTable.finalY;
-
-  const totalDevido = r.valorTotalGeral || (liqCorr+(r.inssReclamada||0)+hon);
-  const dBody = [
-    ['LÍQUIDO DEVIDO AO RECLAMANTE',               {content:fB(liqCorr),             styles:{halign:'right'}}],
-    ['Contribuição Social sobre Salários Devidos', {content:fB(r.inssReclamada||0),  styles:{halign:'right'}}],
-    ['Honorários Líquidos — Adv. Reclamante',      {content:fB(hon),                 styles:{halign:'right'}}],
-    ['IRRF sobre Honorários',                      {content:fB(hon*0.10),            styles:{halign:'right'}}],
-    ['IRPF Devido pelo Reclamante',                {content:fB(r.irrf||0),           styles:{halign:'right'}}],
-    [{content:'Total Devido pelo Reclamado',styles:{fontStyle:'bold'}},{content:fB(totalDevido),styles:{fontStyle:'bold',halign:'right'}}],
+  const yLeft=doc.lastAutoTable.finalY;
+  const dBody=[
+    ['LÍQUIDO DEVIDO AO RECLAMANTE',{content:fB(liq),styles:{halign:'right'}}],
+    ['Contribuição Social sobre Salários Devidos',{content:fB(inssRec),styles:{halign:'right'}}],
+    ['Honorários Líquidos (Adv. Reclamante)',{content:fB(hon),styles:{halign:'right'}}],
+    ['IRRF sobre Honorários',{content:fB(hon*0.1),styles:{halign:'right'}}],
+    ['IRPF Devido pelo Reclamante',{content:fB(irrf),styles:{halign:'right'}}],
+    [{content:'Total Devido pelo Reclamado',styles:{fontStyle:'bold',fillColor:ORTL}},{content:fB(totalDev),styles:{fontStyle:'bold',halign:'right',fillColor:ORTL}}],
   ];
-
-  doc.autoTable({
-    startY:y, margin:{top:48,left:ML+halfW+4,right:MR}, tableWidth:halfW,
-    head:[[{content:'Descrição de Débitos do Reclamado por Credor',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
-    body:dBody,
-    columnStyles:{0:{cellWidth:halfW*0.66},1:{cellWidth:halfW*0.34}},
-    styles:{fontSize:7.5,cellPadding:{top:1.5,bottom:1.5,left:2,right:2},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-    headStyles:{fillColor:C.hBg,textColor:C.hTxt,fontStyle:'bold',fontSize:7.5},
-    alternateRowStyles:{fillColor:C.rowAlt},
-    didParseCell(d){
-      if(d.row.index===dBody.length-1){d.cell.styles.fillColor=C.totalBg;d.cell.styles.fontStyle='bold';}
-    },
-    didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+  doc.autoTable({startY:y,margin:MGR,tableWidth:hfW,
+    head:[[{content:'Débitos do Reclamado por Credor',styles:{halign:'center'}},{content:'Valor',styles:{halign:'center'}}]],
+    body:dBody,columnStyles:{0:{cellWidth:hfW*0.65},1:{cellWidth:hfW*0.35}},
+    styles:{...BS,fontSize:7.5},headStyles:{...BH,fontSize:7.5},alternateRowStyles:BA,...onP,
   });
-  y = Math.max(yLeft, doc.lastAutoTable.finalY) + 6;
+  y=Math.max(yLeft,doc.lastAutoTable.finalY)+6;
 
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 3 — CRITÉRIO DE CÁLCULO E FUNDAMENTAÇÃO LEGAL
-  // ════════════════════════════════════════════════════════
-  if(y+45>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-  y = secTitle('Critério de Cálculo e Fundamentação Legal', y);
-
-  const fundLinhas = [
+  // ── SEÇÃO 3: FUNDAMENTAÇÃO ───────────────────────────────────
+  if(y+40>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+  y=secTitle('Critério de Cálculo e Fundamentação Legal',y);
+  const fundL=[
     '1. Prazo do aviso prévio apurado segundo a Lei nº 12.506/2011.',
     '2. Avos de férias e/ou 13º salário apurados considerando a projeção do prazo do aviso prévio.',
-    '3. Valores corrigidos pelo índice IPCA-E + SELIC (ADC 58), acumulado a partir do mês subsequente ao vencimento, conforme Súmula nº 381 do TST.',
+    '3. Valores corrigidos pelo índice IPCA-E + SELIC (ADC 58), a partir do mês subsequente ao vencimento, conforme Súmula nº 381 do TST.',
     '4. Alíquota de contribuição social empresa fixada em '+(r.percentualInssReclamada||20)+'% durante todo o período.',
-    '5. Contribuições sociais sobre salários devidos calculadas conforme os itens IV e V da Súmula nº 368 do TST.',
-    '6. Imposto de renda apurado em regime de Rendimentos Recebidos Acumuladamente (RRA), conforme Art. 12-A da Lei nº 7.713/1988.',
+    '5. Contribuições sociais sobre salários devidos conforme Súmula nº 368 do TST, itens IV e V.',
+    '6. Imposto de renda em regime RRA — Art. 12-A da Lei nº 7.713/1988.',
     '7. Sem incidência de juros a partir da data do ajuizamento.',
-    '8. Honorários sucumbenciais de '+(r.honorariosPercentual||15)+'% conforme art. 791-A da CLT.',
+    '8. Honorários sucumbenciais de '+(r.honorariosPercentual||15)+'% — art. 791-A da CLT.',
   ];
-  if(r.observation){
-    fundLinhas.push('');
-    r.observation.split('\n').forEach(l=>{ if(l.trim()) fundLinhas.push(l.trim()); });
-  }
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.dark);
-  fundLinhas.forEach(line => {
-    if(y+5>PH-16){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-    const spl = doc.splitTextToSize(line||' ', TW-4);
-    doc.text(spl, ML+2, y);
-    y += spl.length*4.2+1;
+  if(r.observation) r.observation.split('\n').forEach(l=>{if(l.trim())fundL.push(l.trim());});
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...DRK);
+  fundL.forEach(line=>{
+    if(y+5>YFOO-4){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+    const spl=doc.splitTextToSize(line||' ',TW-4);
+    doc.text(spl,ML+2,y); y+=spl.length*4.5+1;
   });
-  y += 4;
+  y+=4;
 
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 4 — DADOS DO CÁLCULO
-  // ════════════════════════════════════════════════════════
-  if(y+35>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-  y = secTitle('Dados do Cálculo', y);
-
-  doc.autoTable({
-    startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
+  // ── SEÇÃO 4: DADOS DO CÁLCULO ────────────────────────────────
+  if(y+35>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+  y=secTitle('Dados do Cálculo',y);
+  doc.autoTable({startY:y,margin:MG,tableWidth:TW,
     body:[
-      [{content:'Estado:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'SP'},
-       {content:'Admissão:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:r.periodoCalculoInicio||'–'}],
-      [{content:'Município:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:r.municipio||'–'},
-       {content:'Demissão:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:r.periodoCalculoFim||'–'}],
-      [{content:'Regime de Trabalho:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'Tempo Integral (CLT)'},
-       {content:'Maior Remuneração:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:fB(r.salarioBaseIdentificado)}],
-      [{content:'Última Remuneração:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:fB(r.salarioBaseIdentificado)},
-       {content:'Carga Horária (Padrão):',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'220,00'}],
-      [{content:'Prescrição Quinquenal:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'Aplicar'},
-       {content:'Projetar Aviso Prévio:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'Calculado'}],
-      [{content:'Correção Monetária:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:'IPCA-E + SELIC (ADC 58)'},
-       {content:'INSS Patronal:',styles:{fontStyle:'bold',fillColor:C.boldBg}},{content:(r.percentualInssReclamada||20)+'%'}],
+      [{content:'Estado:',styles:{fontStyle:'bold',fillColor:GRY}},{content:'SP'},{content:'Admissão:',styles:{fontStyle:'bold',fillColor:GRY}},{content:r.periodoCalculoInicio||'–'}],
+      [{content:'Município:',styles:{fontStyle:'bold',fillColor:GRY}},{content:r.municipio||'–'},{content:'Demissão:',styles:{fontStyle:'bold',fillColor:GRY}},{content:r.periodoCalculoFim||'–'}],
+      [{content:'Regime:',styles:{fontStyle:'bold',fillColor:GRY}},{content:'Tempo Integral (CLT)'},{content:'Maior Remuneração:',styles:{fontStyle:'bold',fillColor:GRY}},{content:fB(r.salarioBaseIdentificado)}],
+      [{content:'Última Remuneração:',styles:{fontStyle:'bold',fillColor:GRY}},{content:fB(r.salarioBaseIdentificado)},{content:'Carga Horária:',styles:{fontStyle:'bold',fillColor:GRY}},{content:'220h/mês'}],
+      [{content:'Correção Monetária:',styles:{fontStyle:'bold',fillColor:GRY}},{content:'IPCA-E + SELIC (ADC 58)'},{content:'INSS Patronal:',styles:{fontStyle:'bold',fillColor:GRY}},{content:(r.percentualInssReclamada||20)+'%'}],
     ],
     columnStyles:{0:{cellWidth:TW*0.18},1:{cellWidth:TW*0.32},2:{cellWidth:TW*0.18},3:{cellWidth:TW*0.32}},
-    styles:{fontSize:7.5,cellPadding:{top:1.5,bottom:1.5,left:2,right:2},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-    didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+    styles:BS,...onP,
   });
-  y = doc.lastAutoTable.finalY+6;
+  y=doc.lastAutoTable.finalY+6;
 
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 7 — DEMONSTRATIVO POR VERBA
-  // ════════════════════════════════════════════════════════
-  const incMap = {
-    salarial:      'FGTS / Contribuição Social / IRPF',
-    indenizatoria: 'Não há.',
-    indenizatório: 'Não há.',
-    indenizatorio: 'Não há.',
-  };
+  // ── SEÇÃO 10: MEMÓRIA MENSAL POR VERBA ───────────────────────
+  // (vai direto de Dados do Cálculo para cá — Seção 7 removida)
+  const dtIni=parseP(r.periodoCalculoInicio||document.getElementById('liq-adm')?.value?.substring(0,7));
+  const dtFim=parseP(r.periodoCalculoFim||document.getElementById('liq-ajuiz')?.value?.substring(0,7));
+  if(dtIni&&dtFim){
+    const meses=(dtFim.getFullYear()-dtIni.getFullYear())*12+(dtFim.getMonth()-dtIni.getMonth())+1;
+    if(meses>=1&&meses<=360){
+      if(y+40>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+      y=secTitle('Memória de Cálculo Mensal por Verba',y);
+      const periStr=String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear()+
+                    ' a '+String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear();
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MID);
+      doc.text('Total por verba dividido proporcionalmente por '+meses+' meses ('+periStr+'). Correção: IPCA-E+SELIC.',ML,y);
+      y+=7;
 
-  verbas.forEach(v => {
-    if(y+50>PH-20){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
+      const COL={0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},2:{cellWidth:TW*0.13},
+                 3:{cellWidth:TW*0.13},4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},6:{cellWidth:TW*0.17}};
+      const HEAD_ROW=[[
+        {content:'Competência',styles:{halign:'center'}},
+        {content:'Total Bruto',styles:{halign:'center'}},
+        {content:'(-) INSS',styles:{halign:'center'}},
+        {content:'(-) IRRF',styles:{halign:'center'}},
+        {content:'Líquido',styles:{halign:'center'}},
+        {content:'Fator Corr.',styles:{halign:'center'}},
+        {content:'Valor Corrigido',styles:{halign:'center'}},
+      ]];
 
-    // ── Faixa laranja nome da verba ──
-    doc.setFillColor(...C.hBg);
-    doc.rect(ML,y,TW,7,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...C.hTxt);
-    const nomeUp = (v.descricao||'–').toUpperCase();
-    doc.text(nomeUp, ML+3, y+4.8, {maxWidth:TW-6});
-    y += 7;
+      let somaGeral=0;
 
-    // ── Fundo cinza claro para o bloco de metadados ──
-    const metaStartY = y;
-    doc.setFillColor(250,250,250);
+      verbas.forEach(v=>{
+        const vTot=getTot(v), vPM=vTot/meses;
+        const vInssM=inss/meses/Math.max(verbas.length,1);
+        const vIrrfM=irrf/meses/Math.max(verbas.length,1);
 
-    // Linha 1: Período
-    doc.setFontSize(7.5); doc.setTextColor(...C.dark);
-    doc.setFont('helvetica','bold');  doc.text('Período:', ML+2, y+5);
-    doc.setFont('helvetica','normal'); doc.text((r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'), ML+19, y+5);
-    y += 6;
+        // ── 1. HEADER LARANJA — autoTable próprio (1 linha, nunca pagina) ──
+        if(y+16>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+        doc.autoTable({
+          startY:y, margin:MG, tableWidth:TW,
+          body:[[{
+            content:(v.descricao||'–').toUpperCase()+'   ·   Total: '+fB(vTot),
+            colSpan:7,
+            styles:{fillColor:OR,textColor:WHT,fontStyle:'bold',fontSize:7.5,
+                    halign:'left',cellPadding:{top:3.5,bottom:3.5,left:4,right:4}},
+          }]],
+          columnStyles:COL,
+          styles:{...BS,fontSize:7},
+          // SEM didDrawPage aqui — esta tabela não pagina
+        });
+        y=doc.lastAutoTable.finalY; // imediatamente abaixo do header
 
-    // Linha 2: Incidências
-    const inc = incMap[(v.natureza||'').toLowerCase()] || 'FGTS / Contribuição Social / IRPF';
-    doc.setFont('helvetica','bold');  doc.text('Incidência(s):', ML+2, y+5);
-    doc.setFont('helvetica','normal');
-    const incLines = doc.splitTextToSize(inc, TW-32);
-    doc.text(incLines, ML+30, y+5);
-    y += Math.max(incLines.length,1)*5.5 + 1;
-
-    // Linha 3: Metodologia / Fórmula
-    if(v.metodologia){
-      if(y+10>PH-20){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-      doc.setFont('helvetica','italic'); doc.setFontSize(6.8); doc.setTextColor(...C.mid);
-      const fl = doc.splitTextToSize('Fórmula: '+v.metodologia, TW-6);
-      doc.text(fl, ML+2, y+4);
-      y += fl.length*4.2 + 5;
-      doc.setFontSize(7.5); doc.setTextColor(...C.dark);
-    } else {
-      y += 2;
-    }
-
-    // ── Tabela da verba ──
-    const base = v.valorCorrigido||v.valor||0;
-    const tot  = v.total||(base+(v.juros||0));
-    doc.autoTable({
-      startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
-      head:[[
-        {content:'Período Mensal', styles:{halign:'center'}},
-        {content:'Base',          styles:{halign:'center'}},
-        {content:'Divisor',       styles:{halign:'center'}},
-        {content:'Multiplicador', styles:{halign:'center'}},
-        {content:'Quantidade',    styles:{halign:'center'}},
-        {content:'Dobra',         styles:{halign:'center'}},
-        {content:'Devido',        styles:{halign:'center'}},
-        {content:'Pago',          styles:{halign:'center'}},
-        {content:'Diferença',     styles:{halign:'center'}},
-      ]],
-      body:[[
-        {content:(r.periodoCalculoInicio||'–')+' a '+(r.periodoCalculoFim||'–'), styles:{halign:'left'}},
-        {content:fB(v.baseCalculo||base),  styles:{halign:'right'}},
-        {content:v.divisor||'—',           styles:{halign:'right'}},
-        {content:v.quantidade ? parseFloat(v.quantidade).toFixed(8) : '1,00000000', styles:{halign:'right'}},
-        {content:v.quantidade||'—',        styles:{halign:'right'}},
-        {content:'Não',                    styles:{halign:'center'}},
-        {content:fB(base),                 styles:{halign:'right'}},
-        {content:'0,00',                   styles:{halign:'right'}},
-        {content:fB(tot),                  styles:{halign:'right',fontStyle:'bold'}},
-      ]],
-      columnStyles:{
-        0:{cellWidth:TW*0.19},1:{cellWidth:TW*0.11},2:{cellWidth:TW*0.09},
-        3:{cellWidth:TW*0.12},4:{cellWidth:TW*0.10},5:{cellWidth:TW*0.07},
-        6:{cellWidth:TW*0.11},7:{cellWidth:TW*0.09},8:{cellWidth:TW*0.09},
-      },
-      styles:{fontSize:7,cellPadding:{top:1.5,bottom:1.5,left:1.5,right:1.5},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-      headStyles:{fillColor:C.hBg,textColor:C.hTxt,fontStyle:'bold',fontSize:7},
-      didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
-    });
-    y = doc.lastAutoTable.finalY;
-    doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...C.mid);
-    doc.text('Comentário: -', ML+2, y+4);
-    y += 9;
-  });
-
-  // ════════════════════════════════════════════════════════
-  // SEÇÃO 10 — MEMÓRIA MENSAL POR VERBA  (verba → meses)
-  // ════════════════════════════════════════════════════════
-  const periodoIniPDF = r.periodoCalculoInicio || document.getElementById('liq-adm')?.value?.substring(0,7);
-  const periodoFimPDF = r.periodoCalculoFim    || document.getElementById('liq-ajuiz')?.value?.substring(0,7);
-  const dtIni = parseP(periodoIniPDF);
-  const dtFim = parseP(periodoFimPDF);
-
-  if(dtIni && dtFim){
-    const meses = (dtFim.getFullYear()-dtIni.getFullYear())*12+(dtFim.getMonth()-dtIni.getMonth())+1;
-    if(meses>=1 && meses<=360){
-      if(y+40>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-      y = secTitle('Memória de Cálculo Mensal por Verba', y);
-
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.mid);
-      const periStr = String(dtIni.getMonth()+1).padStart(2,'0')+'/'+dtIni.getFullYear()+
-                      ' a '+String(dtFim.getMonth()+1).padStart(2,'0')+'/'+dtFim.getFullYear();
-      doc.text('Demonstrativo por verba — cada verba exibe todos os meses do contrato ('+meses+' meses / '+periStr+')', ML, y);
-      y += 6;
-
-      // ── LOOP POR VERBA — header laranja DENTRO do autoTable ──
-      let somaCorrigGeral = 0;
-
-      verbas.forEach(v => {
-        const vTotal  = v.total||v.valorCorrigido||v.valor||0;
-        const vPorMes = vTotal/meses;
-
-        // Monta body: linha header laranja (colSpan) + meses + subtotal
-        const bodyMeses = [];
-
-        // ROW 0 — cabeçalho laranja da verba (colSpan=7)
-        bodyMeses.push([{
-          content: (v.descricao||'–').toUpperCase()+'    ·    Total: '+fB(vTotal),
-          colSpan: 7,
-          styles: {
-            fillColor: C.hBg, textColor: C.hTxt,
-            fontStyle: 'bold', fontSize: 7.5,
-            halign: 'left', cellPadding:{top:2.5,bottom:2.5,left:3,right:3},
-          },
-        }]);
-
-        // ROWS 1..N — meses
-        let dt3 = new Date(dtIni);
-        let somaVCorrig = 0;
+        // ── 2. TABELA DE MESES — paginação limpa sem interferência ──
+        const mRows=[];
+        let dt3=new Date(dtIni), somaV=0;
         for(let i=0;i<meses;i++){
-          const mes  = dt3.getMonth()+1, ano = dt3.getFullYear();
-          const comp = String(mes).padStart(2,'0')+'/'+ano;
-          const fator = getFatorCorrecao(ano, mes);
-          const vInss   = (r.inss||0)/meses/Math.max(verbas.length,1);
-          const vIrrf   = (r.irrf||0)/meses/Math.max(verbas.length,1);
-          const vLiq    = vPorMes - vInss - vIrrf;
-          const vCorrig = vPorMes * fator;
-          somaVCorrig   += vCorrig;
-          somaCorrigGeral += vCorrig;
-          bodyMeses.push([
-            {content:comp,              styles:{halign:'center',fontStyle:'bold'}},
-            {content:fB(vPorMes),       styles:{halign:'right'}},
-            {content:'- '+fB(vInss),    styles:{halign:'right',textColor:[185,28,28]}},
-            {content:'- '+fB(vIrrf),    styles:{halign:'right',textColor:[185,28,28]}},
-            {content:fB(vLiq),          styles:{halign:'right'}},
-            {content:fator.toFixed(4),  styles:{halign:'right',textColor:C.mid}},
-            {content:fB(vCorrig),       styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
+          const mes=dt3.getMonth()+1, ano=dt3.getFullYear();
+          const comp=String(mes).padStart(2,'0')+'/'+ano;
+          const fator=getFatorCorrecao(ano,mes);
+          const vCorr=vPM*fator, vLiq=vPM-vInssM-vIrrfM;
+          somaV+=vCorr; somaGeral+=vCorr;
+          mRows.push([
+            {content:comp,            styles:{halign:'center',fontStyle:'bold'}},
+            {content:fB(vPM),         styles:{halign:'right'}},
+            {content:'- '+fB(vInssM), styles:{halign:'right',textColor:RED}},
+            {content:'- '+fB(vIrrfM), styles:{halign:'right',textColor:RED}},
+            {content:fB(vLiq),        styles:{halign:'right'}},
+            {content:fator.toFixed(4),styles:{halign:'right',textColor:MID}},
+            {content:fB(vCorr),       styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
           ]);
           dt3.setMonth(dt3.getMonth()+1);
         }
-
-        // ROW N+1 — subtotal da verba
-        const vLiqTotal = vTotal-(r.inss||0)/Math.max(verbas.length,1)-(r.irrf||0)/Math.max(verbas.length,1);
-        bodyMeses.push([
-          {content:'SUBTOTAL', styles:{halign:'center',fontStyle:'bold',fillColor:C.totalBg}},
-          {content:fB(vTotal), styles:{halign:'right', fontStyle:'bold',fillColor:C.totalBg}},
-          {content:'',         styles:{fillColor:C.totalBg}},
-          {content:'',         styles:{fillColor:C.totalBg}},
-          {content:fB(vLiqTotal), styles:{halign:'right',fontStyle:'bold',fillColor:C.totalBg}},
-          {content:'—',        styles:{halign:'right',fillColor:C.totalBg}},
-          {content:fB(somaVCorrig), styles:{halign:'right',fontStyle:'bold',fillColor:C.totalBg,textColor:[180,70,0]}},
+        // Subtotal
+        mRows.push([
+          {content:'SUBTOTAL',styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
+          {content:fB(vTot),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+          {content:'',styles:{fillColor:ORTL}},
+          {content:'',styles:{fillColor:ORTL}},
+          {content:fB(vTot-vInssM*meses-vIrrfM*meses),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+          {content:'—',styles:{halign:'right',fillColor:ORTL}},
+          {content:fB(somaV),styles:{halign:'right',fontStyle:'bold',fillColor:ORTL,textColor:[180,70,0]}},
         ]);
 
-        if(y+30>PH-20){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-
         doc.autoTable({
-          startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
-          head:[[
-            {content:'Competência',    styles:{halign:'center'}},
-            {content:'Total Bruto',    styles:{halign:'center'}},
-            {content:'(-) INSS',       styles:{halign:'center'}},
-            {content:'(-) IRRF',       styles:{halign:'center'}},
-            {content:'Líquido',        styles:{halign:'center'}},
-            {content:'Fator Corr.',    styles:{halign:'center'}},
-            {content:'Valor Corrigido',styles:{halign:'center'}},
-          ]],
-          body: bodyMeses,
-          columnStyles:{
-            0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},2:{cellWidth:TW*0.13},
-            3:{cellWidth:TW*0.13},4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},6:{cellWidth:TW*0.17},
-          },
-          styles:{fontSize:7,cellPadding:{top:1.4,bottom:1.4,left:2,right:2},lineColor:C.border,lineWidth:0.15,textColor:C.dark},
-          headStyles:{fillColor:C.hBg,textColor:C.hTxt,fontStyle:'bold',fontSize:7},
-          alternateRowStyles:{fillColor:C.rowAlt},
-          // Evita que a linha header laranja (índice 0) receba alternateRowStyles
-          didParseCell(d){
-            if(d.section==='body' && d.row.index===0){
-              d.cell.styles.fillColor = C.hBg;
-              d.cell.styles.textColor = C.hTxt;
-            }
-          },
-          didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+          startY:y, margin:MG, tableWidth:TW,
+          head:HEAD_ROW, body:mRows,
+          columnStyles:COL,
+          styles:{...BS,fontSize:7}, headStyles:{...BH,fontSize:7},
+          alternateRowStyles:BA,
+          showHead:'firstPage', // cabeçalho só na 1ª pág desta tabela
+          ...onP,
         });
-        y = doc.lastAutoTable.finalY + 4;
+        y=doc.lastAutoTable.finalY+6;
       });
 
-      // ── Linha TOTAL GERAL todas as verbas ──
-      if(y+10>PH-18){doc.addPage();pageNum++;drawPageHeader(pageNum);y=48;}
-      doc.autoTable({
-        startY:y, margin:{top:48,left:ML,right:MR}, tableWidth:TW,
+      // ── TOTAL GERAL ──
+      if(y+10>YFOO){doc.addPage();pageNum++;drawHeader(pageNum);y=48;}
+      doc.autoTable({startY:y,margin:MG,tableWidth:TW,
         body:[[
-          {content:'TOTAL GERAL — '+meses+' MESES',styles:{halign:'left',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
-          {content:fB(r.totalBruto),              styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
-          {content:'- '+fB(r.inss||0),            styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:[255,200,200]}},
-          {content:'- '+fB(r.irrf||0),            styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:[255,200,200]}},
-          {content:fB((r.totalBruto||0)-(r.inss||0)-(r.irrf||0)),styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
-          {content:'—',                           styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
-          {content:fB(somaCorrigGeral),           styles:{halign:'right',fontStyle:'bold',fillColor:C.hBg,textColor:C.hTxt}},
+          {content:'TOTAL GERAL — '+meses+' MESES',styles:{halign:'left',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:fB(sumTotal),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:'- '+fB(inss),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
+          {content:'- '+fB(irrf),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
+          {content:fB(sumTotal-inss-irrf),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:'—',styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
+          {content:fB(somaGeral),styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
         ]],
-        columnStyles:{
-          0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},2:{cellWidth:TW*0.13},
-          3:{cellWidth:TW*0.13},4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},6:{cellWidth:TW*0.17},
-        },
-        styles:{fontSize:8,cellPadding:{top:2.5,bottom:2.5,left:2,right:2},lineColor:C.border,lineWidth:0.2,textColor:C.dark},
-        didDrawPage(d){if(d.pageNumber>pageNum){pageNum=d.pageNumber;drawPageHeader(pageNum);}},
+        columnStyles:COL,
+        styles:{...BS,fontSize:8},...onP,
       });
-
-      y = doc.lastAutoTable.finalY+4;
-      doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...C.mid);
-      doc.text('Demonstrativo proporcional — total apurado dividido igualmente pelo número de meses do contrato.', ML, y);
+      y=doc.lastAutoTable.finalY+4;
+      doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...MID);
+      doc.text('Demonstrativo proporcional — total por verba dividido igualmente pelo nº de meses do contrato.',ML,y);
     }
   }
 
-  // ── RODAPÉ EM TODAS AS PÁGINAS ───────────────────────────
+  // ── RODAPÉS + SALVAR ─────────────────────────────────────────
   drawFooters(doc.getNumberOfPages());
-
-  // ── SALVAR ───────────────────────────────────────────────
-  const nomeSafe = (r.reclamante||'Liquidacao')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\s+/g,'_').replace(/[^\w_]/g,'')
-    .toUpperCase().substring(0,30);
+  const nomeSafe=(r.reclamante||'Liquidacao').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase().substring(0,30);
   doc.save('FazAI_Liquidacao_'+nomeSafe+'_'+now.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.pdf');
 }
 // Liquida History
