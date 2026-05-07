@@ -2473,12 +2473,18 @@ function exportLiquidaPDF() {
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
     doc.text('Liquidação Trabalhista',ML,11.5);
     const proc=r.numeroProcesso||'–', dataLiq=now.toLocaleDateString('pt-BR');
-    doc.setFont('helvetica','normal'); doc.text('Processo: ',PW-MR,6.5,{align:'right'});
-    const wP=doc.getTextWidth('Processo: ');
-    doc.setFont('helvetica','bold'); doc.text(proc,PW-MR-wP,6.5,{align:'right'});
-    doc.setFont('helvetica','normal'); doc.text('Liquidação: ',PW-MR,11.5,{align:'right'});
-    const wL=doc.getTextWidth('Liquidação: ');
-    doc.setFont('helvetica','bold'); doc.text(dataLiq,PW-MR-wL,11.5,{align:'right'});
+    // Bloco right-aligned: [label][valor] — medimos o valor e posicionamos o label antes dele
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica','bold');
+    const wProcVal=doc.getTextWidth(proc);
+    doc.text(proc,PW-MR,6.5,{align:'right'});
+    doc.setFont('helvetica','normal');
+    doc.text('Processo: ',PW-MR-wProcVal,6.5,{align:'right'});
+    const wLiqVal=doc.getTextWidth(dataLiq);
+    doc.setFont('helvetica','bold');
+    doc.text(dataLiq,PW-MR,11.5,{align:'right'});
+    doc.setFont('helvetica','normal');
+    doc.text('Liquidação: ',PW-MR-wLiqVal,11.5,{align:'right'});
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...DRK);
     doc.text('PLANILHA DE CÁLCULO',PW/2,22,{align:'center'});
     doc.setFontSize(8); doc.setFont('helvetica','bold');
@@ -2668,10 +2674,9 @@ function exportLiquidaPDF() {
       y+=7;
 
       const COL={
-        0:{cellWidth:TW*0.13},1:{cellWidth:TW*0.15},
-        2:{cellWidth:TW*0.13},3:{cellWidth:TW*0.13},
-        4:{cellWidth:TW*0.15},5:{cellWidth:TW*0.11},
-        6:{cellWidth:TW*0.17},
+        0:{cellWidth:TW*0.14},1:{cellWidth:TW*0.17},
+        2:{cellWidth:TW*0.15},3:{cellWidth:TW*0.15},
+        4:{cellWidth:TW*0.18},5:{cellWidth:TW*0.21},
       };
 
       // Monta TODOS os rows de todas as verbas num único array
@@ -2683,12 +2688,12 @@ function exportLiquidaPDF() {
       verbas.forEach((v,vi)=>{
         const vTot=getTot(v), vPM=vTot/meses;
 
-        // ── Linha header da verba (colSpan 7) ──
+        // ── Linha header da verba (colSpan 6) ──
         allRows.push({
           _type:'header',
           cells:[{
             content:(v.descricao||'–').toUpperCase()+'   ·   Total: '+fB(vTot),
-            colSpan:7,
+            colSpan:6,
             styles:{
               fillColor:OR, textColor:WHT, fontStyle:'bold', fontSize:7.5,
               halign:'left', cellPadding:{top:4,bottom:4,left:4,right:4},
@@ -2701,19 +2706,17 @@ function exportLiquidaPDF() {
         for(let i=0;i<meses;i++){
           const mes=dt3.getMonth()+1, ano=dt3.getFullYear();
           const comp=String(mes).padStart(2,'0')+'/'+ano;
-          const fator=getFatorCorrecao(ano,mes);
-          const vCorr=vPM*fator, vLiq=vPM-vInssM-vIrrfM;
-          somaV+=vCorr; somaGeral+=vCorr;
+          const vLiq=vPM-vInssM-vIrrfM;
+          somaV+=vPM; somaGeral+=vPM;
           allRows.push({
             _type:'month', isEven:i%2===1,
             cells:[
-              {content:comp,              styles:{halign:'center',fontStyle:'bold'}},
-              {content:fB(vPM),           styles:{halign:'right'}},
-              {content:'- '+fB(vInssM),   styles:{halign:'right',textColor:RED}},
-              {content:'- '+fB(vIrrfM),   styles:{halign:'right',textColor:RED}},
-              {content:fB(vLiq),          styles:{halign:'right'}},
-              {content:fator.toFixed(4),  styles:{halign:'right',textColor:MID}},
-              {content:fB(vCorr),         styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
+              {content:comp,            styles:{halign:'center',fontStyle:'bold'}},
+              {content:fB(vPM),         styles:{halign:'right'}},
+              {content:'- '+fB(vInssM), styles:{halign:'right',textColor:RED}},
+              {content:'- '+fB(vIrrfM), styles:{halign:'right',textColor:RED}},
+              {content:fB(vLiq),        styles:{halign:'right'}},
+              {content:fB(vPM),         styles:{halign:'right',fontStyle:'bold',textColor:[180,70,0]}},
             ],
           });
           dt3.setMonth(dt3.getMonth()+1);
@@ -2724,13 +2727,12 @@ function exportLiquidaPDF() {
         allRows.push({
           _type:'subtotal',
           cells:[
-            {content:'SUBTOTAL',     styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
-            {content:fB(vTot),       styles:{halign:'right', fontStyle:'bold',fillColor:ORTL}},
-            {content:'',             styles:{fillColor:ORTL}},
-            {content:'',             styles:{fillColor:ORTL}},
-            {content:fB(vLiqTotal),  styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
-            {content:'—',            styles:{halign:'right',fillColor:ORTL}},
-            {content:fB(somaV),      styles:{halign:'right',fontStyle:'bold',fillColor:ORTL,textColor:[180,70,0]}},
+            {content:'SUBTOTAL',    styles:{halign:'center',fontStyle:'bold',fillColor:ORTL}},
+            {content:fB(vTot),      styles:{halign:'right', fontStyle:'bold',fillColor:ORTL}},
+            {content:'',            styles:{fillColor:ORTL}},
+            {content:'',            styles:{fillColor:ORTL}},
+            {content:fB(vLiqTotal), styles:{halign:'right',fontStyle:'bold',fillColor:ORTL}},
+            {content:fB(vTot),      styles:{halign:'right',fontStyle:'bold',fillColor:ORTL,textColor:[180,70,0]}},
           ],
         });
 
@@ -2738,7 +2740,7 @@ function exportLiquidaPDF() {
         if(vi < verbas.length-1){
           allRows.push({
             _type:'spacer',
-            cells:[{content:'',colSpan:7,styles:{fillColor:WHT,cellPadding:{top:2,bottom:2,left:0,right:0}}}],
+            cells:[{content:'',colSpan:6,styles:{fillColor:WHT,cellPadding:{top:2,bottom:2,left:0,right:0}}}],
           });
         }
       });
@@ -2752,7 +2754,6 @@ function exportLiquidaPDF() {
           {content:'- '+fB(inss),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
           {content:'- '+fB(irrf),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:[255,200,200]}},
           {content:fB(sumTotal-inss-irrf),           styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
-          {content:'—',                             styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
           {content:fB(somaGeral),                   styles:{halign:'right',fontStyle:'bold',fillColor:OR,textColor:WHT}},
         ],
       });
@@ -2761,13 +2762,12 @@ function exportLiquidaPDF() {
       doc.autoTable({
         startY:y, margin:MG, tableWidth:TW,
         head:[[
-          {content:'Competência',    styles:{halign:'center'}},
-          {content:'Total Bruto',    styles:{halign:'center'}},
-          {content:'(-) INSS',       styles:{halign:'center'}},
-          {content:'(-) IRRF',       styles:{halign:'center'}},
-          {content:'Líquido',        styles:{halign:'center'}},
-          {content:'Fator Corr.',    styles:{halign:'center'}},
-          {content:'Valor Corrigido',styles:{halign:'center'}},
+          {content:'Competência',styles:{halign:'center'}},
+          {content:'Total Bruto',styles:{halign:'center'}},
+          {content:'(-) INSS',  styles:{halign:'center'}},
+          {content:'(-) IRRF',  styles:{halign:'center'}},
+          {content:'Líquido',   styles:{halign:'center'}},
+          {content:'Valor',     styles:{halign:'center'}},
         ]],
         body: allRows.map(r2=>r2.cells),
         columnStyles:COL,
