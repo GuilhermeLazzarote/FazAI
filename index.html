@@ -16,6 +16,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Motor de cálculo determinístico (FazAI) -->
+<script src="fazai_base_dados.js"></script>
+<script src="fazai_motor.js"></script>
+<script src="fazai_liquida_integracao.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -5683,6 +5687,27 @@ async function loadAdminUsers() {
 function renderLiqHist() { renderLiqHistTo('liq-hist-list'); }
 function renderPtHist() { renderPtHistTo('pt-hist-list'); }
 function renderAcHist() { renderAcHistTo('ac-hist-list'); }
+
+// ============================================================
+// MOTOR DETERMINÍSTICO — ponto de entrada
+// Recebe um objeto `caso` (ver INTEGRACAO_GUIA.md), calcula e renderiza.
+// Uso: window.calcularLiquidaDeterministico(caso)
+// ============================================================
+window.calcularLiquidaDeterministico = function(caso) {
+  if (!window.FazAILiquida) { alert('Motor determinístico não carregado.'); return; }
+  const out = FazAILiquida.calcularLiquidacaoDeterministica(caso);
+  liquidaResult = out.liquidaResult;          // mesma variável global do app
+  try { renderLiquidaResult(); } catch(e){ console.warn('render padrão:', e); }
+  // memória mensal REAL (substitui a fabricada no caminho determinístico)
+  if (liquidaResult._deterministico) {
+    const painel = document.getElementById('liq-memoria-panel');
+    if (painel) { painel.style.display='block'; FazAILiquida.renderMemoriaReal(liquidaResult, painel); }
+  }
+  // mostra a área de resultado, se estiver oculta
+  const res = document.getElementById('liq-result'); if (res) res.style.display='block';
+  const up  = document.getElementById('liq-upload'); if (up) up.style.display='none';
+  return liquidaResult;
+};
 
 // ============================================================
 // START
