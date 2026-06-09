@@ -240,7 +240,8 @@
       const totalDevido = l.diferenca + l.dsr + aviso + decimo + ferias;
       const indice = indiceCorrecaoIPCAE(l.comp, caso.dataDistribuicao, avisos);
       return {
-        competencia: l.k, qtd: l.qtd, salarioHora: round(l.salarioHora, 4), horasExtras: round(l.horasExtras),
+        competencia: l.k, salario: round(l.salarioHora * divisor), divisor: divisor,
+        qtd: l.qtd, salarioHora: round(l.salarioHora, 4), horasExtras: round(l.horasExtras),
         valorDevido: round(l.valorDevido), pago: round(l.pago), origemPago: l.origemPago, diferenca: round(l.diferenca),
         du: l.du, dsrs: l.dsrs, dsr: round(l.dsr), baseReflexos: round(l.baseReflexos),
         avisoPrevio: round(aviso), decimoTerceiro: round(decimo), feriasMaisUmTerco: round(ferias),
