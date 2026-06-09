@@ -5697,6 +5697,7 @@ function renderAcHist() { renderAcHistTo('ac-hist-list'); }
 // ============================================================
 window.calcularLiquidaDeterministico = function(caso) {
   if (!window.FazAILiquida) { alert('Motor determinístico não carregado.'); return; }
+  window._fazaiCasoAtual = caso;   // estado p/ edição/reapuração
   const out = FazAILiquida.calcularLiquidacaoDeterministica(caso);
   liquidaResult = out.liquidaResult;          // mesma variável global do app
   try { renderLiquidaResult(); } catch(e){ console.warn('render padrão:', e); }
@@ -5711,6 +5712,19 @@ window.calcularLiquidaDeterministico = function(caso) {
   return liquidaResult;
 };
 
+// Mostra as verbas lidas da inicial que o motor ainda não calcula (não somam no total)
+function renderVerbasPendentes(lista) {
+  const host = document.getElementById('liq-memoria-panel') || document.getElementById('liq-result');
+  if (!host || !Array.isArray(lista) || !lista.length) return;
+  const itens = lista.map(v => `<li>${(v && (v.nome||v)) || ''}</li>`).join('');
+  const div = document.createElement('div');
+  div.style.cssText = 'margin:14px 0;padding:12px 14px;border:1px solid #ffe69c;background:#fff8e6;border-radius:8px';
+  div.innerHTML = `<div style="font-weight:700;color:#9a6b00;margin-bottom:6px">Verbas pedidas na inicial — leitura sem cálculo automático (${lista.length})</div>
+    <div style="font-size:12px;color:#6b5900;margin-bottom:8px">Identificadas no pedido, mas ainda sem cálculo determinístico implementado. Não entram no total acima.</div>
+    <ul style="margin:0;padding-left:18px;font-size:13px;color:#333">${itens}</ul>`;
+  host.appendChild(div);
+}
+
 // ============================================================
 // LIQUIDAÇÃO DETERMINÍSTICA — extrai parâmetros da inicial e calcula no motor
 // ============================================================
@@ -5724,15 +5738,36 @@ async function liquidarDeterministico() {
   if ($('liq-load-lbl')) $('liq-load-lbl').textContent = 'Lendo petição e extraindo parâmetros...';
   let prog=0; const pi=setInterval(()=>{prog=Math.min(prog+5,90); if($('liq-prog'))$('liq-prog').style.width=prog+'%';},600);
 
-  const promptExtracao = `Você é um extrator de parâmetros para cálculo trabalhista. Leia a petição inicial e EXTRAIA (não calcule) os parâmetros abaixo. Para horas extras, traga a MÉDIA mensal alegada (ex.: "2h/dia × 22 dias" => 44). Retorne APENAS JSON válido, sem markdown:
-{"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade|insalubridade|transferencia|acumuloFuncao|heTotais|he100|heArt71|adicionalNoturno|vr|va","percentual":0.3,"horasMes":0,"valorMensal":0}],"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
-Regras: use só os ids listados; periculosidade=0.30, transferencia=0.25, acumuloFuncao=0.15, insalubridade=grau (0.10/0.20/0.40); horasMes só para verbas de hora extra; valorMensal só para vr/va. Se não houver no texto, omita a verba. Datas no formato YYYY-MM-DD.`;
+  const promptExtracao = `Você é um extrator de parâmetros para cálculo trabalhista. Leia a petição inicial e extraia TODAS as verbas pedidas (a integralidade do pedido), além dos dados gerais. NÃO calcule valores. Retorne APENAS JSON válido, sem markdown.
+
+Para CADA verba do pedido, decida se ela corresponde a um destes tipos que o sistema calcula (lista de ids conhecidos):
+- periculosidade (adicional de periculosidade / risco; 0.30)
+- insalubridade (grau mínimo 0.10, médio 0.20, máximo 0.40)
+- transferencia (adicional de transferência; 0.25)
+- acumuloFuncao (acúmulo/desvio de função; 0.15)
+- heTotais (horas extras 50%)
+- he100 (horas extras 100% / dobro)
+- heArt71 (intervalo intrajornada não usufruído, art. 71 CLT)
+- adicionalNoturno (adicional noturno)
+- vr (vale/auxílio refeição)
+- va (vale/auxílio alimentação)
+
+Mapeie com agressividade por sinônimos (ex.: "adicional de risco de vida" => periculosidade; "supressão de intervalo" => heArt71; "labor extraordinário" => heTotais). 
+- Se a verba corresponde a um id conhecido acima, coloque em "verbas" (o motor calcula).
+- Para TODA verba pedida que NÃO corresponde a um id conhecido (aviso prévio, 13º, férias+1/3, FGTS+40%, multa 467, multa 477, diferenças salariais, equiparação, dano moral, seguro-desemprego, PLR, etc.), VOCÊ a calcula com a metodologia trabalhista padrão e coloca em "verbasIA". Use os dados extraídos (salário, datas, motivo). NÃO aplique correção monetária nem juros — informe apenas valores NOMINAIS por competência (o sistema aplica a correção depois).
+  • Verba de natureza mensal/parcelada (13º, férias, diferenças): formato "mensal" com "memoria":[{"competencia":"YYYY-MM","valorDevido":0}] nas competências devidas.
+  • Verba de valor fechado (multa 477, multa 467, dano moral, aviso indenizado): formato "bloco" com "valor":0 e "dataBase":"YYYY-MM".
+- Se faltar dado para calcular alguma verba, liste-a em "verbasPendentes":[{"nome":""}]. NÃO descarte nenhuma verba pedida.
+
+{"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade","percentual":0.3,"horasMes":0,"valorMensal":0}],"verbasIA":[{"descricao":"13º salário","natureza":"salarial","formato":"mensal","metodologia":"","memoria":[{"competencia":"2020-12","valorDevido":0}]},{"descricao":"Multa art. 477","natureza":"indenizatoria","formato":"bloco","valor":0,"dataBase":"2021-06","metodologia":""}],"verbasPendentes":[{"nome":""}],"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
+
+Regras: horasMes só para verbas de hora extra (média mensal alegada, ex. "2h/dia × 22 dias" => 44); valorMensal só para vr/va; percentual conforme acima. Datas em YYYY-MM-DD. Valores em verbasIA são NOMINAIS (sem correção/juros). Não deixe nenhuma verba pedida de fora (calculada em verbasIA ou listada em verbasPendentes).`;
 
   try {
     const txt = await claudeAPI([{role:'user',content:[
       {type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},
       {type:'text',text:promptExtracao}
-    ]}]);
+    ]}], 8000);
     const p = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
     clearInterval(pi); if($('liq-prog'))$('liq-prog').style.width='100%';
 
@@ -5761,12 +5796,16 @@ Regras: use só os ids listados; periculosidade=0.30, transferencia=0.25, acumul
       verbasAtivas, auxiliosPadrao, overrides, qtdHoras, pagos:{},
       incluirINSS:false,
       honorarios: (p.honorarios && p.honorarios.somaPedidosImprocedentes) ? p.honorarios : null,
+      verbasIA: Array.isArray(p.verbasIA) ? p.verbasIA : [],
+      verbasPendentes: Array.isArray(p.verbasPendentes) ? p.verbasPendentes.filter(x => x && (x.nome || '').trim()) : [],
     };
     // aplica a média de horas a todos os meses (editável depois)
     if(adm){ let cur=new Date(adm.getFullYear(),adm.getMonth(),1);
       while(cur<=dem){ (p.verbas||[]).forEach(v=>{ if(qtdHoras[v.id]) qtdHoras[v.id][ym(cur)]=v._horasMes||0; }); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); } }
 
     window.calcularLiquidaDeterministico(caso);
+    // mostra as verbas lidas da inicial que o motor ainda NÃO calcula
+    renderVerbasPendentes(caso.verbasPendentes);
     if($('liq-loading')) $('liq-loading').style.display='none';
   } catch(e){
     clearInterval(pi);
