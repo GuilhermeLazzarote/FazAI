@@ -83,7 +83,7 @@
       periodoCalculoFim: fmtComp(caso.dataDemissao),
       verbas: agg.verbas.map(v => ({
         id: v.id, _tipo: v._tipo || 'motor',
-        descricao: v.descricao, metodologia: v.metodologia, natureza: v.natureza,
+        descricao: (v.descricao || '').toUpperCase(), metodologia: v.metodologia, natureza: v.natureza,
         valor: v.principal, valorCorrigido: v.valorCorrigido, juros: v.juros, total: v.total,
         status: 'normal', _memoria: v.memoriaMensal,
         origem: v.origem || 'motor',
@@ -108,11 +108,23 @@
     if (!containerEl) return;
     const fb = (n) => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const COLS = [
-      ['competencia', 'Compet.'], ['base', 'Base'], ['valorDevido', 'Devido'], ['pago', 'Pago'],
-      ['avisoPrevio', 'Aviso'], ['decimoTerceiro', '13º'], ['feriasMaisUmTerco', 'Férias+1/3'],
-      ['dsr', 'DSR'], ['totalApurado', 'Apurado'], ['totalDevido', 'Apurado'], ['fgts', 'FGTS'],
-      ['indiceCorrecao', 'Índice'], ['corrigido', 'Corrigido'],
+      ['competencia', 'COMPET.'], ['salario', 'SALÁRIO'], ['base', 'SALÁRIO'], ['percentual', '%'],
+      ['valorApurado', 'VLR APURADO'], ['divisor', 'DIVISOR'], ['salarioHora', 'SAL/HORA'],
+      ['qtd', 'QTD HE'], ['horasExtras', 'HE c/ AD.'], ['diasProporcionais', 'DIAS'],
+      ['valorDevido', 'DEVIDO'], ['pago', 'PAGO'], ['diferenca', 'DIFERENÇA'],
+      ['du', 'DIAS ÚTEIS'], ['dsrs', "DSR's"], ['dsr', 'VLR DSR'], ['baseReflexos', 'BASE REFL.'],
+      ['avisoPrevio', 'AVISO'], ['decimoTerceiro', '13º'], ['feriasMaisUmTerco', 'FÉRIAS+1/3'],
+      ['totalApurado', 'APURADO'], ['totalDevido', 'APURADO'], ['fgts', 'FGTS'],
+      ['indiceCorrecao', 'ÍNDICE'], ['corrigido', 'CORRIGIDO'],
     ];
+    const NAO_MOEDA = { percentual: 1, divisor: 1, qtd: 1, horasExtras: 1, diasProporcionais: 1, du: 1, dsrs: 1, indiceCorrecao: 1 };
+    const fmtCell = (key, val) => {
+      if (typeof val !== 'number') return val ?? '';
+      if (key === 'percentual') return (val * 100).toFixed(0) + '%';
+      if (key === 'indiceCorrecao') return val.toFixed(6);
+      if (key === 'divisor' || key === 'qtd' || key === 'horasExtras' || key === 'diasProporcionais' || key === 'du' || key === 'dsrs') return String(val);
+      return fb(val);
+    };
     const badge = (origem) => origem === 'ia'
       ? '<span style="font-size:10px;background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:4px">estimativa IA</span>'
       : '<span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:4px">apuração determinística</span>';
@@ -121,7 +133,7 @@
     function campoEditavel(tipo, key) {
       if (tipo === 'ia') return key === 'valorDevido' ? 'iaValor' : null;
       if (tipo === 'adicional') return key === 'base' ? 'salario' : null;
-      if (tipo === 'he') return key === 'qtd' ? 'qtd' : (key === 'pago' ? 'pago' : null);
+      if (tipo === 'he') return (key === 'salario') ? 'salario' : (key === 'divisor' ? 'divisorGlobal' : (key === 'qtd' ? 'qtd' : (key === 'pago' ? 'pago' : null)));
       if (tipo === 'auxilio') return key === 'valorDevido' ? 'devidoAux' : (key === 'pago' ? 'pago' : null);
       return null;
     }
@@ -134,9 +146,9 @@
         const val = l[k]; const num = typeof val === 'number';
         const campo = campoEditavel(v._tipo, k);
         if (campo) {
-          return `<td style="text-align:right"><input class="fd-edit" data-verba="${encodeURIComponent(v.id)}" data-comp="${l.competencia}" data-campo="${campo}" value="${Number(val) || 0}" style="width:78px;text-align:right;border:1px solid #f0b27a;border-radius:4px;padding:2px 4px;background:#fff7ed"></td>`;
+          return `<td style="text-align:right"><input class="fd-edit" data-verba="${encodeURIComponent(v.id)}" data-comp="${l.competencia}" data-campo="${campo}" value="${Number(val) || 0}" style="width:74px;text-align:right;border:1px solid #f0b27a;border-radius:4px;padding:2px 4px;background:#fff7ed"></td>`;
         }
-        return `<td style="text-align:${num ? 'right' : 'left'}">${num ? (k === 'indiceCorrecao' ? val.toFixed(6) : fb(val)) : (val ?? '')}</td>`;
+        return `<td style="text-align:${num ? 'right' : 'left'}">${fmtCell(k, val)}</td>`;
       }).join('')}</tr>`).join('');
       return `<div style="overflow:auto"><table class="pjc-table" style="font-size:11px;min-width:680px">
         <thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -190,6 +202,7 @@
   function aplicarEdicao(caso, e) {
     const ensure = (obj, k) => (obj[k] = obj[k] || {});
     if (e.campo === 'salario') { ensure(caso, 'salariosMensais')[e.comp] = e.valor; }
+    else if (e.campo === 'divisorGlobal') { caso.divisor = e.valor || 220; }
     else if (e.campo === 'qtd') { ensure(ensure(caso, 'qtdHoras'), e.verba)[e.comp] = e.valor; }
     else if (e.campo === 'pago') { ensure(ensure(caso, 'pagos'), e.verba)[e.comp] = e.valor; }
     else if (e.campo === 'devidoAux') { ensure(ensure(caso, 'valoresDevidos'), e.verba)[e.comp] = e.valor; }
@@ -201,16 +214,20 @@
     }
   }
 
-  // Reapura o caso inteiro e redesenha, preservando a rolagem.
+  // Reapura o caso inteiro e redesenha SEÇÃO 1 (resumo) + memória, preservando a rolagem.
   function reapurar() {
     const caso = window._fazaiCasoAtual; const cont = _estado.containerEl;
     if (!caso || !cont) return;
     const sx = window.scrollX, sy = window.scrollY, cs = cont.scrollTop;
-    const out = calcularLiquidacaoDeterministica(caso);
-    window.liquidaResult = out.liquidaResult;
-    renderMemoriaReal(out.liquidaResult, cont);
+    // calcularLiquidaDeterministico (app) atualiza liquidaResult + SEÇÃO 1 + memória de uma vez
+    if (typeof window.calcularLiquidaDeterministico === 'function') {
+      window.calcularLiquidaDeterministico(caso);
+    } else {
+      const out = calcularLiquidacaoDeterministica(caso);
+      window.liquidaResult = out.liquidaResult;
+      renderMemoriaReal(out.liquidaResult, cont);
+    }
     cont.scrollTop = cs; window.scrollTo(sx, sy);
-    return out;
   }
   const _estado = {};
 
