@@ -840,6 +840,7 @@ a{color:var(--or);text-decoration:none}
           </div>
           <div id="liq-file-ok" class="alert alert-ok" style="display:none;margin-top:10px"></div>
           <button class="btn-liquidar" id="liq-btn" disabled onclick="processLiquida()">LIQUIDAR</button>
+          <button class="btn-liquidar" id="liq-btn-det" disabled onclick="liquidarDeterministico()" style="margin-top:8px;background:#1f2937">LIQUIDAR (DETERMINÍSTICO · BETA)</button>
           <div id="liq-loading" style="display:none">
             <div class="panel" style="text-align:center;padding:48px">
               <div class="spin" style="width:22px;height:22px;margin:0 auto 12px"></div>
@@ -1988,7 +1989,7 @@ function onLiqFileSelect(file){
   const el=document.getElementById('liq-file-ok');
   el.style.display='block';
   el.textContent='✓ Arquivo selecionado: '+file.name;
-  fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';document.getElementById('liq-btn').disabled=false;});
+  fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';document.getElementById('liq-btn').disabled=false;var bd=document.getElementById('liq-btn-det'); if(bd) bd.disabled=false;});
   document.getElementById('liq-upload').style.display='none';
 }
 
@@ -5709,6 +5710,74 @@ window.calcularLiquidaDeterministico = function(caso) {
   const up  = document.getElementById('liq-upload'); if (up) up.style.display='none';
   return liquidaResult;
 };
+
+// ============================================================
+// LIQUIDAÇÃO DETERMINÍSTICA — extrai parâmetros da inicial e calcula no motor
+// ============================================================
+async function liquidarDeterministico() {
+  if (!liqFileB64) { alert('Envie a petição inicial primeiro.'); return; }
+  if (!window.FazAILiquida) { alert('Motor determinístico não carregado.'); return; }
+  const $ = (id) => document.getElementById(id);
+  if ($('liq-upload')) $('liq-upload').style.display='none';
+  if ($('liq-loading')) $('liq-loading').style.display='block';
+  if ($('liq-result')) $('liq-result').style.display='none';
+  if ($('liq-load-lbl')) $('liq-load-lbl').textContent = 'Lendo petição e extraindo parâmetros...';
+  let prog=0; const pi=setInterval(()=>{prog=Math.min(prog+5,90); if($('liq-prog'))$('liq-prog').style.width=prog+'%';},600);
+
+  const promptExtracao = `Você é um extrator de parâmetros para cálculo trabalhista. Leia a petição inicial e EXTRAIA (não calcule) os parâmetros abaixo. Para horas extras, traga a MÉDIA mensal alegada (ex.: "2h/dia × 22 dias" => 44). Retorne APENAS JSON válido, sem markdown:
+{"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade|insalubridade|transferencia|acumuloFuncao|heTotais|he100|heArt71|adicionalNoturno|vr|va","percentual":0.3,"horasMes":0,"valorMensal":0}],"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
+Regras: use só os ids listados; periculosidade=0.30, transferencia=0.25, acumuloFuncao=0.15, insalubridade=grau (0.10/0.20/0.40); horasMes só para verbas de hora extra; valorMensal só para vr/va. Se não houver no texto, omita a verba. Datas no formato YYYY-MM-DD.`;
+
+  try {
+    const txt = await claudeAPI([{role:'user',content:[
+      {type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},
+      {type:'text',text:promptExtracao}
+    ]}]);
+    const p = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
+    clearInterval(pi); if($('liq-prog'))$('liq-prog').style.width='100%';
+
+    const dt = (s)=>{ if(!s) return null; const [y,m,d]=String(s).split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
+    const ym = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const adm = dt(p.dataAdmissao), dem = dt(p.dataDemissao) || new Date();
+    const salario = parseFloat(p.salario)||0;
+
+    const verbasAtivas=[], qtdHoras={}, auxiliosPadrao={}, overrides={};
+    (p.verbas||[]).forEach(v=>{
+      if(!v||!v.id) return; verbasAtivas.push(v.id);
+      if(['heTotais','he100','heArt71','adicionalNoturno'].includes(v.id)) qtdHoras[v.id]={};
+      if(['vr','va'].includes(v.id)) auxiliosPadrao[v.id]=parseFloat(v.valorMensal)||0;
+      if(v.percentual!=null) overrides[v.id]={percentual:parseFloat(v.percentual)};
+      v._horasMes = parseFloat(v.horasMes)||0;
+    });
+
+    const caso = {
+      reclamante:p.reclamante||'', reclamada:p.reclamada||'', numeroProcesso:p.numeroProcesso||'',
+      dataAdmissao:adm, dataDemissao:dem, dataPrescricao:adm,
+      dataDistribuicao:dt(p.dataAjuizamento)|| (document.getElementById('liq-ajuiz')?.value?dt(document.getElementById('liq-ajuiz').value):dem),
+      dataAtualizacao:new Date(),
+      motivoDemissao:p.motivoDemissao||'Sem Justa Causa',
+      percentualFgts:0.112, divisor:parseInt(p.divisor)||220, dsrComSabado:false, dsrCompoeBaseReflexos:false,
+      salariosMensais: adm ? { [ym(adm)]: salario } : {},
+      verbasAtivas, auxiliosPadrao, overrides, qtdHoras, pagos:{},
+      incluirINSS:false,
+      honorarios: (p.honorarios && p.honorarios.somaPedidosImprocedentes) ? p.honorarios : null,
+    };
+    // aplica a média de horas a todos os meses (editável depois)
+    if(adm){ let cur=new Date(adm.getFullYear(),adm.getMonth(),1);
+      while(cur<=dem){ (p.verbas||[]).forEach(v=>{ if(qtdHoras[v.id]) qtdHoras[v.id][ym(cur)]=v._horasMes||0; }); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); } }
+
+    window.calcularLiquidaDeterministico(caso);
+    if($('liq-loading')) $('liq-loading').style.display='none';
+  } catch(e){
+    clearInterval(pi);
+    if($('liq-loading')) $('liq-loading').style.display='none';
+    if($('liq-upload')) $('liq-upload').style.display='block';
+    const msg=e.message||'';
+    if(msg.includes('JSON')) alert('A IA não retornou parâmetros válidos. Tente novamente.');
+    else if(msg.includes('413')||msg.includes('too large')) alert('PDF muito grande. Comprima e tente de novo.');
+    else alert('Erro na liquidação determinística: '+msg);
+  }
+}
 
 // ============================================================
 // START
