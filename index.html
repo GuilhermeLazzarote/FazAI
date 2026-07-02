@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Faz AI — Inteligência Jurídica Trabalhista</title>
 <meta name="google-site-verification" content="eL1ArQXsDgvR85QDX6DEVg2qdrgl9QkPrRXF86EOLzA"/>
-<meta name="description" content="Plataforma de cálculos trabalhistas com IA. LiquidaAI, PontoAI e AcordAI para advogados. 7 dias grátis."/>
+<meta name="description" content="Plataforma de cálculos trabalhistas com IA. LiquidaAI e AcordAI para advogados."/>
 <meta name="keywords" content="liquidação trabalhista, espelho de ponto, Faz AI Calc, perito contábil, acordo trabalhista, IA jurídica"/>
 <meta property="og:title" content="Faz AI — Inteligência Jurídica Trabalhista"/>
 <meta property="og:description" content="Liquidação judicial, extração de ponto e cálculo de acordos com IA. 7 dias grátis."/>
@@ -543,7 +543,7 @@ a{color:var(--or);text-decoration:none}
             <div class="lp-tab-desc">Liquidação judicial</div>
           </div>
         </button>
-        <button class="lp-tab" onclick="selectTab('pactoai',this)">
+        <button class="lp-tab" onclick="selectTab('pactoai',this)" style="display:none">
           <div class="lp-tab-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </div>
@@ -552,7 +552,7 @@ a{color:var(--or);text-decoration:none}
             <div class="lp-tab-desc">España · Portugal</div>
           </div>
         </button>
-        <button class="lp-tab" onclick="selectTab('pontoai',this)">
+        <button class="lp-tab" onclick="selectTab('pontoai',this)" style="display:none">
           <div class="lp-tab-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
@@ -641,63 +641,6 @@ a{color:var(--or);text-decoration:none}
     </div>
   </div>
 
-  <!-- PREÇOS -->
-  <div class="lp-pricing-section">
-    <div class="lp-section-label">Planos</div>
-    <h2 class="lp-section-title">Simples e transparente</h2>
-    <p class="lp-section-sub">7 dias grátis em qualquer plano · Cancele quando quiser</p>
-    <div class="lp-pricing-grid">
-      <div class="lp-price-card">
-        <div class="lp-price-name">Trial</div>
-        <div class="lp-price-val">R$0</div>
-        <div class="lp-price-period">7 dias grátis</div>
-        <div class="lp-price-feats">
-          <div>✓ 5 liquidações</div>
-          <div>✓ 2 extrações de ponto</div>
-          <div>✓ 5 acordos</div>
-          <div>✓ Acesso completo</div>
-        </div>
-        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Começar grátis</button>
-      </div>
-      <div class="lp-price-card">
-        <div class="lp-price-name">Starter</div>
-        <div class="lp-price-val">R$197</div>
-        <div class="lp-price-period">/mês · 1 usuário</div>
-        <div class="lp-price-feats">
-          <div>✓ 10 liquidações/mês</div>
-          <div>✓ PontoAI ilimitado</div>
-          <div>✓ AcordAI ilimitado</div>
-          <div>✓ Relatório PDF profissional</div>
-        </div>
-        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
-      </div>
-      <div class="lp-price-card featured">
-        <div class="lp-price-badge">Mais popular</div>
-        <div class="lp-price-name">Profissional</div>
-        <div class="lp-price-val">R$397</div>
-        <div class="lp-price-period">/mês · 3 usuários</div>
-        <div class="lp-price-feats">
-          <div>✓ 25 liquidações/mês</div>
-          <div>✓ Tudo do Starter</div>
-          <div>✓ Score & Cenários AcordAI</div>
-          <div>✓ Suporte prioritário</div>
-        </div>
-        <button class="lp-price-btn primary" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
-      </div>
-      <div class="lp-price-card">
-        <div class="lp-price-name">Escritório</div>
-        <div class="lp-price-val">R$497</div>
-        <div class="lp-price-period">/mês · ilimitado</div>
-        <div class="lp-price-feats">
-          <div>✓ Liquidações ilimitadas</div>
-          <div>✓ Múltiplos usuários</div>
-          <div>✓ Tudo do Profissional</div>
-          <div>✓ Exportação em lote</div>
-        </div>
-        <button class="lp-price-btn" onclick="showPage('auth');showAuthMode('register')">Assinar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- FOOTER -->
   <div class="lp-footer-new">
@@ -751,13 +694,13 @@ a{color:var(--or);text-decoration:none}
         <button class="nav-item active" id="nav-dash" onclick="showMod('dash')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</button>
         <div class="sb-section">Ferramentas</div>
         <button class="nav-item" id="nav-liquida" onclick="showMod('liquida')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>LiquidaAI</button>
-        <button class="nav-item" id="nav-ponto" onclick="showMod('ponto')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PontoAI</button>
+        <button class="nav-item" id="nav-ponto" onclick="showMod('ponto')" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PontoAI</button>
         <button class="nav-item" id="nav-acordos" onclick="showMod('acordos')"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>AcordAI Brasil</button>
-        <button class="nav-item" id="nav-pacto" onclick="showMod('pacto')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>PactoAI Europa</button>
+        <button class="nav-item" id="nav-pacto" onclick="showMod('pacto')" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>PactoAI Europa</button>
         <div class="sb-section">Histórico</div>
         <button class="nav-item" id="nav-hist" onclick="showMod('hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>Histórico</button>
         <div class="sb-section">Conta</div>
-        <button class="nav-item" id="nav-planos" onclick="showMod('planos')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Planos</button>
+        <button class="nav-item" id="nav-planos" onclick="showMod('planos')" style="display:none"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Planos</button>
         <div id="nav-admin-wrap" style="display:none">
           <div class="sb-section">Administração</div>
           <button class="nav-item" id="nav-admin" onclick="showMod('admin')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários</button>
@@ -1941,6 +1884,7 @@ async function fileToB64(file) {
 // Extrai o texto do PDF no navegador (PDF.js) para NÃO trafegar o binário base64
 // e evitar o limite de corpo do servidor (erro 413). Lê petição de qualquer tamanho.
 let liqFileText = '';
+let liqFile = null;
 async function pdfToText(file){
   try{
     const ab = await file.arrayBuffer();
@@ -2005,7 +1949,7 @@ function onLiqFileSelect(file){
   const el=document.getElementById('liq-file-ok');
   el.style.display='block';
   el.textContent='✓ Arquivo selecionado: '+file.name;
-  liqFileText='';
+  liqFileText=''; liqFile=file;
   fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';document.getElementById('liq-btn').disabled=false;var bd=document.getElementById('liq-btn-det'); if(bd) bd.disabled=false;});
   pdfToText(file).then(t=>{liqFileText=t;});
   document.getElementById('liq-upload').style.display='none';
@@ -2159,6 +2103,7 @@ OBSERVAÇÕES ADICIONAIS: ${obs2||'Nenhuma'}
 
 Retorne APENAS JSON válido sem markdown, sem comentários:
 {"reclamante":"","reclamada":"","numeroProcesso":"","salarioBaseIdentificado":0,"adicionaisIdentificados":"","periodoCalculoInicio":"","periodoCalculoFim":"","verbas":[{"descricao":"a) Nome da verba conforme alínea","metodologia":"Salário: R$X | H.extras: Y/dia | Período: Z meses | Cálculo: X×Y×1,5×Z = R$W","baseCalculo":0,"quantidade":0,"valor":0,"valorCorrigido":0,"juros":0,"total":0,"natureza":"salarial","status":"normal"}],"totalBruto":0,"inss":0,"irrf":0,"fgts":0,"totalLiquido":0,"valorFinalCorrigido":0,"honorariosPercentual":${hon},"valorHonorarios":0,"valorTotalGeral":0,"inssReclamada":0,"baseCalculoInssReclamada":0,"percentualInssReclamada":${inssP},"isCalculationPossible":true,"errorReason":"","observation":"Descreva aqui a metodologia geral, índices e tabelas utilizadas"}`;
+    if((!liqFileText||liqFileText.length<=50) && liqFile){ try{ liqFileText = await pdfToText(liqFile); }catch(e){} }
     const contentLiq = (liqFileText && liqFileText.length>50)
       ? [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+prompt}]
       : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:prompt}];
@@ -5783,6 +5728,7 @@ Mapeie com agressividade por sinônimos (ex.: "adicional de risco de vida" => pe
 Regras: horasMes só para hora extra (média mensal, ex. "2h/dia × 22 dias" => 44); valorMensal só para vr/va. Datas YYYY-MM-DD. Valores em verbasIA são NOMINAIS. Não deixe verba pedida de fora (em verbas, rescisorias, verbasIA ou verbasPendentes).`;
 
   try {
+    if((!liqFileText||liqFileText.length<=50) && liqFile){ try{ liqFileText = await pdfToText(liqFile); }catch(e){} }
     const contentEx = (liqFileText && liqFileText.length>50)
       ? [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+promptExtracao}]
       : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},{type:'text',text:promptExtracao}];
