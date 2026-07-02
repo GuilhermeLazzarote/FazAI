@@ -1870,8 +1870,11 @@ async function claudeAPI(messages, maxTokens=8000) {
     body:JSON.stringify({model:'claude-sonnet-5',max_tokens:maxTokens,messages:msgs}) // modelo atual (claude-sonnet-4-20250514 foi aposentado pela Anthropic)
   });
   const data = await res.json();
-  if(data.error) throw new Error(data.error);
-  return data.content[0].text;
+  if(!res.ok || data.error){ throw new Error((data && data.error) || ('Erro HTTP '+res.status)); }
+  // Pega o primeiro bloco de TEXTO (o modelo pode devolver outro tipo de bloco antes do texto)
+  const bloco = Array.isArray(data.content) ? data.content.find(b => b && b.type === 'text' && typeof b.text === 'string') : null;
+  if(!bloco){ throw new Error('A IA não retornou texto (motivo: ' + (data.stop_reason || 'desconhecido') + '). Tente novamente.'); }
+  return bloco.text;
 }
 async function fileToB64(file) {
   return new Promise((res,rej) => {
