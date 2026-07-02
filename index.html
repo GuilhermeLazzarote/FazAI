@@ -1854,7 +1854,7 @@ async function doLogout() {
 // ============================================================
 // CLAUDE API (via proxy seguro)
 // ============================================================
-async function claudeAPI(messages, maxTokens=8000) {
+async function claudeAPI(messages, maxTokens=8000, model='claude-sonnet-5') {
   // Accepts either: messages array, or (prompt, b64, mime) legacy
   let msgs = messages;
   if(typeof messages === 'string') {
@@ -1867,7 +1867,7 @@ async function claudeAPI(messages, maxTokens=8000) {
   const res = await fetch('/api/claude', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-5',max_tokens:maxTokens,messages:msgs}) // modelo atual (claude-sonnet-4-20250514 foi aposentado pela Anthropic)
+    body:JSON.stringify({model:model,max_tokens:maxTokens,messages:msgs}) // modelo dinâmico (claude-sonnet-4-20250514 foi aposentado)
   });
   const data = await res.json();
   if(!res.ok || data.error){ throw new Error((data && data.error) || ('Erro HTTP '+res.status)); }
@@ -5735,7 +5735,7 @@ Regras: horasMes só para hora extra (média mensal, ex. "2h/dia × 22 dias" => 
     const contentEx = (liqFileText && liqFileText.length>50)
       ? [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+promptExtracao}]
       : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},{type:'text',text:promptExtracao}];
-    const txt = await claudeAPI([{role:'user',content:contentEx}], 8000);
+    const txt = await claudeAPI([{role:'user',content:contentEx}], 8000, 'claude-haiku-4-5-20251001'); // Haiku: extração rápida, evita timeout
     const p = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
     clearInterval(pi); if($('liq-prog'))$('liq-prog').style.width='100%';
 
