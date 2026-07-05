@@ -20,6 +20,10 @@
 <script src="fazai_base_dados.js"></script>
 <script src="fazai_motor.js"></script>
 <script src="fazai_liquida_integracao.js"></script>
+<!-- FazAI: export Excel formulado (v7) — caminho separado, não altera o motor -->
+<script src="fazai_tabelas.js"></script>
+<script src="fazai_engine.js"></script>
+<script src="fazai_hook.js"></script>
 <script src="fazai_form.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -810,7 +814,7 @@ a{color:var(--or);text-decoration:none}
                 </div>
                 <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
                   <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo cálculo</button>
-                  <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSX()">Exportar XLSX</button>
+                  <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSXFormulado()">Exportar Cálculo (Excel formulado)</button>
                   <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Relatório PDF</button>
                 </div>
               </div>
