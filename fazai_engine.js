@@ -14,7 +14,7 @@
   const diasMes=(y,m)=>new Date(y,m,0).getDate();
   const domingos=(y,m)=>{let c=0,d=diasMes(y,m);for(let i=1;i<=d;i++)if(new Date(y,m-1,i).getDay()===0)c++;return c;};
   function listaComp(ini,fim){const o=[];let y=ini.y,m=ini.m;while(y<fim.y||(y===fim.y&&m<=fim.m)){o.push({y,m,k:`${y}-${String(m).padStart(2,"0")}`});m++;if(m>12){m=1;y++;}if(o.length>600)break;}return o;}
-  function mkSheet(mat){const ws={};let mr=0,mc=0;mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell==null||cell==="")return;const a=XLSX.utils.encode_cell({r,c});if(typeof cell==="object"&&cell.f!=null)ws[a]={t:"n",f:cell.f};else if(typeof cell==="number")ws[a]={t:"n",v:cell};else ws[a]={t:"s",v:String(cell)};mr=Math.max(mr,r);mc=Math.max(mc,c);}));ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});return ws;}
+  function mkSheet(mat){const ws={};let mr=0,mc=0;mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell==null||cell==="")return;const a=XLSX.utils.encode_cell({r,c});if(typeof cell==="object"&&cell.f!=null){let ff=String(cell.f);if(ff.charAt(0)==="=")ff=ff.slice(1);if(ff!=="")ws[a]={t:"n",f:ff,v:""};}else if(typeof cell==="number")ws[a]={t:"n",v:cell};else ws[a]={t:"s",v:String(cell)};mr=Math.max(mr,r);mc=Math.max(mc,c);}));ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});return ws;}
 
   function buildWorkbook(p){
     const C=listaComp(p.ini,p.fim), n=C.length, last=n-1;
@@ -22,8 +22,9 @@
     const totd=Object.values(dt).reduce((a,b)=>a+b,0);
     const dist=t=>{const o={};C.forEach(c=>o[c.k]=Math.round((t||0)*dt[c.k]/totd*100)/100);return o;};
     const q50=dist(p.qHE50),qdom=dist(p.qDom),qint=dist(p.qInt);
-    const dataBase = p.dataBase || TAB.DATA_BASE;
+    const dataBaseRaw = p.dataBase || TAB.DATA_BASE;
     const idx = k => (TAB.T_IPCAE||{})[k];
+    const dataBase = idx(dataBaseRaw) ? dataBaseRaw : TAB.DATA_BASE;   // clampa p/ última competência disponível
     const fatFn = p.fatorFn || ((y,m)=>{const k=`${y}-${String(m).padStart(2,"0")}`;const ic=idx(k),ib=idx(dataBase);return (ic&&ib)?ic/ib:1;});
     const wb=XLSX.utils.book_new();
     const R=i=>i+2;             // linha excel na TABELAS/EVOLUCAO
@@ -186,6 +187,31 @@
     push(["LÍQUIDO DO AUTOR (crédito − INSS empregado − IRRF)","","","",F(`=E${s}-E${d1}-E${d2}`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(RZ),"RESUMO");
 
+    // ---- FORMATAÇÃO (SheetJS free: número + largura; sem negrito/cor) ----
+    const MONEY='"R$" #,##0.00;[Red]-"R$" #,##0.00';
+    const moneyCols={ // colunas de VALOR por aba (0-based); demais ficam sem moeda (comp/qtd/%/fator/selic%)
+      RESUMO:[1,2,3,4], EVOLUCAO:[1,2,3,4,5,7],
+      HE_50:[2,4,5,6,7,8,9,11,13,14], HE_100_DOM:[2,4,5,6,7,8,9,11,13,14], HE_ART71:[2,4,5,6,7,8,9,11,13,14],
+      PERICULOSIDADE:[1,3,4,5,6,7,9,11,12], INSALUBRIDADE:[1,3,4,5,6,7,9,11,12],
+      RESCISORIAS:[1], FGTS_MENSAL:[1,2,4], SEGURO:[1],
+      INSS_RECLAMANTE:[1,2,3,4,5,6], INSS_RECLAMADA:[1,3,5,6], IRRF_RRA:[1] };
+    Object.keys(wb.Sheets).forEach(name=>{
+      const ws=wb.Sheets[name]; if(!ws['!ref'])return;
+      const ref=XLSX.utils.decode_range(ws['!ref']);
+      const mc=new Set(moneyCols[name]||[]);
+      const widths=[];
+      for(let c=ref.s.c;c<=ref.e.c;c++){
+        let w=9;
+        for(let r=ref.s.r;r<=ref.e.r;r++){
+          const cell=ws[XLSX.utils.encode_cell({r,c})]; if(!cell)continue;
+          if(mc.has(c) && (cell.f!=null || typeof cell.v==="number")) cell.z=MONEY;
+          const txt=String(cell.v!==undefined&&cell.v!==""?cell.v:(cell.f||""));
+          w=Math.min(Math.max(w, txt.length+ (mc.has(c)?4:2)), 46);
+        }
+        widths.push({wch: mc.has(c)?Math.max(w,14):w});
+      }
+      ws['!cols']=widths;
+    });
     wb.Workbook={CalcPr:{fullCalcOnLoad:true}};
     wb.SheetNames=["RESUMO","EVOLUCAO","HE_50","HE_100_DOM","HE_ART71","PERICULOSIDADE","INSALUBRIDADE","RESCISORIAS","FGTS_MENSAL","INSS_RECLAMANTE","INSS_RECLAMADA","IRRF_RRA","PREMISSAS","TABELAS","TAB_IRRF"];
     return wb;
