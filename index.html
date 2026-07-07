@@ -5730,9 +5730,9 @@ Mapeie com agressividade por sinônimos (ex.: "adicional de risco de vida" => pe
   • valor fechado: formato "bloco" com "valor":0 e "dataBase":"YYYY-MM".
 - Se faltar dado para calcular, liste em "verbasPendentes":[{"nome":""}]. NÃO descarte nenhuma verba pedida.
 
-{"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade","percentual":0.3,"horasMes":0,"valorMensal":0}],"rescisorias":["saldoSalario","avisoPrevio","decimoTerceiro","ferias","fgtsRescisorio","multaFgts"],"verbasIA":[{"descricao":"Multa art. 477","natureza":"indenizatoria","formato":"bloco","valor":0,"dataBase":"2021-06","metodologia":""}],"verbasPendentes":[{"nome":""}],"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
+{"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade","percentual":0.3,"horasMes":0,"valorMensal":0}],"rescisorias":["saldoSalario","avisoPrevio","decimoTerceiro","ferias","fgtsRescisorio","multaFgts"],"verbasIA":[{"descricao":"Multa art. 477","natureza":"indenizatoria","formato":"bloco","valor":0,"dataBase":"2021-06","metodologia":""}],"verbasPendentes":[{"nome":""}],"jornada":{"dias":{"0":{"entrada":19,"saida":8,"interv":30,"base":0,"tipo":"100"},"1":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"2":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"3":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"4":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"5":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"6":{"entrada":19,"saida":8,"interv":30,"base":4,"tipo":"50"}}},"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
 
-Regras: horasMes só para hora extra (média mensal, ex. "2h/dia × 22 dias" => 44); valorMensal só para vr/va. Datas YYYY-MM-DD. Valores em verbasIA são NOMINAIS. Não deixe verba pedida de fora (em verbas, rescisorias, verbasIA ou verbasPendentes).`;
+JORNADA (horas extras): NÃO calcule quantidade de horas. TRANSCREVA a jornada por dia-da-semana no campo "jornada.dias" (chaves 0=domingo ... 6=sábado). Para cada dia informe: entrada (hora decimal, 19:00=19, 19:30=19.5), saida (idem; se vira a noite tudo bem), interv (intervalo REAL em minutos que o Autor alega, ex 30), base (jornada normal do dia: 8 seg-sex, 4 sáb, 0 dom), tipo ("50" dia útil/sábado, "100" domingo/jornada inteira, null se não trabalha). O sistema calcula labor=(saida-entrada)-interv, HE50=labor-base, HE100=labor inteiro, Art.71=(60-interv)/60. Se a inicial não trouxer horário, deixe "jornada":null. valorMensal só para vr/va. Datas YYYY-MM-DD. Valores em verbasIA são NOMINAIS. Não deixe verba pedida de fora.`;
 
   try {
     if((!liqFileText||liqFileText.length<=50) && liqFile){ try{ liqFileText = await pdfToText(liqFile); }catch(e){} }
@@ -5777,6 +5777,7 @@ Regras: horasMes só para hora extra (média mensal, ex. "2h/dia × 22 dias" => 
         return d && !temaMotor;
       }),
       verbasPendentes: Array.isArray(p.verbasPendentes) ? p.verbasPendentes.filter(x => x && (x.nome || '').trim()) : [],
+      jornada: (p.jornada && p.jornada.dias) ? p.jornada : null,
     };
     // aplica a média de horas a todos os meses (editável depois)
     if(adm){ let cur=new Date(adm.getFullYear(),adm.getMonth(),1);
