@@ -36,7 +36,7 @@
       inssPatronal:0.23, pctFgts:0.08, aplicaMulta:"Sim", pctMulta:0.40,
       fgtsDiferencaSalario: caso.fgtsDiferencaSalario || "Nao",
       qHE50:sumH("heTotais"), qDom:sumH("he100"), qInt:sumH("heArt71"),
-      jornada: caso.jornada || null,   // {he50:{wd:h},he100:{wd:h},art71:{wd:h}} — dias 0=dom..6=sáb
+      jornada: caso.jornada && caso.jornada.dias ? caso.jornada : null,   // {dias:{0..6:{entrada,saida,interv,base,tipo}}}
       danoMoral:0,
       verbasIA:(caso.verbasIA||[]).map(v=>({descricao:v.descricao||"Verba complementar",
         valor: v.formato==="mensal" ? (v.memoria||[]).reduce((s,m)=>s+num(m.valorDevido),0) : num(v.valor)})),
