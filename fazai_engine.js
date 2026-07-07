@@ -40,16 +40,18 @@
       const JR=[];
       JR[0]=["JORNADA — a IA transcreve horários; o Excel calcula duração e horas extras"];
       JR[1]=["PARÂMETROS POR DIA-DA-SEMANA (horas em decimal: 19:30 = 19,5 · intervalo em minutos)"];
-      JR[2]=["Dia","Entrada","Saída","Interv(min)","Base(h)","Permanência","Labor líquido","HE 50%/dia","HE 100%/dia","Art.71/dia(h)"];
+      JR[2]=["Dia","Entrada","Saída","Interv(min)","Base(h)","Permanência","Horas noturnas","Labor ajustado","HE 50%/dia","HE 100%/dia","Art.71/dia(h)"];
       for(let wd=0;wd<=6;wd++){
         const d=D[wd]||{}, r=4+wd;
         const tra=(d.entrada!=null||d.saida!=null)&&d.tipo;
+        // Colunas: A Dia B Entrada C Saída D Interv E Base F Perm G Noturnas H Labor I HE50 J HE100 K Art71
         JR[r-1]=[nomes[wd], (+d.entrada||0), (+d.saida||0), (+d.interv||0), (+d.base||0),
-          tra?F(`=MOD(C${r}-B${r},24)`):0,          // Permanência = saída − entrada (vira noite)
-          tra?F(`=F${r}-D${r}/60`):0,               // Labor líquido = permanência − intervalo
-          (tra&&d.tipo==='50')?F(`=MAX(G${r}-E${r},0)`):0,   // HE 50%/dia = labor − base
-          (tra&&d.tipo==='100')?F(`=G${r}`):0,               // HE 100%/dia = labor inteiro
-          tra?F(`=MAX((60-D${r})/60,0)`):0];                 // Art.71/dia = (60 − intervalo)/60
+          tra?F(`=MOD(C${r}-B${r},24)`):0,                                          // Permanência
+          tra?F(`=MAX(0,(C${r}+IF(C${r}<=B${r},24,0))-MAX(B${r},22))`):0,           // Horas noturnas (22h→fim, Súmula 60)
+          tra?F(`=F${r}+G${r}*(60/52.5-1)-D${r}/60`):0,                             // Labor ajustado = perm + redução noturna − intervalo
+          (tra&&d.tipo==='50')?F(`=MAX(H${r}-E${r},0)`):0,                          // HE 50%/dia = labor − base
+          (tra&&d.tipo==='100')?F(`=H${r}`):0,                                      // HE 100%/dia = labor inteiro
+          tra?F(`=MAX((60-D${r})/60,0)`):0];                                        // Art.71/dia = (60 − intervalo)/60
       }
       JR[11]=["DIAS TRABALHADOS POR COMPETÊNCIA (contados pelo calendário)"];
       JR[12]=["Comp","Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
@@ -59,7 +61,7 @@
     // Qtd = Σ (HE/dia do dia-da-semana × nº daquele dia na competência). Param: he50=col H, he100=col I, art71=col J (linhas 4..10). Contagem: cols B..H, linha jrCountRow.
     function qtdFormula(tipoName,i){
       if(!JOR) return null;
-      const cr=jrCountRow(i), col=tipoName==='he50'?'H':tipoName==='he100'?'I':'J', t=[];
+      const cr=jrCountRow(i), col=tipoName==='he50'?'I':tipoName==='he100'?'J':'K', t=[];
       for(let wd=0;wd<=6;wd++){ t.push(`JORNADA!${col}${4+wd}*JORNADA!${String.fromCharCode(66+wd)}${cr}`); }
       return t.join("+");
     }
