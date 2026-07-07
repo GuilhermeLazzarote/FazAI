@@ -23,8 +23,8 @@
     const dist=t=>{const o={};C.forEach(c=>o[c.k]=Math.round((t||0)*dt[c.k]/totd*100)/100);return o;};
     const q50=dist(p.qHE50),qdom=dist(p.qDom),qint=dist(p.qInt);
 
-    // ---- JORNADA: conta dias-da-semana trabalhados por competência (JS conta, Excel multiplica) ----
-    const JOR=(p.jornada&&(p.jornada.he50||p.jornada.he100||p.jornada.art71))?p.jornada:null;
+    // ---- JORNADA (modo horário): IA transcreve entrada/saída/intervalo; o EXCEL calcula duração e HE ----
+    const JOR=(p.jornada&&p.jornada.dias)?p.jornada:null;
     function contaWd(i){
       const c=C[i], dim=diasMes(c.y,c.m); let sd=1, ed=dim;
       if(i===0 && p.diasBordaIni) sd=dim-p.diasBordaIni+1;
@@ -33,17 +33,35 @@
       for(let d=sd;d<=ed;d++) cnt[new Date(c.y,c.m-1,d).getDay()]++;
       return cnt;
     }
-    let jrRow = JOR ? (i=>i+3) : null; // linha excel da competência i na JORNADA (título+cabeçalho 1-2)
-    const jrData = JOR ? (()=>{const JR=[["JORNADA — dias da semana trabalhados por competência (base das horas extras)"],
-                ["Comp","Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]];
-      C.forEach((c,i)=>JR.push([c.k,...contaWd(i)])); return JR;})() : null;
-    // monta a fórmula de Qtd a partir da jornada do tipo: Σ he/dia × contagem do dia-da-semana
-    // colunas JORNADA: Dom=B(wd0) Seg=C(wd1) Ter=D Qua=E Qui=F Sex=G Sáb=H(wd6)
-    function qtdFormula(tipoMap,i){
-      if(!JOR||!tipoMap) return null;
-      const rj=jrRow(i), termos=[];
-      for(let wd=0;wd<=6;wd++){const h=tipoMap[wd];if(h){const col=String.fromCharCode(66+wd);termos.push(`${h}*JORNADA!${col}${rj}`);}}
-      return termos.length?termos.join("+"):"0";
+    let jrData=null;
+    const jrCountRow = i=>14+i;   // linha da contagem da competência i (bloco 2 começa na 14)
+    if(JOR){
+      const D=p.jornada.dias, nomes=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      const JR=[];
+      JR[0]=["JORNADA — a IA transcreve horários; o Excel calcula duração e horas extras"];
+      JR[1]=["PARÂMETROS POR DIA-DA-SEMANA (horas em decimal: 19:30 = 19,5 · intervalo em minutos)"];
+      JR[2]=["Dia","Entrada","Saída","Interv(min)","Base(h)","Permanência","Labor líquido","HE 50%/dia","HE 100%/dia","Art.71/dia(h)"];
+      for(let wd=0;wd<=6;wd++){
+        const d=D[wd]||{}, r=4+wd;
+        const tra=(d.entrada!=null||d.saida!=null)&&d.tipo;
+        JR[r-1]=[nomes[wd], (+d.entrada||0), (+d.saida||0), (+d.interv||0), (+d.base||0),
+          tra?F(`=MOD(C${r}-B${r},24)`):0,          // Permanência = saída − entrada (vira noite)
+          tra?F(`=F${r}-D${r}/60`):0,               // Labor líquido = permanência − intervalo
+          (tra&&d.tipo==='50')?F(`=MAX(G${r}-E${r},0)`):0,   // HE 50%/dia = labor − base
+          (tra&&d.tipo==='100')?F(`=G${r}`):0,               // HE 100%/dia = labor inteiro
+          tra?F(`=MAX((60-D${r})/60,0)`):0];                 // Art.71/dia = (60 − intervalo)/60
+      }
+      JR[11]=["DIAS TRABALHADOS POR COMPETÊNCIA (contados pelo calendário)"];
+      JR[12]=["Comp","Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+      C.forEach((c,i)=>{JR[13+i]=[c.k,...contaWd(i)];});
+      jrData=JR;
+    }
+    // Qtd = Σ (HE/dia do dia-da-semana × nº daquele dia na competência). Param: he50=col H, he100=col I, art71=col J (linhas 4..10). Contagem: cols B..H, linha jrCountRow.
+    function qtdFormula(tipoName,i){
+      if(!JOR) return null;
+      const cr=jrCountRow(i), col=tipoName==='he50'?'H':tipoName==='he100'?'I':'J', t=[];
+      for(let wd=0;wd<=6;wd++){ t.push(`JORNADA!${col}${4+wd}*JORNADA!${String.fromCharCode(66+wd)}${cr}`); }
+      return t.join("+");
     }
     const dataBaseRaw = p.dataBase || TAB.DATA_BASE;
     const idx = k => (TAB.T_IPCAE||{})[k];
@@ -85,7 +103,7 @@
     if(jrData) XLSX.utils.book_append_sheet(wb,mkSheet(jrData),"JORNADA");
 
     // ---- motor HE ----
-    function motorHE(nome,adicKey,qtd,comRef,tipoMap){
+    function motorHE(nome,adicKey,qtd,comRef,tipoName){
       const M=[[nome],[],["Comp","Qtd","Sal-Hora","Adic","Devido","DSR","Aviso","13º","Férias","SUBTOTAL","Fator","CORRIGIDO","SELIC%","Juros","TOTAL"]];
       const r0=4;
       C.forEach((c,i)=>{const r=r0+i,er=R(i);let av="0",d13="0",fer="0";const pi=Math.max(0,i-12);
@@ -94,7 +112,7 @@
           if(c.m===12||i===last){const rows=C.map((x,j)=>x.y===c.y?r0+j:null).filter(x=>x!=null);d13=`SUM(E${rows[0]}:E${rows[rows.length-1]})/12`;}
           if(((c.m===1&&i>=11)||i===last)&&i>0){const b=`AVERAGE(E${r0+pi}:E${r-1})*1.3333`;fer=(i===last)?`${b}*(1+1/12)`:b;}
         }
-        const qtdCell = (JOR&&tipoMap) ? F(`=${qtdFormula(tipoMap,i)}`) : qtd[c.k];
+        const qtdCell = (JOR&&tipoName) ? F(`=${qtdFormula(tipoName,i)}`) : qtd[c.k];
         M.push([c.k,qtdCell,F(`=EVOLUCAO!H${er}`),F(`=${pp(adicKey)}`),F(`=B${r}*C${r}*(1+D${r})`),
           F(`=IF(${pp("aplica_dsr_he")}="Sim",E${r}/${diasMes(c.y,c.m)-domingos(c.y,c.m)}*${domingos(c.y,c.m)},0)`),
           F(`=${av}`),F(`=${d13}`),F(`=${fer}`),F(`=E${r}+F${r}+G${r}+H${r}+I${r}`),F(`=TABELAS!C${er}`),
@@ -104,7 +122,7 @@
       M.push(["TOTAL","","","",F(`=SUM(E${r0}:E${r0+n-1})`),F(`=SUM(F${r0}:F${r0+n-1})`),F(`=SUM(G${r0}:G${r0+n-1})`),F(`=SUM(H${r0}:H${r0+n-1})`),F(`=SUM(I${r0}:I${r0+n-1})`),F(`=SUM(J${r0}:J${r0+n-1})`),"",F(`=SUM(L${r0}:L${r0+n-1})`),"",F(`=SUM(N${r0}:N${r0+n-1})`),F(`=SUM(O${r0}:O${r0+n-1})`)]);
       XLSX.utils.book_append_sheet(wb,mkSheet(M),nome);return tr;
     }
-    const t50=motorHE("HE_50","adic_he_50",q50,true,JOR?JOR.he50:null), tdom=motorHE("HE_100_DOM","adic_he_100",qdom,true,JOR?JOR.he100:null), tint=motorHE("HE_ART71","adic_he_50",qint,false,JOR?JOR.art71:null);
+    const t50=motorHE("HE_50","adic_he_50",q50,true,JOR?"he50":null), tdom=motorHE("HE_100_DOM","adic_he_100",qdom,true,JOR?"he100":null), tint=motorHE("HE_ART71","adic_he_50",qint,false,JOR?"art71":null);
 
     // ---- motor adicional (peric/insal) ----
     function motorAd(nome,baseFx,pctKey,aplicaKey){
