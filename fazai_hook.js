@@ -32,6 +32,7 @@
       aplicaInsal: has("insalubridade")?"Sim":"Nao", grauInsal:num((ov.insalubridade||{}).percentual)||0.40,
       baseInsal:"Salario Minimo", aplicaCumulacao:(has("periculosidade")&&has("insalubridade"))?"Sim":"Nao",
       avisoDias:39, aplicaCorrecao:"Sim", selicPos,
+      ajuizamento: caso.dataDistribuicao ? ymOf(caso.dataDistribuicao) : undefined,
       pctHon:(caso.honorarios&&caso.honorarios.percentual)?num(caso.honorarios.percentual)/100:0.15,
       inssPatronal:0.23, pctFgts:0.08, aplicaMulta:"Sim", pctMulta:0.40,
       fgtsDiferencaSalario: caso.fgtsDiferencaSalario || "Nao",
@@ -44,7 +45,7 @@
     };
   }
 
-  window.exportLiquidaXLSXFormulado=function(){
+  window.exportLiquidaXLSXFormulado=async function(){
     if(!window.FazAIEngine){alert("Motor de fórmulas não carregado (inclua fazai_tabelas.js e fazai_engine.js).");return;}
     const caso=window._fazaiCasoAtual;
     if(!caso){alert("Rode a liquidação primeiro (não há cálculo em memória).");return;}
@@ -54,7 +55,18 @@
     console.log("[FazAI] params p/ Excel formulado:",p);
     const wb=window.FazAIEngine.buildWorkbook(p);
     const nome=(p.reclamante||"calculo").replace(/[^\wÀ-ÿ]+/g,"_");
-    XLSX.writeFile(wb,"Calculo_"+nome+".xlsx");
+    // gera buffer (SheetJS) e aplica estilo PJe-Calc (exceljs), se disponível
+    try{
+      if(window.ExcelJS && window.aplicarEstiloPjeCalc){
+        const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});
+        const styled=await window.aplicarEstiloPjeCalc(buf,window.ExcelJS);
+        const blob=new Blob([styled],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+        const url=URL.createObjectURL(blob), a=document.createElement("a");
+        a.href=url; a.download="Calculo_"+nome+".xlsx"; a.click(); URL.revokeObjectURL(url);
+        return;
+      }
+    }catch(e){ console.warn("[FazAI] estilo PJe-Calc falhou, baixando sem estilo:",e); }
+    XLSX.writeFile(wb,"Calculo_"+nome+".xlsx"); // fallback sem estilo
   };
   window.FazAI_casoToParams=casoToParams;
 })();
