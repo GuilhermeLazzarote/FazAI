@@ -7,6 +7,17 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
   const LINHA={style:'thin',color:{argb:'FFD3D3D3'}};
   const BORDA={top:LINHA,left:LINHA,bottom:LINHA,right:LINHA};
   wb.eachSheet(ws=>{
+    // Impressão: paisagem + enquadrar. RESUMO: página única.
+    const unica = ws.name==='RESUMO';
+    ws.pageSetup={
+      paperSize:9,                     // A4
+      orientation:'landscape',
+      fitToPage:true,
+      fitToWidth:1,
+      fitToHeight: unica?1:0,          // 0 = quantas páginas de altura precisar
+      horizontalCentered:true,
+      margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}
+    };
     ws.eachRow({includeEmpty:false},(row,rn)=>{
       const cells=[]; row.eachCell({includeEmpty:false},(c,cn)=>cells.push({c,cn}));
       const vals=cells.map(x=>x.c.value);
