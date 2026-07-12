@@ -67,8 +67,10 @@
     }
     const dataBaseRaw = p.dataBase || TAB.DATA_BASE;
     const idx = k => (TAB.T_IPCAE||{})[k];
-    const dataBase = idx(dataBaseRaw) ? dataBaseRaw : TAB.DATA_BASE;   // clampa p/ última competência disponível
-    const fatFn = p.fatorFn || ((y,m)=>{const k=`${y}-${String(m).padStart(2,"0")}`;const ic=idx(k),ib=idx(dataBase);return (ic&&ib)?ic/ib:1;});
+    const dataBase = idx(dataBaseRaw) ? dataBaseRaw : TAB.DATA_BASE;   // último mês fechado disponível
+    // ADC 58 fase 1: correção monetária (IPCA-E) da competência ATÉ O AJUIZAMENTO. Fase 2 (SELIC) entra via selic_pos_ajuiz.
+    const ajuiz = (p.ajuizamento && idx(p.ajuizamento)) ? p.ajuizamento : dataBase;
+    const fatFn = p.fatorFn || ((y,m)=>{const k=`${y}-${String(m).padStart(2,"0")}`;const ic=idx(k),ia=idx(ajuiz);return (ic&&ia)?ic/ia:1;});
     const wb=XLSX.utils.book_new();
     const R=i=>i+2;             // linha excel na TABELAS/EVOLUCAO
     const rh=i=>4+i;            // linha excel nos motores (dados começam na 4)
@@ -88,6 +90,7 @@
       ["aplica_cumulacao",p.aplicaCumulacao||"Sim"],["pct_fgts",p.pctFgts||0.08],["aplica_multa_fgts",p.aplicaMulta||"Sim"],["pct_multa_fgts",p.pctMulta||0.40],
       ["fgts_diferenca_salario",p.fgtsDiferencaSalario||"Nao"],
       ["aviso_dias",p.avisoDias||39],["aplica_correcao",p.aplicaCorrecao||"Sim"],["selic_pos_ajuiz",p.selicPos||0],
+      ["ajuizamento (alvo IPCA-E)",ajuiz],["selic_acumulada_ate",dataBase],
       ["pct_honorarios",p.pctHon||0.15],["inss_patronal",p.inssPatronal||0.23],["dependentes",p.dependentes||0],["irrf_meses_rra",p.irrfMeses||n]];
     const K={}; const PR=[["Parâmetro","Valor"]]; PREM.forEach(([k,v],i)=>{K[k]=i+2;PR.push([k,v]);});
     XLSX.utils.book_append_sheet(wb,mkSheet(PR),"PREMISSAS");
