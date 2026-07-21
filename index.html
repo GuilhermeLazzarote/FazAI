@@ -99,6 +99,9 @@ img{max-width:100%; display:block}
 .btn-primario:hover{background:var(--laranja-luz)}
 .btn-fantasma{border:1px solid #46527A; color:#E7EBF3}
 .btn-fantasma:hover{border-color:var(--laranja); color:#fff}
+.link-pdf{display:inline-flex; align-items:center; gap:8px; margin-top:18px; color:#D6DEEA; text-decoration:none; font-size:15px; font-weight:500; border-bottom:1px solid rgba(255,255,255,.25); padding-bottom:3px; transition:color .18s ease, border-color .18s ease}
+.link-pdf:hover{color:#fff; border-color:var(--laranja)}
+.link-pdf::before{content:"\2193"; color:var(--laranja); font-weight:700}
 .selo{display:flex; gap:22px; flex-wrap:wrap; margin-top:30px; padding-top:22px; border-top:1px solid var(--marinho-linha); font-size:13px; color:#8C97AD}
 .selo i{color:var(--laranja); font-style:normal}
 
@@ -144,6 +147,24 @@ img{max-width:100%; display:block}
 .motivo{background:#fff; border:1px solid var(--linha); border-radius:12px; padding:28px 26px}
 .motivo h3{font-size:17.5px; font-weight:700; margin-bottom:9px}
 .motivo p{font-size:15px; color:var(--cinza)}
+
+/* provas */
+.provas{background:var(--marinho); color:#fff; padding:88px 0}
+.provas h2{color:#fff}
+.provas .secao-topo p{color:var(--cinza-azul)}
+.paineis{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+@media(max-width:860px){ .paineis{grid-template-columns:1fr} }
+.painel{background:var(--marinho-card); border-radius:12px; padding:30px 28px}
+.painel-tit{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--laranja); font-weight:500; margin-bottom:6px; display:block}
+.painel h3{font-size:20px; font-weight:700; color:#fff; margin-bottom:22px}
+.metrica{padding:16px 0; border-top:1px solid rgba(255,255,255,.12)}
+.metrica:first-of-type{border-top:none; padding-top:0}
+.metrica b{font-family:Montserrat; font-weight:800; font-size:clamp(30px,4vw,38px); color:var(--laranja); letter-spacing:-.03em; display:block; line-height:1}
+.metrica span{display:block; font-size:14.5px; color:var(--cinza-azul); margin-top:7px}
+.provas-pe{margin-top:26px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between}
+.provas-nota{font-size:12.5px; color:#8C97AD; max-width:46em}
+.btn-pdf{display:inline-flex; align-items:center; gap:9px; border:1px solid #46527A; color:#E7EBF3; text-decoration:none; font-weight:600; font-size:15px; padding:13px 22px; border-radius:8px; transition:border-color .18s ease, color .18s ease}
+.btn-pdf:hover{border-color:var(--laranja); color:#fff}
 
 /* faixa sistema */
 .sistema{background:var(--marinho); color:#fff; padding:72px 0}
@@ -203,6 +224,8 @@ img{max-width:100%; display:block}
           <a class="btn btn-primario" id="cta-calculo" href="#">Solicite seu cálculo</a>
           <a class="btn btn-fantasma" href="#sistema">Tenho interesse no sistema</a>
         </div>
+
+        <a class="link-pdf" id="baixar-pdf-topo" href="/apresentacao-fazai.pdf" target="_blank" rel="noopener">Baixar a apresentação com os resultados (PDF)</a>
 
         <div class="selo">
           <span><i>&#9642;</i> Correção pela ADC 58</span>
@@ -316,6 +339,39 @@ img{max-width:100%; display:block}
     </div>
   </section>
 
+  <section class="provas" id="resultados">
+    <div class="wrap">
+      <div class="secao-topo">
+        <span class="eyebrow">Resultados</span>
+        <h2>Prova em números.</h2>
+        <p>Casos reais, dos dois lados da reclamatória. Os processos estão identificados na apresentação institucional.</p>
+      </div>
+
+      <div class="paineis">
+        <article class="painel">
+          <span class="painel-tit">Para quem se defende</span>
+          <h3>Redução de passivo em execução</h3>
+          <div class="metrica"><b>72,93%</b><span>maior redução homologada em um caso — de R$ 1,75 milhão apresentado pelo reclamante para R$ 474 mil</span></div>
+          <div class="metrica"><b>40,93%</b><span>laudo pericial reduzido de R$ 2,03 milhões para R$ 1,20 milhão em duas impugnações sucessivas</span></div>
+          <div class="metrica"><b>33,7%</b><span>redução média em cinco casos sorteados por amostragem aleatória — não são os melhores resultados</span></div>
+        </article>
+
+        <article class="painel">
+          <span class="painel-tit">Para quem pede</span>
+          <h3>Liquidação e ações coletivas</h3>
+          <div class="metrica"><b>4.629</b><span>substituídos calculados em ações coletivas de sindicatos</span></div>
+          <div class="metrica"><b>13</b><span>sindicatos atendidos, com custo fixo por caso em vez de cobrança por substituído</span></div>
+          <div class="metrica"><b>1.670</b><span>substituídos em uma única ação — a apuração escala sem mudar o prazo</span></div>
+        </article>
+      </div>
+
+      <div class="provas-pe">
+        <p class="provas-nota">Percentuais apurados sobre valores efetivamente homologados em juízo. Resultados de casos concretos — cada processo tem circunstâncias próprias e resultados anteriores não garantem resultado futuro.</p>
+        <a class="btn-pdf" id="baixar-pdf" href="/apresentacao-fazai.pdf" target="_blank" rel="noopener">Baixar apresentação (PDF)</a>
+      </div>
+    </div>
+  </section>
+
   <section class="sistema" id="sistema">
     <div class="wrap sistema-grid">
       <div>
@@ -396,6 +452,15 @@ Object.entries(destinos).forEach(function(par){
   el.href=SISTEMA_URL;
   el.addEventListener("click", function(){
     if(typeof gtag === "function") gtag("event","acesso_sistema");
+  });
+});
+
+["baixar-pdf","baixar-pdf-topo"].forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener("click", function(){
+    if(typeof gtag === "function") gtag("event","baixar_apresentacao",{origem:id});
+    if(typeof fbq === "function") fbq("track","ViewContent",{content_name:"apresentacao"});
   });
 });
 
