@@ -22,16 +22,48 @@
     const diasNoMes=(y,m)=>new Date(y,m,0).getDate();
     const diasBordaIni = diasNoMes(ini.y,ini.m) - caso.dataAdmissao.getDate() + 1;
     const diasBordaFim = caso.dataDemissao.getDate();
+
+    // --- RESCISÓRIAS: cálculos corretos a partir das datas ---
+    const adm=caso.dataAdmissao, dem=caso.dataDemissao;
+    // (1) Saldo de salário = dias trabalhados no mês da demissão
+    const diasSaldo = dem.getDate();
+    // (4) Aviso prévio proporcional: 30 dias + 3 por ano completo de casa (Lei 12.506), teto 90
+    const anosCasa = Math.floor((dem - adm)/(365.25*24*3600*1000));
+    const avisoDias = Math.min(30 + 3*anosCasa, 90);
+    // (2) Avos proporcionais de 13º e férias: meses com >=15 dias trabalhados
+    //     13º conta no ano da demissão; férias contam no período aquisitivo em curso.
+    const avos13 = (function(){
+      let m = dem.getDate()>=15 ? dem.getMonth()+1 : dem.getMonth(); // meses jan..demissão
+      // se admitido no mesmo ano, começa do mês de admissão
+      if(adm.getFullYear()===dem.getFullYear()){
+        const inicioAvo = adm.getDate()<=15 ? adm.getMonth()+1 : adm.getMonth()+2;
+        m = (dem.getDate()>=15 ? dem.getMonth()+1 : dem.getMonth()) - inicioAvo + 1;
+      }
+      return Math.max(0, Math.min(12, m));
+    })();
+    // férias proporcionais: avos desde o último aniversário de admissão
+    const avosFerias = (function(){
+      const ultAniv = new Date(dem.getFullYear(), adm.getMonth(), adm.getDate());
+      const base = ultAniv>dem ? new Date(dem.getFullYear()-1, adm.getMonth(), adm.getDate()) : ultAniv;
+      let meses = (dem.getFullYear()-base.getFullYear())*12 + (dem.getMonth()-base.getMonth());
+      if(dem.getDate()>=15) meses+=1; // fração >=15 dias conta
+      return Math.max(0, Math.min(12, meses));
+    })();
+    // (3) férias vencidas: só se houver pedido explícito; nunca em dobro automático
+    const temFeriasVencidas = has("feriasVencidas") || has("ferias_vencidas");
+    // (5) adicional noturno como verba própria só se pedido
+    const temAdicNoturno = has("adicionalNoturno") || has("adic_noturno");
     return {
       reclamante:caso.reclamante||"", reclamada:caso.reclamada||"", processo:caso.numeroProcesso||"",
       ini, fim, dataBase, diasBordaIni, diasBordaFim,
+      diasSaldo, avosFerias, avos13, temFeriasVencidas, temAdicNoturno,
       salarioBase, valeRefeicao:num((caso.auxiliosPadrao||{}).vr), vrIntegra: has("vr")?"Sim":"Nao",
       divisor:num(caso.divisor)||220,
       aplicaDsrHe: caso.dsrCompoeBaseReflexos?"Sim":"Nao",
       aplicaPeric: has("periculosidade")?"Sim":"Nao", pctPeric:num((ov.periculosidade||{}).percentual)||0.30,
       aplicaInsal: has("insalubridade")?"Sim":"Nao", grauInsal:num((ov.insalubridade||{}).percentual)||0.40,
       baseInsal:"Salario Minimo", aplicaCumulacao:(has("periculosidade")&&has("insalubridade"))?"Sim":"Nao",
-      avisoDias:39, aplicaCorrecao:"Sim", selicPos,
+      avisoDias, aplicaCorrecao:"Sim", selicPos,
       ajuizamento: caso.dataDistribuicao ? ymOf(caso.dataDistribuicao) : undefined,
       pctHon:(caso.honorarios&&caso.honorarios.percentual)?num(caso.honorarios.percentual)/100:0.15,
       inssPatronal:0.23, pctFgts:0.08, aplicaMulta:"Sim", pctMulta:0.40,
@@ -65,8 +97,16 @@
         a.href=url; a.download="Calculo_"+nome+".xlsx"; a.click(); URL.revokeObjectURL(url);
         return;
       }
-    }catch(e){ console.warn("[FazAI] estilo PJe-Calc falhou, baixando sem estilo:",e); }
-    XLSX.writeFile(wb,"Calculo_"+nome+".xlsx"); // fallback sem estilo
+    }catch(e){
+      console.warn("[FazAI] estilo PJe-Calc falhou, baixando sem estilo:",e);
+      alert("Aviso: não foi possível aplicar o layout PJe-Calc. O arquivo será baixado sem formatação, mas com os cálculos corretos.");
+    }
+    try{
+      XLSX.writeFile(wb,"Calculo_"+nome+".xlsx"); // fallback sem estilo
+    }catch(err){
+      console.error("[FazAI] falha ao gerar Excel:",err);
+      alert("Erro ao gerar o Excel. Recarregue a página e rode a liquidação novamente. Se persistir, avise o suporte.");
+    }
   };
   window.FazAI_casoToParams=casoToParams;
 })();
