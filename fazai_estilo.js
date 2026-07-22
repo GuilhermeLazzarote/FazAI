@@ -59,18 +59,17 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
         c.border=BORDA;
         if(isTitle||isHeader) c.fill=AZUL;
 
-        // ---- destaques do RESUMO ----
+        // ---- destaques do RESUMO: SÓ subtotais recebem fundo azul ----
         if(ehSubtotal){
           c.fill=AZUL;
           c.font={name:'Arial',size:11,bold:true,color:BRANCO};
         }
         if(ehTotalExec){
-          c.fill=AZUL;
-          c.font={name:'Arial',size:14,bold:true,color:BRANCO};   // maior, para evidência
+          // fundo branco, apenas maior e negrito para evidência
+          c.font={name:'Arial',size:14,bold:true,color:{argb:'FF16213E'}};
         }
         if(ehLiquido){
-          c.fill=AZUL;
-          c.font={name:'Arial',size:13,bold:true,color:BRANCO};
+          c.font={name:'Arial',size:13,bold:true,color:{argb:'FF16213E'}};
         }
 
         // ---- alinhamento: números centralizados; coluna A do RESUMO à esquerda (verbas longas) ----
