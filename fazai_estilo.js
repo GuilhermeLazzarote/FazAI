@@ -7,14 +7,14 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
   const LINHA={style:'thin',color:{argb:'FFD3D3D3'}};
   const BORDA={top:LINHA,left:LINHA,bottom:LINHA,right:LINHA};
   wb.eachSheet(ws=>{
-    // Impressão: paisagem + enquadrar. RESUMO: página única.
-    const unica = ws.name==='RESUMO';
+    // RESUMO em paisagem; todas as outras abas em RETRATO, colunas cabendo em 1 página de largura.
+    const ehResumo = ws.name==='RESUMO';
     ws.pageSetup={
-      paperSize:9,                     // A4
-      orientation:'landscape',
+      paperSize:9,                          // A4
+      orientation: ehResumo?'landscape':'portrait',
       fitToPage:true,
-      fitToWidth:1,
-      fitToHeight: unica?1:0,          // 0 = quantas páginas de altura precisar
+      fitToWidth:1,                         // todas as colunas numa página de largura
+      fitToHeight:0,                        // quantas páginas de altura precisar
       horizontalCentered:true,
       margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}
     };
@@ -25,6 +25,8 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
       const isTitle=allStr && vals.length===1 && rn<=2;
       const isHeader=allStr && vals.length>=2;
       cells.forEach(({c,cn})=>{
+        // sanitiza valor inválido que corromperia o arquivo
+        if(typeof c.value==='number' && (isNaN(c.value)||!isFinite(c.value))) c.value=0;
         const isMoney=c.numFmt && String(c.numFmt).includes('R$');
         c.font={name:'Arial',size:isTitle?12:(isHeader?11:10),bold:(isTitle||isHeader),color:(isTitle||isHeader)?BRANCO:undefined};
         c.border=BORDA;
