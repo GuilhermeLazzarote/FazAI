@@ -818,7 +818,6 @@ a{color:var(--or);text-decoration:none}
                 <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
                   <button class="btn btn-ghost btn-sm" onclick="clearLiquida()">Novo cálculo</button>
                   <button class="btn btn-ghost btn-sm" onclick="exportLiquidaXLSXFormulado()">Exportar Cálculo (Excel formulado)</button>
-                  <button class="btn btn-primary btn-sm" onclick="exportLiquidaPDF()">Relatório PDF</button>
                 </div>
               </div>
 
@@ -1909,6 +1908,26 @@ async function pdfToText(file){
   }catch(e){ return ''; }
 }
 
+// Fallback p/ PDF escaneado (sem texto): renderiza cada página como imagem
+// e devolve blocos de imagem — evita mandar base64 gigante do PDF (erro 413).
+async function pdfToImages(file, escala){
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+  const blocos=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const vp=page.getViewport({scale:escala||1.5});
+    const canvas=document.createElement('canvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
+    blocos.push({type:'image',source:{type:'base64',media_type:'image/jpeg',
+      data:canvas.toDataURL('image/jpeg',0.85).split(',')[1]}});
+  }
+  return blocos;
+}
+
 // ============================================================
 // DASHBOARD
 // ============================================================
@@ -2114,9 +2133,17 @@ OBSERVAÇÕES ADICIONAIS: ${obs2||'Nenhuma'}
 Retorne APENAS JSON válido sem markdown, sem comentários:
 {"reclamante":"","reclamada":"","numeroProcesso":"","salarioBaseIdentificado":0,"adicionaisIdentificados":"","periodoCalculoInicio":"","periodoCalculoFim":"","verbas":[{"descricao":"a) Nome da verba conforme alínea","metodologia":"Salário: R$X | H.extras: Y/dia | Período: Z meses | Cálculo: X×Y×1,5×Z = R$W","baseCalculo":0,"quantidade":0,"valor":0,"valorCorrigido":0,"juros":0,"total":0,"natureza":"salarial","status":"normal"}],"totalBruto":0,"inss":0,"irrf":0,"fgts":0,"totalLiquido":0,"valorFinalCorrigido":0,"honorariosPercentual":${hon},"valorHonorarios":0,"valorTotalGeral":0,"inssReclamada":0,"baseCalculoInssReclamada":0,"percentualInssReclamada":${inssP},"isCalculationPossible":true,"errorReason":"","observation":"Descreva aqui a metodologia geral, índices e tabelas utilizadas"}`;
     if((!liqFileText||liqFileText.length<=50) && liqFile){ try{ liqFileText = await pdfToText(liqFile); }catch(e){} }
-    const contentLiq = (liqFileText && liqFileText.length>50)
-      ? [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+prompt}]
-      : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:prompt}];
+    let contentLiq;
+    if(liqFileText && liqFileText.length>50){
+      contentLiq = [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+prompt}];
+    } else if(liqFile && liqFile.size > 4*1024*1024){
+      // PDF grande e sem texto (escaneado): renderiza em imagem p/ não estourar o limite do servidor
+      alert('PDF escaneado e grande — vou lê-lo como imagem. Pode levar um pouco mais.');
+      const imgs = await pdfToImages(liqFile);
+      contentLiq = [...imgs,{type:'text',text:prompt}];
+    } else {
+      contentLiq = [{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:prompt}];
+    }
     const txt = await claudeAPI([{role:'user',content:contentLiq}]);
     clearInterval(pi);
     document.getElementById('liq-prog').style.width='100%';
@@ -5674,6 +5701,7 @@ window.calcularLiquidaDeterministico = function(caso) {
   const out = FazAILiquida.calcularLiquidacaoDeterministica(caso);
   liquidaResult = out.liquidaResult;          // mesma variável global do app
   try { renderLiquidaResult(); } catch(e){ console.warn('render padrão:', e); }
+  try { renderPainelJornada(caso); } catch(e){ console.warn('painel jornada:', e); }
   // memória mensal REAL (substitui a fabricada no caminho determinístico)
   if (liquidaResult._deterministico) {
     const painel = document.getElementById('liq-memoria-panel');
@@ -5684,6 +5712,90 @@ window.calcularLiquidaDeterministico = function(caso) {
   const up  = document.getElementById('liq-upload'); if (up) up.style.display='none';
   return liquidaResult;
 };
+
+// ============================================================
+// PAINEL DE JORNADA EDITÁVEL (Bug 2) — o calculista confere/corrige o que a IA extraiu
+// ============================================================
+// Converte "19:30" -> 19.5 de forma segura (minutos viram fração /60, nunca 19.3)
+function horaParaDecimal(str){
+  if(str==null || str==='') return null;
+  if(typeof str==='number') return str;
+  const s=String(str).trim().replace('h',':').replace(/[^\d:.,]/g,'');
+  if(s.includes(':')){ const [h,m]=s.split(':'); return (+h||0)+((+m||0)/60); }
+  // aceita "19,5" ou "19.5"
+  const n=parseFloat(s.replace(',','.')); return isNaN(n)?null:n;
+}
+function decimalParaHora(dec){
+  if(dec==null||dec==='') return '';
+  const h=Math.floor(dec), m=Math.round((dec-h)*60);
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function renderPainelJornada(caso){
+  const host = document.getElementById('liq-memoria-panel') || document.getElementById('liq-result');
+  if(!host) return;
+  // remove painel anterior (reapuração)
+  const old=document.getElementById('fz-jornada-panel'); if(old) old.remove();
+  const pedeHE = (caso.verbasAtivas||[]).some(id=>['heTotais','he100','heArt71'].includes(id));
+  const dias = (caso.jornada && caso.jornada.dias) ? caso.jornada.dias : {};
+  const temJornada = Object.keys(dias).length>0;
+  // só mostra o painel se pede HE (senão não é relevante)
+  if(!pedeHE) return;
+  const nomes=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const linhas=nomes.map((nome,wd)=>{
+    const d=dias[wd]||{};
+    return `<tr data-wd="${wd}">
+      <td style="text-align:left;font-size:12px">${nome}</td>
+      <td><input class="fz-j" data-k="entrada" value="${d.entrada!=null?decimalParaHora(d.entrada):''}" placeholder="--:--" style="width:64px"></td>
+      <td><input class="fz-j" data-k="saida" value="${d.saida!=null?decimalParaHora(d.saida):''}" placeholder="--:--" style="width:64px"></td>
+      <td><input class="fz-j" data-k="interv" value="${d.interv!=null?d.interv:''}" placeholder="min" style="width:48px"></td>
+      <td><input class="fz-j" data-k="base" value="${d.base!=null?d.base:''}" placeholder="h" style="width:44px"></td>
+      <td><select class="fz-j" data-k="tipo" style="width:74px">
+        <option value=""${!d.tipo?' selected':''}>— folga</option>
+        <option value="50"${d.tipo==='50'?' selected':''}>50%</option>
+        <option value="100"${d.tipo==='100'?' selected':''}>100%</option>
+      </select></td>
+    </tr>`;
+  }).join('');
+  const aviso = temJornada ? '' :
+    `<div style="background:#fff3f3;border:1px solid #f5b5b5;color:#a11;border-radius:6px;padding:8px 10px;font-size:12.5px;margin-bottom:10px">
+      ⚠ Não consegui extrair a jornada da inicial. O cálculo saiu com <b>HE = 0</b>. Preencha os horários abaixo e clique em <b>Reapurar</b>.
+    </div>`;
+  const div=document.createElement('div');
+  div.id='fz-jornada-panel';
+  div.style.cssText='margin:16px 0;padding:14px 16px;border:1px solid #cfd8e6;background:#f7f9fc;border-radius:10px';
+  div.innerHTML=`
+    <div style="font-weight:700;color:#16213E;margin-bottom:4px">Jornada de trabalho ${temJornada?'(confira o que foi lido)':'(preencha para apurar HE)'}</div>
+    <div style="font-size:11.5px;color:#667;margin-bottom:10px">Horários em HH:MM (ex: 19:00). Intervalo em minutos. Base = jornada normal do dia (8 seg-sex, 4 sáb). Tipo: 50% dia útil, 100% domingo/feriado.</div>
+    ${aviso}
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="color:#667;text-align:center">
+        <th style="text-align:left">Dia</th><th>Entrada</th><th>Saída</th><th>Interv</th><th>Base</th><th>Tipo</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <button id="fz-reapurar" style="margin-top:12px;background:#F15A22;color:#fff;border:none;border-radius:7px;padding:10px 18px;font-weight:600;cursor:pointer">Reapurar com esta jornada</button>
+  `;
+  host.appendChild(div);
+  document.getElementById('fz-reapurar').addEventListener('click',()=>reapurarComJornada(caso));
+}
+function reapurarComJornada(caso){
+  const rows=document.querySelectorAll('#fz-jornada-panel tbody tr');
+  const novosDias={}; let algum=false;
+  rows.forEach(tr=>{
+    const wd=tr.getAttribute('data-wd');
+    const g=k=>{const el=tr.querySelector(`.fz-j[data-k="${k}"]`); return el?el.value.trim():'';};
+    const tipo=g('tipo');
+    const entrada=horaParaDecimal(g('entrada')), saida=horaParaDecimal(g('saida'));
+    // dia só conta se tem entrada+saída+tipo
+    if(entrada!=null && saida!=null && tipo){
+      novosDias[wd]={entrada,saida,interv:(+g('interv')||0),base:(+g('base')||0),tipo};
+      algum=true;
+    }
+  });
+  if(!algum){ alert('Preencha ao menos um dia com entrada, saída e tipo (50%/100%).'); return; }
+  caso.jornada={dias:novosDias};
+  window.calcularLiquidaDeterministico(caso); // recalcula tudo
+}
 
 // Mostra as verbas lidas da inicial que o motor ainda não calcula (não somam no total)
 function renderVerbasPendentes(lista) {
@@ -5735,13 +5847,25 @@ Mapeie com agressividade por sinônimos (ex.: "adicional de risco de vida" => pe
 
 {"reclamante":"","reclamada":"","numeroProcesso":"","dataAdmissao":"YYYY-MM-DD","dataDemissao":"YYYY-MM-DD","dataAjuizamento":"YYYY-MM-DD","salario":0,"motivoDemissao":"Sem Justa Causa","divisor":220,"verbas":[{"id":"periculosidade","percentual":0.3,"horasMes":0,"valorMensal":0}],"rescisorias":["saldoSalario","avisoPrevio","decimoTerceiro","ferias","fgtsRescisorio","multaFgts"],"verbasIA":[{"descricao":"Multa art. 477","natureza":"indenizatoria","formato":"bloco","valor":0,"dataBase":"2021-06","metodologia":""}],"verbasPendentes":[{"nome":""}],"jornada":{"dias":{"0":{"entrada":19,"saida":8,"interv":30,"base":0,"tipo":"100"},"1":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"2":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"3":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"4":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"5":{"entrada":19,"saida":8,"interv":30,"base":8,"tipo":"50"},"6":{"entrada":19,"saida":8,"interv":30,"base":4,"tipo":"50"}}},"honorarios":{"somaPedidosImprocedentes":0,"percentual":0.10}}
 
-JORNADA (horas extras): NÃO calcule quantidade de horas. TRANSCREVA a jornada por dia-da-semana no campo "jornada.dias" (chaves 0=domingo ... 6=sábado). Para cada dia informe: entrada (hora decimal, 19:00=19, 19:30=19.5), saida (idem; se vira a noite tudo bem), interv (intervalo REAL em minutos que o Autor alega, ex 30), base (jornada normal do dia: 8 seg-sex, 4 sáb, 0 dom), tipo ("50" dia útil/sábado, "100" domingo/jornada inteira, null se não trabalha). O sistema calcula labor=(saida-entrada)-interv, HE50=labor-base, HE100=labor inteiro, Art.71=(60-interv)/60. Se a inicial não trouxer horário, deixe "jornada":null. valorMensal só para vr/va. Datas YYYY-MM-DD. Valores em verbasIA são NOMINAIS. Não deixe verba pedida de fora.`;
+JORNADA (horas extras): NÃO calcule quantidade de horas. TRANSCREVA a jornada por dia-da-semana no campo "jornada.dias" (chaves 0=domingo ... 6=sábado). Para cada dia informe: entrada (hora decimal, 19:00=19, 19:30=19.5 — MINUTOS viram fração: 15min=0.25, 30min=0.5, 45min=0.75), saida (idem; se vira a noite tudo bem), interv (intervalo REAL em minutos que o Autor alega, ex 30), base (jornada normal do dia: 8 seg-sex, 4 sáb, 0 dom), tipo ("50" dia útil/sábado, "100" domingo/jornada inteira, null se não trabalha). O sistema calcula labor=(saida-entrada)-interv, HE50=labor-base, HE100=labor inteiro, Art.71=(60-interv)/60.
+ESCALAS ESPECIAIS — preencha jornada.dias mesmo assim, NÃO deixe null:
+• 12x36 (ex "das 19h às 7h em dias alternados"): preencha os dias trabalhados com entrada/saída da escala e tipo "50"; nos dias de folga tipo null. base=8.
+• 6x1: preencha seg-sáb com o horário; domingo (folga) tipo null.
+• Jornada única repetida ("das 8h às 18h de seg a sex"): replique nos dias 1 a 5.
+Só use "jornada":null se a inicial REALMENTE não descrever nenhum horário. Se descrever de qualquer forma (texto, escala, faixa), TRANSCREVA. valorMensal só para vr/va. Datas YYYY-MM-DD. Valores em verbasIA são NOMINAIS. Não deixe verba pedida de fora.`;
 
   try {
     if((!liqFileText||liqFileText.length<=50) && liqFile){ try{ liqFileText = await pdfToText(liqFile); }catch(e){} }
-    const contentEx = (liqFileText && liqFileText.length>50)
-      ? [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+promptExtracao}]
-      : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},{type:'text',text:promptExtracao}];
+    let contentEx;
+    if(liqFileText && liqFileText.length>50){
+      contentEx = [{type:'text',text:'TEXTO DA PETIÇÃO INICIAL (extraído do PDF):\n'+liqFileText+'\n\n'+promptExtracao}];
+    } else if(liqFile && liqFile.size > 4*1024*1024){
+      alert('PDF escaneado e grande — vou lê-lo como imagem. Pode levar um pouco mais.');
+      const imgs = await pdfToImages(liqFile);
+      contentEx = [...imgs,{type:'text',text:promptExtracao}];
+    } else {
+      contentEx = [{type:'document',source:{type:'base64',media_type:'application/pdf',data:liqFileB64}},{type:'text',text:promptExtracao}];
+    }
     const txt = await claudeAPI([{role:'user',content:contentEx}], 8000, 'claude-haiku-4-5-20251001'); // Haiku: extração rápida, evita timeout
     const p = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
     clearInterval(pi); if($('liq-prog'))$('liq-prog').style.width='100%';
@@ -5782,6 +5906,8 @@ JORNADA (horas extras): NÃO calcule quantidade de horas. TRANSCREVA a jornada p
       verbasPendentes: Array.isArray(p.verbasPendentes) ? p.verbasPendentes.filter(x => x && (x.nome || '').trim()) : [],
       jornada: (p.jornada && p.jornada.dias) ? p.jornada : null,
     };
+    // O painel de jornada editável (renderPainelJornada) avisa e permite corrigir
+    // quando pede HE mas a jornada não foi extraída — sem alert bloqueante.
     // aplica a média de horas a todos os meses (editável depois)
     if(adm){ let cur=new Date(adm.getFullYear(),adm.getMonth(),1);
       while(cur<=dem){ (p.verbas||[]).forEach(v=>{ if(qtdHoras[v.id]) qtdHoras[v.id][ym(cur)]=v._horasMes||0; }); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); } }
