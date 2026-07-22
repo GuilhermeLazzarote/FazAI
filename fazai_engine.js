@@ -275,11 +275,11 @@
     const s=push(["SUBTOTAL CRÉDITO",F(`=${B}`),F(`=${Cc}`),F(`=${D}`),F(`=${E}`)]);
     const hon=push(["Honorários",F(""),"","",F(`=E${s}*${pp("pct_honorarios")}`)]);
     const inr=push(["INSS Reclamada + SELIC (Súm.368)","","","",F(`=INSS_RECLAMADA!G${tir2}`)]);
-    push(["TOTAL DA EXECUÇÃO (crédito + honorários + INSS reclamada)","","","",F(`=E${s}+E${hon}+E${inr}`)]);
+    push(["TOTAL DA EXECUÇÃO","","","",F(`=E${s}+E${hon}+E${inr}`)]);
     push(["",""]);
     const d1=push(["(−) INSS Reclamante","","","",F(`=INSS_RECLAMANTE!G${tie}`)]);
     const d2=push(["(−) IRRF/RRA","","","",F(`=IRRF_RRA!B7`)]);
-    push(["LÍQUIDO DO AUTOR (crédito − INSS empregado − IRRF)","","","",F(`=E${s}-E${d1}-E${d2}`)]);
+    push(["LÍQUIDO DO AUTOR","","","",F(`=E${s}-E${d1}-E${d2}`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(RZ),"RESUMO");
 
     // ---- FORMATAÇÃO (SheetJS free: número + largura; sem negrito/cor) ----
