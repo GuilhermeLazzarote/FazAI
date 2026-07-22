@@ -789,8 +789,7 @@ a{color:var(--or);text-decoration:none}
             <p>Clique ou arraste o arquivo aqui</p>
           </div>
           <div id="liq-file-ok" class="alert alert-ok" style="display:none;margin-top:10px"></div>
-          <button class="btn-liquidar" id="liq-btn" disabled onclick="processLiquida()">LIQUIDAR</button>
-          <button class="btn-liquidar" id="liq-btn-det" disabled onclick="liquidarDeterministico()" style="margin-top:8px;background:#1f2937">LIQUIDAR (DETERMINÍSTICO · BETA)</button>
+          <button class="btn-liquidar" id="liq-btn-det" disabled onclick="liquidarDeterministico()">LIQUIDAR</button>
           <div id="liq-loading" style="display:none">
             <div class="panel" style="text-align:center;padding:48px">
               <div class="spin" style="width:22px;height:22px;margin:0 auto 12px"></div>
@@ -1979,7 +1978,7 @@ function onLiqFileSelect(file){
   el.style.display='block';
   el.textContent='✓ Arquivo selecionado: '+file.name;
   liqFileText=''; liqFile=file;
-  fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';document.getElementById('liq-btn').disabled=false;var bd=document.getElementById('liq-btn-det'); if(bd) bd.disabled=false;});
+  fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';var bd=document.getElementById('liq-btn-det'); if(bd) bd.disabled=false;});
   pdfToText(file).then(t=>{liqFileText=t;});
   document.getElementById('liq-upload').style.display='none';
 }
@@ -2337,7 +2336,7 @@ function clearLiquida() {
   document.getElementById('liq-result').style.display='none';
   document.getElementById('liq-file').value='';
   document.getElementById('liq-file-ok').style.display='none';
-  const btn=document.getElementById('liq-btn');if(btn){btn.disabled=true;btn.style.display='block';}
+  const btn=document.getElementById('liq-btn-det');if(btn){btn.disabled=true;btn.style.display='block';}
   document.getElementById('liq-obs-panel').style.display='none';
   document.getElementById('liq-memoria-panel').style.display='none';
 }
