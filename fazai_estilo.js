@@ -22,10 +22,8 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
       fitToHeight:0,                        // quantas páginas de altura precisar
       horizontalCentered:true,
       verticalCentered:false,
-      margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}
+      margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}
     };
-    // garante que a orientação não seja sobrescrita pelo scale automático
-    ws.pageSetup.scale = undefined; // deixa o fitToPage mandar
 
     ws.eachRow({includeEmpty:false},(row,rn)=>{
       const cells=[]; row.eachCell({includeEmpty:false},(c,cn)=>cells.push({c,cn}));
@@ -71,12 +69,13 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
           c.font={name:'Arial',size:14,bold:true,color:BRANCO};   // maior, para evidência
         }
         if(ehLiquido){
-          c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2C5F2D'}}; // verde escuro p/ o líquido
+          c.fill=AZUL;
           c.font={name:'Arial',size:13,bold:true,color:BRANCO};
         }
 
-        // ---- alinhamento: TUDO centralizado ----
-        c.alignment={vertical:'middle',horizontal:'center',wrapText:false};
+        // ---- alinhamento: números centralizados; coluna A do RESUMO à esquerda (verbas longas) ----
+        const alinhaEsq = ehResumo && cn===1 && typeof c.value==='string' && !isTitle && !isHeader;
+        c.alignment={vertical:'middle',horizontal: alinhaEsq?'left':'center',wrapText:false,indent: alinhaEsq?1:0};
       });
 
       // altura das linhas de destaque
@@ -86,8 +85,18 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
       else row.height=isTitle?22:(isHeader?18:15);
     });
 
-    // largura de coluna razoável para caber em retrato (sem estourar)
-    ws.columns.forEach(col=>{ if(!col.width || col.width>18) col.width=14; if(col.width<9) col.width=9; });
+    // largura de coluna: A (rótulos/verbas) larga; colunas de valor médias.
+    if(ehResumo){
+      // RESUMO tem poucas colunas (verba + valores): dá espaço pros nomes das verbas
+      ws.getColumn(1).width = 58;   // coluna A: nomes de verbas (longos)
+      for(let i=2;i<=ws.columnCount;i++){ ws.getColumn(i).width = 17; }
+    } else {
+      // demais abas: coluna A um pouco maior (competência/rótulo), resto compacto p/ caber em retrato
+      ws.columns.forEach((col,idx)=>{
+        if(idx===0) col.width = 20;
+        else { if(!col.width || col.width>16) col.width=12; if(col.width<9) col.width=9; }
+      });
+    }
   });
   return await wb.xlsx.writeBuffer();
 }
