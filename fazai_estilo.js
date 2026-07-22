@@ -33,6 +33,13 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
       const allStr=vals.length>0 && vals.every(v=>typeof v==='string');
       const isTitle=allStr && vals.length===1 && rn<=2;
       const isHeader=allStr && vals.length>=2;
+
+      // ---- linhas especiais do RESUMO (destaque) ----
+      const rotuloLinha = (typeof vals[0]==='string') ? vals[0].trim().toUpperCase() : '';
+      const ehSubtotal = ehResumo && (/→\s*SUBTOTAL/.test(rotuloLinha) || rotuloLinha==='SUBTOTAL CRÉDITO' || rotuloLinha.startsWith('SUBTOTAL'));
+      const ehTotalExec = ehResumo && rotuloLinha.startsWith('TOTAL DA EXECUÇÃO');
+      const ehLiquido = ehResumo && rotuloLinha.startsWith('LÍQUIDO DO AUTOR');
+
       cells.forEach(({c,cn})=>{
         // sanitiza valor inválido que corromperia o arquivo
         if(typeof c.value==='number' && (isNaN(c.value)||!isFinite(c.value))) c.value=0;
@@ -41,25 +48,42 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
         if(typeof c.value==='number' || (c.value && c.value.formula)){
           const jaTemFmt = c.numFmt && String(c.numFmt).length>0;
           const rotulo = (typeof vals[0]==='string') ? vals[0].toLowerCase() : '';
-          // rótulos que representam percentual/alíquota/grau
           const ehLinhaPct = /pct_|percent|%|grau|aliquota|alíquota|patronal|honorario|honorário|multa_fgts|pct_fgts|adicional 20|adic_he/.test(rotulo);
           const valNum = (typeof c.value==='number') ? c.value : null;
-          // um valor entre 0 e 1 numa linha marcada como pct é fração -> %
           if(!jaTemFmt){
             if(ehLinhaPct && cn>1 && (valNum===null || (valNum>0 && valNum<1))) c.numFmt=FMT_PCT;
             else c.numFmt=FMT_NUM;
           }
         }
 
-        // ---- fonte e cor ----
+        // ---- fonte e cor (base) ----
         c.font={name:'Arial',size:isTitle?12:(isHeader?11:10),bold:(isTitle||isHeader),color:(isTitle||isHeader)?BRANCO:undefined};
         c.border=BORDA;
         if(isTitle||isHeader) c.fill=AZUL;
 
-        // ---- alinhamento: TUDO centralizado (texto e número) ----
+        // ---- destaques do RESUMO ----
+        if(ehSubtotal){
+          c.fill=AZUL;
+          c.font={name:'Arial',size:11,bold:true,color:BRANCO};
+        }
+        if(ehTotalExec){
+          c.fill=AZUL;
+          c.font={name:'Arial',size:14,bold:true,color:BRANCO};   // maior, para evidência
+        }
+        if(ehLiquido){
+          c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2C5F2D'}}; // verde escuro p/ o líquido
+          c.font={name:'Arial',size:13,bold:true,color:BRANCO};
+        }
+
+        // ---- alinhamento: TUDO centralizado ----
         c.alignment={vertical:'middle',horizontal:'center',wrapText:false};
       });
-      row.height=isTitle?22:(isHeader?18:15);
+
+      // altura das linhas de destaque
+      if(ehTotalExec) row.height=26;
+      else if(ehLiquido) row.height=24;
+      else if(ehSubtotal) row.height=18;
+      else row.height=isTitle?22:(isHeader?18:15);
     });
 
     // largura de coluna razoável para caber em retrato (sem estourar)
