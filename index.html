@@ -175,6 +175,7 @@ img{max-width:100%;display:block}
           <a class="btn btn-fantasma" href="#sistema">Tenho interesse no sistema</a>
         </div>
         <a class="link-pdf" id="baixar-pdf-topo" href="/apresentacao-fazai.pdf" target="_blank" rel="noopener">Baixar a apresentação com os resultados (PDF)</a>
+        <a class="link-pdf" id="ver-portfolio-topo" href="/portfolio-fazai.pdf" target="_blank" rel="noopener">Baixar o portfólio de casos (PDF)</a>
         <div class="selo">
           <span><i>&#9642;</i> Correção pela ADC 58</span>
           <span><i>&#9642;</i> Memória mês a mês</span>
@@ -285,7 +286,7 @@ function link(tipo){return "https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent
 const destinos={"cta-topo":"calculo","cta-calculo":"calculo","cta-fim":"calculo","cta-rodape":"calculo","cta-flutuante":"calculo","cta-sistema":"sistema"};
 Object.entries(destinos).forEach(function(par){var id=par[0],tipo=par[1];var el=document.getElementById(id);if(!el)return;el.href=link(tipo);el.target="_blank";el.rel="noopener";el.addEventListener("click",function(){if(typeof fbq==="function")fbq("track","Contact",{content_name:tipo});if(typeof gtag==="function")gtag("event","contato_whatsapp",{tipo:tipo});});});
 ["acesso-topo","acesso-sistema","acesso-rodape"].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.href=SISTEMA_URL;el.addEventListener("click",function(){if(typeof gtag==="function")gtag("event","acesso_sistema");});});
-["baixar-pdf","baixar-pdf-topo","ver-portfolio"].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.addEventListener("click",function(){if(typeof gtag==="function")gtag("event","baixar_material",{origem:id});if(typeof fbq==="function")fbq("track","ViewContent",{content_name:id});});});
+["baixar-pdf","baixar-pdf-topo","ver-portfolio","ver-portfolio-topo"].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.addEventListener("click",function(){if(typeof gtag==="function")gtag("event","baixar_material",{origem:id});if(typeof fbq==="function")fbq("track","ViewContent",{content_name:id});});});
 var brl=function(n){return n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});};
 var reduzir=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var demo=document.getElementById("demo");
