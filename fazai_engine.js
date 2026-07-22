@@ -14,7 +14,7 @@
   const diasMes=(y,m)=>new Date(y,m,0).getDate();
   const domingos=(y,m)=>{let c=0,d=diasMes(y,m);for(let i=1;i<=d;i++)if(new Date(y,m-1,i).getDay()===0)c++;return c;};
   function listaComp(ini,fim){const o=[];let y=ini.y,m=ini.m;while(y<fim.y||(y===fim.y&&m<=fim.m)){o.push({y,m,k:`${y}-${String(m).padStart(2,"0")}`});m++;if(m>12){m=1;y++;}if(o.length>600)break;}return o;}
-  function mkSheet(mat){const ws={};let mr=0,mc=0;mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell==null||cell==="")return;const a=XLSX.utils.encode_cell({r,c});if(typeof cell==="object"&&cell.f!=null){let ff=String(cell.f);if(ff.charAt(0)==="=")ff=ff.slice(1);if(ff!=="")ws[a]={t:"n",f:ff,v:""};}else if(typeof cell==="number")ws[a]={t:"n",v:cell};else ws[a]={t:"s",v:String(cell)};mr=Math.max(mr,r);mc=Math.max(mc,c);}));ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});return ws;}
+  function mkSheet(mat){const ws={};let mr=0,mc=0;mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell==null||cell==="")return;const a=XLSX.utils.encode_cell({r,c});if(typeof cell==="object"&&cell.f!=null){let ff=String(cell.f);if(ff.charAt(0)==="=")ff=ff.slice(1);if(ff!=="")ws[a]={t:"n",f:ff};}else if(typeof cell==="number"){var _vn=(isNaN(cell)||!isFinite(cell))?0:cell;ws[a]={t:"n",v:_vn};}else ws[a]={t:"s",v:String(cell)};mr=Math.max(mr,r);mc=Math.max(mc,c);}));ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});return ws;}
 
   function buildWorkbook(p){
     const C=listaComp(p.ini,p.fim), n=C.length, last=n-1;
@@ -61,7 +61,7 @@
     // Qtd = Σ (HE/dia do dia-da-semana × nº daquele dia na competência). Param: he50=col H, he100=col I, art71=col J (linhas 4..10). Contagem: cols B..H, linha jrCountRow.
     function qtdFormula(tipoName,i){
       if(!JOR) return null;
-      const cr=jrCountRow(i), col=tipoName==='he50'?'I':tipoName==='he100'?'J':'K', t=[];
+      const cr=jrCountRow(i), col=tipoName==='he50'?'I':tipoName==='he100'?'J':tipoName==='noturno'?'G':'K', t=[];
       for(let wd=0;wd<=6;wd++){ t.push(`JORNADA!${col}${4+wd}*JORNADA!${String.fromCharCode(66+wd)}${cr}`); }
       return t.join("+");
     }
@@ -91,7 +91,8 @@
       ["fgts_diferenca_salario",p.fgtsDiferencaSalario||"Nao"],
       ["aviso_dias",p.avisoDias||39],["aplica_correcao",p.aplicaCorrecao||"Sim"],["selic_pos_ajuiz",p.selicPos||0],
       ["ajuizamento (alvo IPCA-E)",ajuiz],["selic_acumulada_ate",dataBase],
-      ["pct_honorarios",p.pctHon||0.15],["inss_patronal",p.inssPatronal||0.23],["dependentes",p.dependentes||0],["irrf_meses_rra",p.irrfMeses||n]];
+      ["pct_honorarios",p.pctHon||0.15],["inss_patronal",p.inssPatronal||0.23],["dependentes",p.dependentes||0],["irrf_meses_rra",p.irrfMeses||n],
+      ["dias_saldo",p.diasSaldo||30],["avos_13",p.avos13!=null?p.avos13:12],["avos_ferias",p.avosFerias!=null?p.avosFerias:12]];
     const K={}; const PR=[["Parâmetro","Valor"]]; PREM.forEach(([k,v],i)=>{K[k]=i+2;PR.push([k,v]);});
     XLSX.utils.book_append_sheet(wb,mkSheet(PR),"PREMISSAS");
     const pp=k=>`PREMISSAS!$B$${K[k]}`;
@@ -103,7 +104,7 @@
       EV.push([c.k,F(`=${pp("salario_base")}`),F(`=IF(${pp("vr_integra_base")}="Sim",${pp("vale_refeicao")},0)`),
         F(`=IF(${pp("aplica_periculosidade")}="Sim",${pp("salario_base")}*${pp("pct_periculosidade")},0)`),
         F(`=IF(${pp("aplica_insalubridade")}="Sim",IF(${pp("aplica_cumulacao")}="Sim",${ins},IF(${pp("aplica_periculosidade")}="Sim",0,${ins})),0)`),
-        F(`=B${r}+C${r}+D${r}+E${r}`),F(`=${pp("divisor")}`),F(`=F${r}/G${r}`)]);});
+        F(`=B${r}+C${r}+D${r}+E${r}`),F(`=${pp("divisor")}`),F(`=IF(G${r}=0,0,F${r}/G${r})`)]);});
     XLSX.utils.book_append_sheet(wb,mkSheet(EV),"EVOLUCAO");
     if(jrData) XLSX.utils.book_append_sheet(wb,mkSheet(jrData),"JORNADA");
 
@@ -129,6 +130,28 @@
     }
     const t50=motorHE("HE_50","adic_he_50",q50,true,JOR?"he50":null), tdom=motorHE("HE_100_DOM","adic_he_100",qdom,true,JOR?"he100":null), tint=motorHE("HE_ART71","adic_he_50",qint,false,JOR?"art71":null);
 
+    // ---- ADICIONAL NOTURNO (20%) como verba própria — só quando houver pedido (item 5) ----
+    // Base: horas noturnas/mês (col G da JORNADA) × valor-hora × 20%. A redução da hora
+    // noturna (52,5min) e a prorrogação Súmula 60 já entram no cálculo de HE; aqui é o adicional.
+    let tnot=null;
+    if(p.temAdicNoturno && JOR){
+      const AN=[["ADICIONAL NOTURNO (20% s/ horas noturnas)"],[],["Comp","Horas Not.","Valor-Hora","Valor Mês","Aviso","13º","Férias","SUBTOTAL","Fator","CORRIGIDO","SELIC%","Juros","TOTAL"]];
+      const r0=4;
+      C.forEach((c,i)=>{const r=r0+i,er=R(i),h=rh(i);
+        const qn=qtdFormula('noturno',i)||"0";
+        let av="0",d13="0",fer="0";const pi=Math.max(0,i-12);
+        if(i===last&&i>0)av=`AVERAGE(D${r0+pi}:D${r-1})*${pp("aviso_dias")}/30`;
+        if(c.m===12||i===last){const rows=C.map((x,j)=>x.y===c.y?r0+j:null).filter(x=>x!=null);d13=`SUM(D${rows[0]}:D${rows[rows.length-1]})/12`;}
+        if(((c.m===1&&i>=11)||i===last)&&i>0)fer=`AVERAGE(D${r0+pi}:D${r-1})*1.3333`;
+        AN.push([c.k,F(`=${qn}`),F(`=EVOLUCAO!H${er}`),F(`=B${r}*C${r}*0.20`),
+          F(`=${av}`),F(`=${d13}`),F(`=${fer}`),F(`=D${r}+E${r}+F${r}+G${r}`),F(`=TABELAS!C${er}`),
+          F(`=IF(${pp("aplica_correcao")}="Sim",H${r}*I${r},H${r})`),F(`=${pp("selic_pos_ajuiz")}`),F(`=J${r}*K${r}`),F(`=J${r}+L${r}`)]);
+      });
+      tnot=r0+n;
+      AN.push(["TOTAL","","",F(`=SUM(D${r0}:D${r0+n-1})`),F(`=SUM(E${r0}:E${r0+n-1})`),F(`=SUM(F${r0}:F${r0+n-1})`),F(`=SUM(G${r0}:G${r0+n-1})`),F(`=SUM(H${r0}:H${r0+n-1})`),"",F(`=SUM(J${r0}:J${r0+n-1})`),"",F(`=SUM(L${r0}:L${r0+n-1})`),F(`=SUM(M${r0}:M${r0+n-1})`)]);
+      XLSX.utils.book_append_sheet(wb,mkSheet(AN),"ADICIONAL_NOTURNO");
+    }
+
     // ---- motor adicional (peric/insal) ----
     function motorAd(nome,baseFx,pctKey,aplicaKey){
       const M=[[nome],[],["Comp","Base","%/Grau","Valor Mês","Aviso","13º","Férias","SUBTOTAL","Fator","CORRIGIDO","SELIC%","Juros","TOTAL"]];
@@ -150,15 +173,34 @@
     const tins=motorAd("INSALUBRIDADE",er=>`IF(${pp("base_insalubridade")}="Salario Minimo",TABELAS!B${er},${pp("salario_base")})`,"grau_insalubridade","aplica_insalubridade");
 
     // ---- RESCISORIAS ----
-    const brf=`EVOLUCAO!I${R(last)}`; // não existe col I em EVOLUCAO aqui; base rescisória = salário+VR
     const baseResc=`(${pp("salario_base")}+${pp("vale_refeicao")})`;
     const RS=[["RESCISÓRIAS"],[],["Verba","Valor"]];
-    const Lr=[["Saldo de salário 24d",`=${pp("salario_base")}/30*24`],["Aviso 39d",`=${baseResc}/30*${pp("aviso_dias")}`],
-      ["13º prop 2/12",`=${baseResc}/12*2`],["Férias prop 2/12 +1/3",`=${baseResc}/12*2*1.3333`],
-      ["Férias vencidas 2(dobro)+1/3",`=${baseResc}*3*1.3333`],["13º vencidos 2",`=${baseResc}*2`]];
+    // (1) saldo = dias efetivamente trabalhados no mês da demissão
+    // (2) 13º e férias proporcionais por AVOS reais (meses >=15 dias)
+    // (4) aviso já vem proporcional (30 + 3/ano) em aviso_dias
+    const Lr=[
+      ["Saldo de salário",`=${pp("salario_base")}/30*${pp("dias_saldo")}`],
+      ["Aviso prévio indenizado",`=${baseResc}/30*${pp("aviso_dias")}`],
+      ["13º proporcional",`=${baseResc}/12*${pp("avos_13")}`],
+      ["Férias proporcionais +1/3",`=${baseResc}/12*${pp("avos_ferias")}*1.3333`]
+    ];
+    // (3) férias vencidas: SÓ quando houver pedido; e SIMPLES (nunca dobro automático)
+    if(p.temFeriasVencidas){
+      Lr.push(["Férias vencidas +1/3",`=${baseResc}*1.3333`]);
+      Lr.push(["13º vencidos",`=${baseResc}`]);
+    }
     Lr.forEach(([a,f])=>RS.push([a,F(f)]));
     const trs=RS.length+1; RS.push(["TOTAL",F(`=SUM(B4:B${trs-1})`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(RS),"RESCISORIAS");
+    // linhas dinâmicas: saldo=B4, aviso=B5, 13ºprop=B6, fériasProp=B7, [fériasVenc, 13ºVenc se houver]
+    const rescLin={saldo:4,aviso:5,dec13:6,ferias:7};
+    if(p.temFeriasVencidas){ rescLin.feriasVenc=8; rescLin.dec13Venc=9; }
+    // FGTS incide sobre saldo + aviso + 13º (proporcional e vencido, não sobre férias)
+    const fgtsResc = p.temFeriasVencidas
+      ? `RESCISORIAS!B${rescLin.saldo}+RESCISORIAS!B${rescLin.aviso}+RESCISORIAS!B${rescLin.dec13}+RESCISORIAS!B${rescLin.dec13Venc}`
+      : `RESCISORIAS!B${rescLin.saldo}+RESCISORIAS!B${rescLin.aviso}+RESCISORIAS!B${rescLin.dec13}`;
+    // IRRF tributável: saldo + aviso + 13º (proporcional e vencido)
+    const irrfResc = fgtsResc;
 
     // ---- FGTS MENSAL ----
     const FG=[["FGTS MÊS A MÊS + MULTA 40%"],[],["Comp","Base Salarial","FGTS 8%","Fator","FGTS Corrigido"]];
@@ -168,7 +210,7 @@
       FG.push([c.k,F(base),F(`=B${r}*${pp("pct_fgts")}`),F(`=TABELAS!C${er}`),F(`=IF(${pp("aplica_correcao")}="Sim",C${r}*D${r},C${r})`)]);
     });
     const dataLast=3+n, rResc=dataLast+1, tfg=dataLast+2, tmul=dataLast+3;
-    FG.push(["FGTS s/ rescisórias (saldo+aviso+13)","",F(`=(RESCISORIAS!B4+RESCISORIAS!B5+RESCISORIAS!B6+RESCISORIAS!B9)*${pp("pct_fgts")}`),"",F(`=C${rResc}`)]);
+    FG.push(["FGTS s/ rescisórias (saldo+aviso+13)","",F(`=(${fgtsResc})*${pp("pct_fgts")}`),"",F(`=C${rResc}`)]);
     FG.push(["TOTAL FGTS","",F(`=SUM(C${r0f}:C${rResc})`),"",F(`=SUM(E${r0f}:E${rResc})`)]);
     FG.push(["MULTA 40%","","","",F(`=IF(${pp("aplica_multa_fgts")}="Sim",E${tfg}*${pp("pct_multa_fgts")},0)`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(FG),"FGTS_MENSAL");
@@ -193,9 +235,9 @@
     // ---- IRRF/RRA ----
     const ib=TAB.T_IRRF[C[last].k];
     const IX=[["IRRF por RRA (férias indeniz./juros isentos — Súm.63 STJ)"],
-      ["Base tributável",F(`=(HE_50!J${t50}-HE_50!I${t50})+(HE_100_DOM!J${tdom}-HE_100_DOM!I${tdom})+(PERICULOSIDADE!H${tper}-PERICULOSIDADE!G${tper})+(INSALUBRIDADE!H${tins}-INSALUBRIDADE!G${tins})+RESCISORIAS!B4+RESCISORIAS!B5+RESCISORIAS!B6+RESCISORIAS!B9-INSS_RECLAMANTE!G${tie}`)],
+      ["Base tributável",F(`=(HE_50!J${t50}-HE_50!I${t50})+(HE_100_DOM!J${tdom}-HE_100_DOM!I${tdom})+(PERICULOSIDADE!H${tper}-PERICULOSIDADE!G${tper})+(INSALUBRIDADE!H${tins}-INSALUBRIDADE!G${tins})+${irrfResc}-INSS_RECLAMANTE!G${tie}`)],
       ["Meses RRA",F(`=${pp("irrf_meses_rra")}`)],["Dependentes",F(`=${pp("dependentes")}`)],
-      ["Base média mensal",F(`=B2/B3-B4*${ib[13]}`)],
+      ["Base média mensal",F(`=IF(B3=0,0,B2/B3)-B4*${ib[13]}`)],
       ["IRRF mensal",F(`=MAX(IF(B5<=${ib[0]},B5*${ib[1]}-${ib[2]},IF(B5<=${ib[3]},B5*${ib[4]}-${ib[5]},IF(B5<=${ib[6]},B5*${ib[7]}-${ib[8]},IF(B5<=${ib[9]},B5*${ib[10]}-${ib[11]},B5*${ib[10]}-${ib[11]})))),0)`)],
       ["IRRF TOTAL",F(`=B6*B3`)]];
     XLSX.utils.book_append_sheet(wb,mkSheet(IX),"IRRF_RRA");
@@ -211,8 +253,13 @@
     push(["INTERVALO ART.71 (indenizatório)","","","",""]);push(["  Principal (sem reflexos)",F(`=HE_ART71!E${tint}`),"","",""]);
     sub.push(push(["  → SUBTOTAL",F(`=HE_ART71!J${tint}`),F(`=HE_ART71!L${tint}-HE_ART71!J${tint}`),F(`=HE_ART71!O${tint}-HE_ART71!L${tint}`),F(`=HE_ART71!O${tint}`)]));
     blocoAd("PERICULOSIDADE",tper,"PERICULOSIDADE"); blocoAd("INSALUBRIDADE",tins,"INSALUBRIDADE");
+    if(tnot) blocoAd("ADICIONAL NOTURNO 20%",tnot,"ADICIONAL_NOTURNO");
     push(["VERBAS RESCISÓRIAS","","","",""]);
-    ["Saldo de salário","Aviso prévio indenizado","13º proporcional","Férias proporcionais +1/3","Férias vencidas (dobro)+1/3","13º vencidos"].forEach((nm,j)=>push(["  "+nm,F(`=RESCISORIAS!B${4+j}`),"","",""]));
+    (function(){
+      const nomes=["Saldo de salário","Aviso prévio indenizado","13º proporcional","Férias proporcionais +1/3"];
+      if(p.temFeriasVencidas){ nomes.push("Férias vencidas +1/3"); nomes.push("13º vencidos"); }
+      nomes.forEach((nm,j)=>push(["  "+nm,F(`=RESCISORIAS!B${4+j}`),"","",""]));
+    })();
     const rc=`RESCISORIAS!B${trs}`; sub.push(push(["  → SUBTOTAL",F(`=${rc}`),F(`=${rc}*${fatr}-${rc}`),F(`=${rc}*${fatr}*${selfac}`),F(`=${rc}*${fatr}*(1+${selfac})`)]));
     const fh=`FGTS_MENSAL!C${tfg}`,fi=`FGTS_MENSAL!E${tfg}`;
     sub.push(push(["FGTS 8% (mês a mês)",F(`=${fh}`),F(`=${fi}-${fh}`),F(`=${fi}*${selfac}`),F(`=${fi}*(1+${selfac})`)]));
@@ -261,7 +308,7 @@
       ws['!cols']=widths;
     });
     wb.Workbook={CalcPr:{fullCalcOnLoad:true}};
-    wb.SheetNames=["RESUMO","EVOLUCAO","JORNADA","HE_50","HE_100_DOM","HE_ART71","PERICULOSIDADE","INSALUBRIDADE","RESCISORIAS","FGTS_MENSAL","INSS_RECLAMANTE","INSS_RECLAMADA","IRRF_RRA","PREMISSAS","TABELAS","TAB_IRRF"].filter(n=>wb.Sheets[n]);
+    wb.SheetNames=["RESUMO","EVOLUCAO","JORNADA","HE_50","HE_100_DOM","HE_ART71","ADICIONAL_NOTURNO","PERICULOSIDADE","INSALUBRIDADE","RESCISORIAS","FGTS_MENSAL","INSS_RECLAMANTE","INSS_RECLAMADA","IRRF_RRA","PREMISSAS","TABELAS","TAB_IRRF"].filter(n=>wb.Sheets[n]);
     return wb;
   }
 
