@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FazAI · Análise de Processo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
+    --line:#cfd8e6; --bg:#EEF1F6; --panel:#f7f9fc; --muted:#5A6472;
+    --warn-bg:#fff4e8; --warn-line:#f0c088; --ok:#1B7A3D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:12px}
+  header .logo{font-weight:800;font-size:20px;letter-spacing:.5px}
+  header .logo b{color:var(--orange)}
+  header .sub{font-size:13px;color:#AEB8CC;margin-left:auto}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:20px}
+  h1{font-size:22px;color:var(--navy);margin:0 0 6px}
+  .lead{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:34px;text-align:center;cursor:pointer;transition:.15s;background:var(--panel)}
+  .drop:hover{border-color:var(--orange);background:#fff}
+  .drop .big{font-size:15px;font-weight:600;color:var(--navy)}
+  .drop .small{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .picker{margin-top:14px;padding:14px 16px;border:1px solid var(--line);background:var(--panel);border-radius:10px;display:none}
+  .picker b{color:var(--navy)}
+  input[type=text]{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px}
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-weight:600;cursor:pointer;font-size:14px}
+  .btn-primary{background:var(--orange);color:#fff}
+  .btn-primary:disabled{background:#c9ccd2;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .status{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px}
+  .okmsg{color:var(--ok);font-weight:600}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .loader{display:none;text-align:center;padding:40px}
+  .spin{width:38px;height:38px;border:4px solid #e3e8f0;border-top-color:var(--orange);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 14px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .result{display:none}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .tab{padding:9px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);border-bottom:2px solid transparent}
+  .tab.on{color:var(--navy);border-bottom-color:var(--orange)}
+  .pane{display:none}
+  .pane.on{display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 18px}
+  th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+  td{padding:7px 10px;border-bottom:1px solid #e7ebf1;vertical-align:top}
+  tr:nth-child(even) td{background:#f6f8fb}
+  .sec-title{font-weight:700;color:var(--navy);font-size:15px;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--orange);display:inline-block}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .tag-def{background:#e3f4e8;color:#1B7A3D}
+  .tag-ind{background:#f4e3e3;color:#a11}
+  .tag-exc{background:#f4e3e3;color:#a11}
+  .tag-und{background:#fff0d8;color:#8a5a00}
+  .conf{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 14px;margin:6px 0;font-size:13px}
+  .conf b{color:#8a5a00}
+  ul.att{margin:6px 0;padding-left:20px}
+  ul.att li{margin-bottom:6px;font-size:13px}
+  pre{background:#1e1e2e;color:#d4d4e8;padding:16px;border-radius:8px;overflow:auto;font-size:12px;line-height:1.5}
+  .copybar{display:flex;justify-content:flex-end;margin-bottom:-8px}
+  .copybtn{font-size:12px;background:#2a2a3e;color:#d4d4e8;border:none;padding:5px 12px;border-radius:6px;cursor:pointer}
+  .err{background:#fdecec;border:1px solid #f0b0b0;color:#a11;padding:12px 14px;border-radius:8px;font-size:14px}
+  .meta{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .meta b{color:var(--navy)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Faz<b>AI</b></div>
+  <div class="sub">Análise de Processo · leitura de decisões</div>
+</header>
+
+<div class="wrap">
+  <div class="card" id="card-input">
+    <h1>Análise de decisões trabalhistas</h1>
+    <p class="lead">Suba a decisão (sentença, acórdão) ou o processo com várias peças. O sistema lê, consolida a cadeia decisória e devolve o mapa de verbas + situação processual para sua conferência. <b>Não calcula valores</b> — extrai os comandos e sinaliza o que exige decisão sua.</p>
+
+    <input type="file" id="file" accept=".pdf" style="display:none">
+    <div class="drop" id="drop">
+      <div class="big">Clique para selecionar o PDF</div>
+      <div class="small">sentença, acórdão ou processo completo · qualquer tamanho</div>
+    </div>
+
+    <div class="picker" id="picker">
+      <div style="margin-bottom:4px"><b>Processo grande — <span id="pinfo"></span></b></div>
+      <div class="hint" style="margin-bottom:10px">Informe só as páginas que importam (inicial, sentença, acórdão). Ex.: <b>1-15, 340-352, 401-410</b></div>
+      <input type="text" id="ranges" placeholder="ex: 1-15, 340-352, 401-410">
+      <div class="row">
+        <button class="btn btn-primary" onclick="recortar()">Usar essas páginas</button>
+        <button class="btn btn-ghost" onclick="usarInteiro()">Usar o PDF inteiro</button>
+      </div>
+      <div class="status" id="pstatus"></div>
+    </div>
+
+    <div class="status" id="fstatus"></div>
+    <div class="row">
+      <button class="btn btn-primary" id="go" disabled onclick="analisar()">Analisar decisões</button>
+    </div>
+  </div>
+
+  <div class="card loader" id="loader">
+    <div class="spin"></div>
+    <div id="loadmsg" style="font-weight:600;color:var(--navy)">Lendo as decisões…</div>
+    <div class="hint">Pode levar de 30s a 2min em processos grandes.</div>
+  </div>
+
+  <div class="card result" id="result">
+    <div class="tabs">
+      <div class="tab on" data-p="resumo" onclick="tab('resumo')">Resumo para conferência</div>
+      <div class="tab" data-p="json" onclick="tab('json')">JSON (dados)</div>
+    </div>
+    <div class="pane on" id="pane-resumo"></div>
+    <div class="pane" id="pane-json">
+      <div class="copybar"><button class="copybtn" onclick="copiarJson()">copiar JSON</button></div>
+      <pre id="jsonout"></pre>
+    </div>
+    <div class="row">
+      <button class="btn btn-ghost" onclick="location.reload()">Nova análise</button>
+    </div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const PROMPT = `Você é um perito contábil que elabora cálculos para processos judiciais trabalhistas. Vou te enviar um processo trabalhista — pode ser UMA peça (só a sentença) ou VÁRIAS (sentença, embargos, acórdão do TRT, acórdão de embargos, decisão de recurso de revista, agravo de petição, agravo de instrumento e demais decisões modificativas). Analise TODAS as decisões e devolva: (1) o mapa consolidado de verbas e parâmetros para liquidação, e (2) a situação processual e o risco de alteração do crédito.
+
+Você NÃO calcula valores. Você NÃO interpreta o que o juiz "quis dizer". Transcreve o que está EXPRESSO, reconcilia a cadeia de decisões e sinaliza o que for omisso, remissivo, herdado ou controvertido para conferência humana.
+
+PASSO 1 — IDENTIFIQUE E ORDENE AS PEÇAS: liste todas as decisões em ordem cronológica (mais antiga → mais recente): tipo, data, ID/folhas, e o que cada uma ALTEROU.
+
+PASSO 2 — CONSOLIDE CADA VERBA (regra de ouro): o que EXECUTA é o resultado final da cadeia. 1) A decisão MAIS RECENTE que tratou o ponto prevalece — indique quando reformar outra. 2) O que uma peça superior NÃO tocou PERMANECE. 3) Reforma de EXISTÊNCIA ≠ de PARÂMETRO: recurso que EXCLUI → statusFinal EXCLUÍDA; que MANTÉM mas altera parâmetro → DEFERIDA com o novo, demais HERDAM da anterior; que DEFERE verba antes indeferida → DEFERIDA; que SILENCIA → permanece. 4) HERANÇA DE PARÂMETRO (crítico): acórdão quase nunca repete base/reflexos/período; ao alterar só um, HERDE o resto E marque requerConferencia com "parâmetros herdados de <peça>; recurso alterou apenas <X>". Nunca presuma que o recurso zerou o que não mencionou. 5) Indeterminável ("provimento parcial nos termos do voto" sem dispositivo claro) → statusFinal INDEFINIDO + requerConferencia.
+
+PASSO 3 — DENTRO DE CADA PEÇA: tópico a tópico, comando ≠ raciocínio. Cada decisão vem em TÓPICOS NUMERADOS + DISPOSITIVO. Processe UMA VERBA POR VEZ: leia o tópico + o item do dispositivo e RECONCILIE (o dispositivo costuma repetir os parâmetros — confirma; se divergir, o DISPOSITIVO prevalece e sinalize). Capture só COMANDO ("defiro","condeno","indefiro","dou/nego provimento","reformo para excluir/reduzir","declaro prescritos os créditos anteriores a DD/MM/AAAA","adoto o divisor X","excluídos os afastamentos"), nunca RACIOCÍNIO ("o reclamante alega","a reclamada sustenta","em tese","discute-se","a inicial requer"). Na dúvida, trate como raciocínio e sinalize. Padrão "adicional de 50% OU outro mais benéfico previsto em norma coletiva": NÃO cravou — capture "50% ou CCT (verificar)" + requerConferencia.
+
+PASSO 4 — PARÂMETROS. Por verba DEFERIDA (só o expresso): período, base de cálculo, percentual/adicional/divisor, reflexos deferidos, exclusões, baseApuracao (evolução/fixo), abatimento (valores pagos a deduzir), observacoesTecnicas (OJs/Súmulas), decisão que deferiu. GERAIS: prescrição e marco, limitação ao pedido, honorários (sucumbenciais e periciais: % e base), contribuições previdenciárias/fiscais, dedução de valores pagos, data-base, responsáveis (grupo econômico/subsidiária + limite). CORREÇÃO/JUROS (não devolva só "omisso"): índice nominal fixado → transcreva; remissão sem nomear índice ("na forma da lei","ADCs 58/59","Lei 14.905/2024") → transcreva a remissão literal e aponte o índice que ela implica na data da decisão, marcando PONTO CONTROVERTIDO. Não presuma base/período/reflexo omissos → registre "omisso na decisão".
+
+PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não confirmado nos autos; data e documento; +/- 2 anos da rescisória art.975 CPC; parcial vs total; não presuma trânsito por ausência de recurso). Recursos pendentes/admitidos (tipo, parte, tema, situação). Impacto: para cada recurso da RECLAMADA, qual verba/parâmetro pode mudar e em que medida. Conclusão (até 3 linhas): crédito consolidado ou risco concreto? RR admitido que comprometa a condenação?
+
+TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula.
+
+SAÍDA — DUAS PARTES. Primeiro um bloco \\\`\\\`\\\`json com o JSON válido, depois (fora do bloco) NADA MAIS — só o JSON. Estrutura do JSON:
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
+
+let arquivo=null, arquivoB64=null, arquivoTexto='';
+const $=id=>document.getElementById(id);
+
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>selec(e.target.files[0]);
+
+async function selec(file){
+  if(!file) return;
+  arquivo=file; arquivoB64=null; arquivoTexto='';
+  $('fstatus').innerHTML='';
+  $('picker').style.display='none';
+  const GRANDE=8*1024*1024;
+  if(file.size>GRANDE){
+    try{
+      const ab=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+      $('pinfo').textContent=pdf.numPages+' páginas, '+(file.size/1048576).toFixed(1)+' MB';
+      $('picker').style.display='block';
+      $('fstatus').textContent='';
+      return;
+    }catch(e){ /* segue com arquivo todo */ }
+  }
+  await preparar(file);
+}
+
+async function preparar(file){
+  arquivo=file;
+  $('fstatus').innerHTML='<span class="okmsg">✓ '+file.name+' ('+(file.size/1048576).toFixed(2)+' MB)</span>';
+  $('go').disabled=false;
+  // extrai texto (se PDF nativo) — mais barato e preciso que mandar o PDF
+  try{
+    const ab=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+    let t='';
+    for(let i=1;i<=pdf.numPages;i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); t+=c.items.map(x=>x.str).join(' ')+'\n'; }
+    arquivoTexto=t.trim();
+  }catch(e){ arquivoTexto=''; }
+  // b64 de reserva (para PDF escaneado)
+  const r=new FileReader();
+  r.onload=()=>{ arquivoB64=r.result.split(',')[1]; };
+  r.readAsDataURL(file);
+}
+
+function parseRanges(txt,max){
+  const s=new Set();
+  (txt||'').split(',').forEach(p=>{p=p.trim();if(!p)return;
+    if(p.includes('-')){const[a,b]=p.split('-').map(x=>parseInt(x.trim(),10));if(!isNaN(a)&&!isNaN(b))for(let i=Math.min(a,b);i<=Math.max(a,b);i++)if(i>=1&&i<=max)s.add(i);}
+    else{const n=parseInt(p,10);if(!isNaN(n)&&n>=1&&n<=max)s.add(n);}});
+  return[...s].sort((x,y)=>x-y);
+}
+
+async function recortar(){
+  const st=$('pstatus');
+  try{
+    const ab=await arquivo.arrayBuffer();
+    const info=await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
+    const pgs=parseRanges($('ranges').value,info.numPages);
+    if(!pgs.length){ st.textContent='Informe ao menos uma página válida.'; return; }
+    st.textContent='Recortando '+pgs.length+' páginas…';
+    const src=await PDFLib.PDFDocument.load(ab);
+    const novo=await PDFLib.PDFDocument.create();
+    const cp=await novo.copyPages(src,pgs.map(p=>p-1));
+    cp.forEach(p=>novo.addPage(p));
+    const bytes=await novo.save();
+    const f=new File([bytes],'recorte_'+arquivo.name,{type:'application/pdf'});
+    $('picker').style.display='none';
+    await preparar(f);
+  }catch(e){ console.error(e); st.textContent='Não consegui recortar. Tente "usar o PDF inteiro".'; }
+}
+async function usarInteiro(){ $('picker').style.display='none'; await preparar(arquivo); }
+
+async function analisar(){
+  $('card-input').style.display='none';
+  $('loader').style.display='block';
+  try{
+    let content;
+    if(arquivoTexto && arquivoTexto.length>200){
+      content=[{type:'text',text:'DECISÕES DO PROCESSO (texto extraído do PDF):\n\n'+arquivoTexto+'\n\n---\n'+PROMPT}];
+    } else if(arquivoB64){
+      content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:arquivoB64}},{type:'text',text:PROMPT}];
+    } else {
+      throw new Error('Não consegui ler o arquivo. Recarregue e tente de novo.');
+    }
+    const res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:8000,messages:[{role:'user',content}]})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Erro na API');
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    render(txt);
+  }catch(e){
+    $('loader').style.display='none';
+    $('card-input').style.display='block';
+    $('fstatus').innerHTML='<div class="err">'+e.message+'</div>';
+  }
+}
+
+let ultimoJson=null;
+function render(txt){
+  $('loader').style.display='none';
+  $('result').style.display='block';
+  // extrai o JSON
+  let j=null;
+  const m=txt.match(/```json\s*([\s\S]*?)```/) || txt.match(/\{[\s\S]*\}/);
+  try{ j=JSON.parse(m ? (m[1]||m[0]) : txt); }catch(e){ j=null; }
+  ultimoJson=j;
+  $('jsonout').textContent = j ? JSON.stringify(j,null,2) : txt;
+  $('pane-resumo').innerHTML = j ? montarResumo(j) : '<div class="err">A IA respondeu, mas não em JSON válido. Veja a aba JSON para o texto cru.</div>';
+}
+
+function tagStatus(s){
+  const map={'DEFERIDA':'tag-def','INDEFERIDA':'tag-ind','EXCLUÍDA':'tag-exc','INDEFINIDO':'tag-und'};
+  return '<span class="tag '+(map[s]||'tag-und')+'">'+(s||'?')+'</span>';
+}
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function arr(a){ return Array.isArray(a)&&a.length?a.join(', '):'—'; }
+
+function montarResumo(j){
+  if(j.erro) return '<div class="err">'+esc(j.erro)+'</div>';
+  let h='';
+  const p=j.processo||{};
+  h+='<div class="meta"><b>'+esc(p.numero||'Processo')+'</b> · '+esc(p.reclamante||'')+' × '+esc((p.reclamadas||[]).join(', '))+(p.vara?' · '+esc(p.vara):'')+' · Resultado: <b>'+esc(j.resultadoConsolidado||'—')+'</b></div>';
+
+  // cronologia
+  if((j.cronologia||[]).length){
+    h+='<div class="sec-title">Cronologia das decisões</div><table><tr><th>Peça</th><th>Data</th><th>ID/fls</th><th>O que alterou</th></tr>';
+    j.cronologia.forEach(c=>h+='<tr><td>'+esc(c.tipo)+'</td><td>'+esc(c.data||'—')+'</td><td>'+esc(c.id||'—')+'</td><td>'+esc(c.alterou||'—')+'</td></tr>');
+    h+='</table>';
+  }
+
+  // verbas deferidas
+  const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const out=(j.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
+  h+='<div class="sec-title">Verbas para apurar</div>';
+  if(def.length){
+    h+='<table><tr><th>Verba</th><th>Período</th><th>Base</th><th>%/Adic/Divisor</th><th>Reflexos</th><th>Status</th></tr>';
+    def.forEach(v=>{
+      const per=(v.periodo&&(v.periodo.inicio||v.periodo.fim))?esc((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'—';
+      const pd=[v.percentual,v.divisor?('div '+v.divisor):''].filter(Boolean).map(esc).join(' · ')||'—';
+      h+='<tr><td><b>'+esc(v.descricao)+'</b>'+(v.requerConferencia?' ⚠':'')+'</td><td>'+per+'</td><td>'+esc(v.baseCalculo||'—')+'</td><td>'+pd+'</td><td>'+esc(arr(v.reflexos))+'</td><td>'+tagStatus(v.statusFinal)+'</td></tr>';
+    });
+    h+='</table>';
+  } else h+='<p class="hint">Nenhuma verba deferida identificada.</p>';
+
+  // indeferidas/excluídas
+  if(out.length){
+    h+='<div class="sec-title">Verbas NÃO apuráveis (indeferidas / excluídas)</div><table><tr><th>Verba</th><th>Status</th><th>Definida em</th><th>Obs.</th></tr>';
+    out.forEach(v=>h+='<tr><td>'+esc(v.descricao)+'</td><td>'+tagStatus(v.statusFinal)+'</td><td>'+esc((v.definidaEm&&v.definidaEm.tipo)||'—')+'</td><td>'+esc(v.observacao||'—')+'</td></tr>');
+    h+='</table>';
+  }
+
+  // parâmetros globais
+  const g=j.parametrosGlobais||{};
+  h+='<div class="sec-title">Parâmetros gerais</div><table>';
+  if(g.prescricao) h+='<tr><td>Prescrição</td><td>'+esc(g.prescricao.marco||'—')+(g.prescricao.requerConferencia?' ⚠ conferir':'')+' '+esc(g.prescricao.observacao||'')+'</td></tr>';
+  h+='<tr><td>Limitação ao pedido</td><td>'+(g.limitacaoAoPedido?'Sim':'Não/omisso')+'</td></tr>';
+  if(g.correcaoJuros){const c=g.correcaoJuros;h+='<tr><td>Correção/Juros</td><td>'+esc(c.transcricaoLiteral||c.indiceImplicado||'—')+(c.indiceImplicado&&c.transcricaoLiteral?' → implica '+esc(c.indiceImplicado):'')+(c.pontoControvertido?' <b>⚠ ponto controvertido</b>':'')+'</td></tr>';}
+  if(g.honorariosSucumbenciais)h+='<tr><td>Honorários sucumbenciais</td><td>'+esc(g.honorariosSucumbenciais.percentual||0)+'% sobre '+esc(g.honorariosSucumbenciais.base||'—')+'</td></tr>';
+  if(g.honorariosPericiais&&g.honorariosPericiais.valor)h+='<tr><td>Honorários periciais</td><td>R$ '+esc(g.honorariosPericiais.valor)+' ('+esc(g.honorariosPericiais.aCargoDe||'')+')</td></tr>';
+  if(g.dataBase)h+='<tr><td>Data-base</td><td>'+esc(g.dataBase)+'</td></tr>';
+  (g.responsaveis||[]).forEach(r=>h+='<tr><td>Responsável</td><td>'+esc(r.nome)+' ('+esc(r.tipo)+(r.limite?', '+esc(r.limite):'')+')</td></tr>');
+  h+='</table>';
+
+  // situação processual
+  const s=j.situacaoProcessual||{};
+  h+='<div class="sec-title">Situação processual e risco</div><table>';
+  h+='<tr><td>Trânsito em julgado</td><td>'+esc(s.transitoEmJulgado||'—')+(s.dataTransito?' ('+esc(s.dataTransito)+')':'')+(s.transitoParcial?' — parcial':'')+'</td></tr>';
+  if((s.recursosPendentes||[]).length){
+    s.recursosPendentes.forEach(r=>h+='<tr><td>Recurso: '+esc(r.tipo)+'</td><td>'+esc(r.parte)+' — '+esc(r.tema)+' ('+esc(r.situacao)+')'+(r.verbaImpactada?' → impacta: '+esc(r.verbaImpactada):'')+(r.risco?'. Risco: '+esc(r.risco):'')+'</td></tr>');
+  } else h+='<tr><td>Recursos pendentes</td><td>Nenhum identificado</td></tr>';
+  if(s.conclusaoRisco)h+='<tr><td><b>Conclusão</b></td><td><b>'+esc(s.conclusaoRisco)+'</b></td></tr>';
+  h+='</table>';
+
+  // pontos de atenção
+  const pa=[];
+  (j.verbas||[]).forEach(v=>{ if(v.requerConferencia&&v.observacao) pa.push('<b>'+esc(v.descricao)+':</b> '+esc(v.observacao)); });
+  (j.pontosDeAtencao||[]).forEach(x=>pa.push(esc(x)));
+  if(pa.length){
+    h+='<div class="sec-title">⚠ Conferir antes de calcular</div><div class="conf"><ul class="att">';
+    pa.forEach(x=>h+='<li>'+x+'</li>');
+    h+='</ul></div>';
+  }
+  return h;
+}
+
+function tab(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
+  document.querySelectorAll('.pane').forEach(pn=>pn.classList.remove('on'));
+  $('pane-'+p).classList.add('on');
+}
+function copiarJson(){ if(ultimoJson) navigator.clipboard.writeText(JSON.stringify(ultimoJson,null,2)); }
+</script>
+</body>
+</html>
