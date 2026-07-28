@@ -111,9 +111,11 @@
   <div class="card result" id="result">
     <div class="tabs">
       <div class="tab on" data-p="resumo" onclick="tab('resumo')">Resumo para conferência</div>
+      <div class="tab" data-p="dados" onclick="tab('dados')">Dados para o cálculo</div>
       <div class="tab" data-p="json" onclick="tab('json')">JSON (dados)</div>
     </div>
     <div class="pane on" id="pane-resumo"></div>
+    <div class="pane" id="pane-dados"></div>
     <div class="pane" id="pane-json">
       <div class="copybar"><button class="copybtn" onclick="copiarJson()">copiar JSON</button></div>
       <pre id="jsonout"></pre>
@@ -133,6 +135,8 @@ Você NÃO calcula valores. Você NÃO interpreta o que o juiz "quis dizer". Tra
 
 PASSO 1 — IDENTIFIQUE E ORDENE AS PEÇAS: liste todas as decisões em ordem cronológica (mais antiga → mais recente): tipo, data, ID/folhas, e o que cada uma ALTEROU.
 
+DADOS CONTRATUAIS (preencha em "dadosContratuais" SÓ o que constar EXPRESSO nas decisões; use null no que não constar — NÃO invente): dataAjuizamento (costuma aparecer na análise da prescrição), dataAdmissao, dataDemissao, tipoRescisao, funcao, salario, dataBaseAtualizacao, evolucaoSalarial. Esses dados serão confirmados/completados pelo calculista depois — sua função é só adiantar o que a decisão já revelou.
+
 PASSO 2 — CONSOLIDE CADA VERBA (regra de ouro): o que EXECUTA é o resultado final da cadeia. 1) A decisão MAIS RECENTE que tratou o ponto prevalece — indique quando reformar outra. 2) O que uma peça superior NÃO tocou PERMANECE. 3) Reforma de EXISTÊNCIA ≠ de PARÂMETRO: recurso que EXCLUI → statusFinal EXCLUÍDA; que MANTÉM mas altera parâmetro → DEFERIDA com o novo, demais HERDAM da anterior; que DEFERE verba antes indeferida → DEFERIDA; que SILENCIA → permanece. 4) HERANÇA DE PARÂMETRO (crítico): acórdão quase nunca repete base/reflexos/período; ao alterar só um, HERDE o resto E marque requerConferencia com "parâmetros herdados de <peça>; recurso alterou apenas <X>". Nunca presuma que o recurso zerou o que não mencionou. 5) Indeterminável ("provimento parcial nos termos do voto" sem dispositivo claro) → statusFinal INDEFINIDO + requerConferencia.
 
 PASSO 3 — DENTRO DE CADA PEÇA: tópico a tópico, comando ≠ raciocínio. Cada decisão vem em TÓPICOS NUMERADOS + DISPOSITIVO. Processe UMA VERBA POR VEZ: leia o tópico + o item do dispositivo e RECONCILIE (o dispositivo costuma repetir os parâmetros — confirma; se divergir, o DISPOSITIVO prevalece e sinalize). Capture só COMANDO ("defiro","condeno","indefiro","dou/nego provimento","reformo para excluir/reduzir","declaro prescritos os créditos anteriores a DD/MM/AAAA","adoto o divisor X","excluídos os afastamentos"), nunca RACIOCÍNIO ("o reclamante alega","a reclamada sustenta","em tese","discute-se","a inicial requer"). Na dúvida, trate como raciocínio e sinalize. Padrão "adicional de 50% OU outro mais benéfico previsto em norma coletiva": NÃO cravou — capture "50% ou CCT (verificar)" + requerConferencia.
@@ -144,7 +148,7 @@ PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não c
 TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula.
 
 IMPORTANTE — FORMATO DA RESPOSTA: responda EXCLUSIVAMENTE com o objeto JSON, começando com { e terminando com }. NÃO escreva nenhuma palavra antes ou depois. NÃO use blocos de código markdown. NÃO explique. Apenas o JSON puro. Estrutura do JSON:
-{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
 
 let arquivo=null, arquivoB64=null, arquivoTexto='';
 const $=id=>document.getElementById(id);
@@ -304,6 +308,7 @@ function render(txt, cortou){
   $('jsonout').textContent = j ? JSON.stringify(j,null,2) : txt;
   if(j){
     $('pane-resumo').innerHTML = aviso + montarResumo(j);
+    $('pane-dados').innerHTML = montarDados(j);
   } else if(cortou){
     $('pane-resumo').innerHTML='<div class="err">A análise foi cortada por tamanho (processo grande) e não deu para recuperar. Tente analisar menos decisões por vez — por exemplo, sentença+acórdão numa análise e as demais em outra.</div>';
   } else {
@@ -386,6 +391,60 @@ function montarResumo(j){
   return h;
 }
 
+function campo(label, id, valor, tipo, sugerido){
+  const v = valor==null?'':valor;
+  const badge = sugerido ? '<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>' : '';
+  const inp = tipo==='select'
+    ? '<select id="'+id+'">'+valor+'</select>'
+    : '<input type="'+(tipo||'text')+'" id="'+id+'" value="'+String(v).replace(/"/g,'&quot;')+'">';
+  return '<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">'+label+badge+'</label>'+inp+'</div>';
+}
+function montarDados(j){
+  const d = j.dadosContratuais || {};
+  const g = j.parametrosGlobais || {};
+  const ajuiz = d.dataAjuizamento || null;
+  const dataBase = d.dataBaseAtualizacao || g.dataBase || null;
+  const s = v=>v!=null && v!=='';
+  const opt = (val, atual) => '<option value="'+val+'"'+(atual===val?' selected':'')+'>'+val+'</option>';
+  const rescOpts = ['','sem justa causa','pedido de demissão','justa causa','rescisão indireta','término de contrato','distrato']
+    .map(o=>opt(o,d.tipoRescisao||'')).join('');
+  let h='';
+  h+='<div class="conf" style="margin-bottom:16px"><b>Confira e complete os dados do contrato.</b> O que a IA localizou nas decisões vem marcado; os demais só você tem (CTPS/inicial). Esses dados alimentam o cálculo — a decisão sozinha não os traz.</div>';
+  h+='<div style="max-width:620px">';
+  h+=campo('Data de ajuizamento','f_ajuiz',ajuiz,'date',s(ajuiz));
+  h+=campo('Data de admissão','f_adm',d.dataAdmissao,'date',s(d.dataAdmissao));
+  h+=campo('Data de demissão','f_dem',d.dataDemissao,'date',s(d.dataDemissao));
+  h+=campo('Tipo de rescisão','f_resc',rescOpts,'select',s(d.tipoRescisao));
+  h+=campo('Função / cargo','f_func',d.funcao,'text',s(d.funcao));
+  h+=campo('Salário (R$)','f_sal',d.salario,'number',s(d.salario));
+  h+=campo('Data-base de atualização','f_db',dataBase,'date',s(dataBase));
+  h+='<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">Evolução salarial'+(s(d.evolucaoSalarial)?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>':'')+'</label><textarea id="f_evol" style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px" placeholder="Reajustes/aumentos ao longo do contrato, se houver">'+(d.evolucaoSalarial||'')+'</textarea></div>';
+  h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar dados para o cálculo</button></div>';
+  h+='<div class="status" id="f_status"></div>';
+  h+='</div>';
+  return h;
+}
+function salvarDados(){
+  const dados={
+    dataAjuizamento:$('f_ajuiz').value||null,
+    dataAdmissao:$('f_adm').value||null,
+    dataDemissao:$('f_dem').value||null,
+    tipoRescisao:$('f_resc').value||'',
+    funcao:$('f_func').value||'',
+    salario:parseFloat($('f_sal').value)||null,
+    dataBaseAtualizacao:$('f_db').value||null,
+    evolucaoSalarial:$('f_evol').value||''
+  };
+  // valida o mínimo pro cálculo
+  const faltando=[];
+  if(!dados.dataAdmissao) faltando.push('admissão');
+  if(!dados.dataDemissao) faltando.push('demissão');
+  if(!dados.dataAjuizamento) faltando.push('ajuizamento');
+  const st=$('f_status');
+  if(faltando.length){ st.innerHTML='<span style="color:#a11">Faltam datas essenciais: '+faltando.join(', ')+'. Sem elas o cálculo não fecha.</span>'; }
+  else { st.innerHTML='<span class="okmsg">✓ Dados salvos. Prontos para o cálculo.</span>'; }
+  if(ultimoJson){ ultimoJson.dadosContratuais = Object.assign({}, ultimoJson.dadosContratuais, dados); $('jsonout').textContent=JSON.stringify(ultimoJson,null,2); }
+}
 function tab(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
   document.querySelectorAll('.pane').forEach(pn=>pn.classList.remove('on'));
