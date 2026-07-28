@@ -231,12 +231,14 @@ async function analisar(){
     }
     const res=await fetch('/api/claude',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:8000,messages:[{role:'user',content}]})
+      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:16000,messages:[{role:'user',content}]})
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Erro na API');
     const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    render(txt);
+    // detecta resposta cortada por limite de tokens
+    const cortou = data.stop_reason==='max_tokens';
+    render(txt, cortou);
   }catch(e){
     $('loader').style.display='none';
     $('card-input').style.display='block';
@@ -267,14 +269,46 @@ function extrairJson(txt){
   }
   return null;
 }
-function render(txt){
+function repararJsonCortado(txt){
+  // pega do primeiro { em diante e tenta fechar chaves/colchetes abertos
+  let i=txt.indexOf('{'); if(i<0) return null;
+  let s=txt.slice(i);
+  // remove última linha incompleta (provável corte no meio)
+  s=s.replace(/,?\s*"[^"]*$/,'').replace(/,\s*$/,'');
+  // conta e fecha aberturas pendentes
+  let abreC=0,abreCol=0,dentroStr=false,esc=false;
+  for(const ch of s){
+    if(esc){esc=false;continue;}
+    if(ch==='\\'){esc=true;continue;}
+    if(ch==='"'){dentroStr=!dentroStr;continue;}
+    if(dentroStr)continue;
+    if(ch==='{')abreC++; else if(ch==='}')abreC--;
+    else if(ch==='[')abreCol++; else if(ch===']')abreCol--;
+  }
+  if(dentroStr) s+='"';
+  s=s.replace(/,\s*$/,'');
+  while(abreCol-->0) s+=']';
+  while(abreC-->0) s+='}';
+  try{ return JSON.parse(s); }catch(e){ return null; }
+}
+function render(txt, cortou){
   $('loader').style.display='none';
   $('result').style.display='block';
-  const j=extrairJson(txt);
+  let j=extrairJson(txt);
+  let aviso='';
+  if(!j && cortou){
+    j=repararJsonCortado(txt); // tenta salvar o que veio antes do corte
+    if(j) aviso='<div class="conf"><b>⚠ Resposta parcial:</b> o processo é grande e a análise foi cortada por tamanho. O resumo abaixo pode estar incompleto (faltando as últimas verbas). Para processos grandes, analise as decisões em 2 partes.</div>';
+  }
   ultimoJson=j;
   $('jsonout').textContent = j ? JSON.stringify(j,null,2) : txt;
-  $('pane-resumo').innerHTML = j ? montarResumo(j)
-    : '<div class="err">A IA respondeu, mas não consegui extrair o JSON. Veja a aba JSON para o texto cru — me mostre para eu ajustar.</div>';
+  if(j){
+    $('pane-resumo').innerHTML = aviso + montarResumo(j);
+  } else if(cortou){
+    $('pane-resumo').innerHTML='<div class="err">A análise foi cortada por tamanho (processo grande) e não deu para recuperar. Tente analisar menos decisões por vez — por exemplo, sentença+acórdão numa análise e as demais em outra.</div>';
+  } else {
+    $('pane-resumo').innerHTML='<div class="err">A IA respondeu, mas não consegui extrair o JSON. Veja a aba JSON para o texto cru — me mostre para eu ajustar.</div>';
+  }
 }
 
 function tagStatus(s){
