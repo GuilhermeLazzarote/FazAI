@@ -143,7 +143,7 @@ PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não c
 
 TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula.
 
-SAÍDA — DUAS PARTES. Primeiro um bloco \\\`\\\`\\\`json com o JSON válido, depois (fora do bloco) NADA MAIS — só o JSON. Estrutura do JSON:
+IMPORTANTE — FORMATO DA RESPOSTA: responda EXCLUSIVAMENTE com o objeto JSON, começando com { e terminando com }. NÃO escreva nenhuma palavra antes ou depois. NÃO use blocos de código markdown. NÃO explique. Apenas o JSON puro. Estrutura do JSON:
 {"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
 
 let arquivo=null, arquivoB64=null, arquivoTexto='';
@@ -245,16 +245,36 @@ async function analisar(){
 }
 
 let ultimoJson=null;
+function extrairJson(txt){
+  if(!txt) return null;
+  const tentativas=[];
+  // 1) bloco ```json ... ```
+  let m=txt.match(/```json\s*([\s\S]*?)```/i); if(m) tentativas.push(m[1]);
+  // 2) bloco ``` ... ``` genérico
+  m=txt.match(/```\s*([\s\S]*?)```/); if(m) tentativas.push(m[1]);
+  // 3) do primeiro { até o último } (recorta texto antes/depois)
+  const i=txt.indexOf('{'), f=txt.lastIndexOf('}');
+  if(i>=0 && f>i) tentativas.push(txt.slice(i,f+1));
+  // 4) o texto inteiro
+  tentativas.push(txt);
+  for(let t of tentativas){
+    if(!t) continue;
+    let s=t.trim()
+      .replace(/^[^{]*/,'')           // tira qualquer coisa antes do primeiro {
+      .replace(/[^}]*$/,'')           // tira qualquer coisa depois do último }
+      .replace(/,\s*([}\]])/g,'$1');  // remove vírgula sobrando antes de } ou ]
+    try{ const j=JSON.parse(s); if(j && typeof j==='object') return j; }catch(e){}
+  }
+  return null;
+}
 function render(txt){
   $('loader').style.display='none';
   $('result').style.display='block';
-  // extrai o JSON
-  let j=null;
-  const m=txt.match(/```json\s*([\s\S]*?)```/) || txt.match(/\{[\s\S]*\}/);
-  try{ j=JSON.parse(m ? (m[1]||m[0]) : txt); }catch(e){ j=null; }
+  const j=extrairJson(txt);
   ultimoJson=j;
   $('jsonout').textContent = j ? JSON.stringify(j,null,2) : txt;
-  $('pane-resumo').innerHTML = j ? montarResumo(j) : '<div class="err">A IA respondeu, mas não em JSON válido. Veja a aba JSON para o texto cru.</div>';
+  $('pane-resumo').innerHTML = j ? montarResumo(j)
+    : '<div class="err">A IA respondeu, mas não consegui extrair o JSON. Veja a aba JSON para o texto cru — me mostre para eu ajustar.</div>';
 }
 
 function tagStatus(s){
