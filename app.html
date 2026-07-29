@@ -12,6 +12,7 @@
 <meta property="og:url" content="https://faz-ai-one.vercel.app"/>
 <meta property="og:type" content="website"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -789,6 +790,16 @@ a{color:var(--or);text-decoration:none}
             <p>Clique ou arraste o arquivo aqui</p>
           </div>
           <div id="liq-file-ok" class="alert alert-ok" style="display:none;margin-top:10px"></div>
+          <div id="liq-page-picker" style="display:none;margin-top:12px;padding:14px 16px;border:1px solid #cfd8e6;background:#f7f9fc;border-radius:10px">
+            <div style="font-weight:700;color:#16213E;margin-bottom:4px">Processo grande detectado — <span id="lpp-info"></span></div>
+            <div style="font-size:12.5px;color:#667;margin-bottom:10px">Informe só as páginas que importam (sentença, acórdão, inicial). Isso deixa a leitura mais rápida, barata e precisa. Ex.: <b>1-15, 340-352, 401-410</b></div>
+            <input type="text" id="lpp-ranges" placeholder="ex: 1-15, 340-352, 401-410" style="width:100%;padding:9px;border:1px solid #cfd8e6;border-radius:6px;font-size:14px;box-sizing:border-box">
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="aplicarRecorte()">Usar essas páginas</button>
+              <button class="btn btn-ghost btn-sm" onclick="usarPdfInteiro()">Usar o PDF inteiro mesmo assim</button>
+            </div>
+            <div id="lpp-status" style="font-size:12px;color:#667;margin-top:8px"></div>
+          </div>
           <button class="btn-liquidar" id="liq-btn-det" disabled onclick="liquidarDeterministico()">LIQUIDAR</button>
           <div id="liq-loading" style="display:none">
             <div class="panel" style="text-align:center;padding:48px">
@@ -1973,14 +1984,77 @@ function updateDashboard() {
 // ============================================================
 function onLiqFileSelect(file){
   if(!file) return;
-  liqFileB64=null; liqFileMime=null;
+  liqFileB64=null; liqFileMime=null; liqFileText=''; liqFile=file;
   const el=document.getElementById('liq-file-ok');
   el.style.display='block';
   el.textContent='✓ Arquivo selecionado: '+file.name;
-  liqFileText=''; liqFile=file;
+  document.getElementById('liq-upload').style.display='none';
+  // PDF grande? conta páginas e oferece o seletor (evita os limites de 4,5MB Vercel / 32MB API)
+  const GRANDE_MB = 8;
+  if(file.size > GRANDE_MB*1024*1024){
+    file.arrayBuffer().then(ab=>{
+      return pdfjsLib.getDocument({data:ab}).promise;
+    }).then(pdf=>{
+      const mb=(file.size/1024/1024).toFixed(1);
+      document.getElementById('lpp-info').textContent = pdf.numPages+' páginas, '+mb+' MB';
+      document.getElementById('liq-page-picker').style.display='block';
+    }).catch(()=>{ prepararArquivoLiq(file); }); // se não conseguir contar, segue com o arquivo todo
+    return;
+  }
+  prepararArquivoLiq(file);
+}
+
+// prepara o arquivo (b64 + texto) e habilita o botão — usado após seleção ou recorte
+function prepararArquivoLiq(file){
+  liqFile=file;
   fileToB64(file).then(b64=>{liqFileB64=b64;liqFileMime='application/pdf';var bd=document.getElementById('liq-btn-det'); if(bd) bd.disabled=false;});
   pdfToText(file).then(t=>{liqFileText=t;});
-  document.getElementById('liq-upload').style.display='none';
+}
+
+// interpreta "1-15, 340-352, 401" -> array de páginas (1-based)
+function parsearRanges(txt, maxPag){
+  const paginas=new Set();
+  (txt||'').split(',').forEach(parte=>{
+    parte=parte.trim(); if(!parte) return;
+    if(parte.includes('-')){
+      const [a,b]=parte.split('-').map(x=>parseInt(x.trim(),10));
+      if(!isNaN(a)&&!isNaN(b)) for(let i=Math.min(a,b);i<=Math.max(a,b);i++) if(i>=1&&i<=maxPag) paginas.add(i);
+    } else {
+      const n=parseInt(parte,10); if(!isNaN(n)&&n>=1&&n<=maxPag) paginas.add(n);
+    }
+  });
+  return [...paginas].sort((x,y)=>x-y);
+}
+
+// recorta as páginas escolhidas num PDF novo e menor
+async function aplicarRecorte(){
+  const st=document.getElementById('lpp-status');
+  try{
+    const ab = await liqFile.arrayBuffer();
+    const info = await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
+    const paginas = parsearRanges(document.getElementById('lpp-ranges').value, info.numPages);
+    if(paginas.length===0){ st.textContent='Informe ao menos uma página válida (ex: 1-15, 340-352).'; return; }
+    st.textContent='Recortando '+paginas.length+' páginas...';
+    const src = await PDFLib.PDFDocument.load(ab);
+    const novo = await PDFLib.PDFDocument.create();
+    const copiadas = await novo.copyPages(src, paginas.map(p=>p-1)); // pdf-lib é 0-based
+    copiadas.forEach(pg=>novo.addPage(pg));
+    const bytes = await novo.save();
+    const recortado = new File([bytes], 'recorte_'+liqFile.name, {type:'application/pdf'});
+    const mb=(recortado.size/1024/1024).toFixed(2);
+    document.getElementById('liq-page-picker').style.display='none';
+    document.getElementById('liq-file-ok').textContent='✓ '+paginas.length+' páginas selecionadas ('+mb+' MB)';
+    prepararArquivoLiq(recortado);
+  }catch(e){
+    console.error('recorte falhou:',e);
+    st.textContent='Não consegui recortar. Você pode usar o PDF inteiro, mas pode falhar se for muito grande.';
+  }
+}
+
+function usarPdfInteiro(){
+  document.getElementById('liq-page-picker').style.display='none';
+  document.getElementById('liq-file-ok').textContent='✓ Usando o PDF inteiro: '+liqFile.name;
+  prepararArquivoLiq(liqFile);
 }
 
 async function processLiquida() {
@@ -2336,6 +2410,7 @@ function clearLiquida() {
   document.getElementById('liq-result').style.display='none';
   document.getElementById('liq-file').value='';
   document.getElementById('liq-file-ok').style.display='none';
+  var _pp=document.getElementById('liq-page-picker'); if(_pp) _pp.style.display='none';
   const btn=document.getElementById('liq-btn-det');if(btn){btn.disabled=true;btn.style.display='block';}
   document.getElementById('liq-obs-panel').style.display='none';
   document.getElementById('liq-memoria-panel').style.display='none';
