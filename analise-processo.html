@@ -6,6 +6,12 @@
 <title>FazAI · Análise de Processo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="fazai_tabelas.js"></script>
+<script src="fazai_engine.js"></script>
+<script src="fazai_estilo.js"></script>
+<script src="fazai_hook.js"></script>
 <style>
   :root{
     --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
@@ -112,10 +118,12 @@
     <div class="tabs">
       <div class="tab on" data-p="resumo" onclick="tab('resumo')">Resumo para conferência</div>
       <div class="tab" data-p="dados" onclick="tab('dados')">Dados para o cálculo</div>
+      <div class="tab" data-p="calculo" onclick="tab('calculo')">Estimativa</div>
       <div class="tab" data-p="json" onclick="tab('json')">JSON (dados)</div>
     </div>
     <div class="pane on" id="pane-resumo"></div>
     <div class="pane" id="pane-dados"></div>
+    <div class="pane" id="pane-calculo"></div>
     <div class="pane" id="pane-json">
       <div class="copybar"><button class="copybtn" onclick="copiarJson()">copiar JSON</button></div>
       <pre id="jsonout"></pre>
@@ -419,7 +427,7 @@ function montarDados(j){
   h+=campo('Salário (R$)','f_sal',d.salario,'number',s(d.salario));
   h+=campo('Data-base de atualização','f_db',dataBase,'date',s(dataBase));
   h+='<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">Evolução salarial'+(s(d.evolucaoSalarial)?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>':'')+'</label><textarea id="f_evol" style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px" placeholder="Reajustes/aumentos ao longo do contrato, se houver">'+(d.evolucaoSalarial||'')+'</textarea></div>';
-  h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar dados para o cálculo</button></div>';
+  h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar e estimar</button><button class="btn btn-primary" style="background:var(--navy)" onclick="gerarExcel()">Gerar Excel formulado</button></div>';
   h+='<div class="status" id="f_status"></div>';
   h+='</div>';
   return h;
@@ -442,9 +450,185 @@ function salvarDados(){
   if(!dados.dataAjuizamento) faltando.push('ajuizamento');
   const st=$('f_status');
   if(faltando.length){ st.innerHTML='<span style="color:#a11">Faltam datas essenciais: '+faltando.join(', ')+'. Sem elas o cálculo não fecha.</span>'; }
-  else { st.innerHTML='<span class="okmsg">✓ Dados salvos. Prontos para o cálculo.</span>'; }
+  else { st.innerHTML='<span class="okmsg">✓ Dados salvos. Veja a aba <b>Estimativa</b>.</span>'; }
   if(ultimoJson){ ultimoJson.dadosContratuais = Object.assign({}, ultimoJson.dadosContratuais, dados); $('jsonout').textContent=JSON.stringify(ultimoJson,null,2); }
+  // roda a estimativa e mostra
+  if(!faltando.length && ultimoJson){
+    $('pane-calculo').innerHTML = estimarCalculo(ultimoJson, dados);
+    tab('calculo');
+  }
 }
+
+// Estimativa simplificada por verba — número real a partir dos dados, NÃO substitui a liquidação completa
+function estimarCalculo(j, d){
+  const sal = d.salario || 0;
+  if(!sal) return '<div class="err">Informe o salário para estimar os valores.</div>';
+  const adm = d.dataAdmissao ? new Date(d.dataAdmissao) : null;
+  const dem = d.dataDemissao ? new Date(d.dataDemissao) : null;
+  const ajz = d.dataAjuizamento ? new Date(d.dataAjuizamento) : null;
+  const presc = (j.parametrosGlobais && j.parametrosGlobais.prescricao && j.parametrosGlobais.prescricao.marco) ? new Date(j.parametrosGlobais.prescricao.marco) : null;
+  // período apurável: do maior entre (admissão, prescrição) até demissão
+  let ini = adm, fim = dem;
+  if(presc && (!ini || presc>ini)) ini = presc;
+  const meses = (ini && fim) ? Math.max(0, (fim.getFullYear()-ini.getFullYear())*12 + (fim.getMonth()-ini.getMonth())) : 0;
+  const valorHora = sal/220;
+  const def = (j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const linhas=[]; let total=0;
+
+  def.forEach(v=>{
+    let base=0, memo='';
+    const desc=(v.descricao||'').toLowerCase();
+    // heurística simples por tipo de verba (ESTIMATIVA)
+    const pctNum = (function(){ const m=String(v.percentual||'').match(/(\d+)\s*%/); return m?parseInt(m[1],10)/100:null; })();
+    if(/hora extra|extraordin/.test(desc)){
+      const p = pctNum || 0.5;
+      const heMes = 20; // premissa de demonstração: 20h/mês (editável no cálculo completo)
+      base = valorHora*(1+p)*heMes*meses; memo=heMes+'h/mês × '+meses+' meses × R$'+valorHora.toFixed(2)+' × '+(1+p);
+    } else if(/periculosidade/.test(desc)){
+      const p = pctNum || 0.30;
+      base = sal*p*meses; memo=(p*100)+'% × salário × '+meses+' meses';
+    } else if(/insalubridade/.test(desc)){
+      const p = pctNum || 0.20;
+      base = sal*p*meses; memo=(p*100)+'% × base × '+meses+' meses';
+    } else if(/intervalo|intrajornada|art.*71/.test(desc)){
+      const p = pctNum || 0.5;
+      const horaDia = 1; // 1h/dia de intervalo suprimido (premissa)
+      base = valorHora*(1+p)*horaDia*22*meses; memo='1h/dia × 22 dias × '+meses+' meses';
+    } else if(/feriado/.test(desc)){
+      const feriadosMes = 1;
+      base = valorHora*8*2*feriadosMes*meses; memo=feriadosMes+' feriado/mês em dobro × '+meses+' meses';
+    } else if(/adicional noturno|noturn/.test(desc)){
+      base = sal*0.2*meses; memo='20% × salário × '+meses+' meses';
+    } else {
+      base = sal*meses*0.05; memo='estimativa genérica (5% do salário/mês)';
+    }
+    total += base;
+    linhas.push({v:v.descricao, valor:base, memo, conf:v.requerConferencia});
+  });
+
+  // reflexos aproximados (DSR, 13º, férias+1/3, FGTS) — acréscimo estimado de ~40%
+  const reflexos = total*0.40;
+  const totalWReflex = total + reflexos;
+  // correção/juros aproximada por tempo até hoje (SELIC ~ estimativa demonstrativa)
+  const anos = ajz ? Math.max(0,(new Date()-ajz)/(365.25*24*3600*1000)) : 0;
+  const correcao = totalWReflex * Math.min(0.6, anos*0.10); // ~10%/ano, teto demonstrativo
+  const totalGeral = totalWReflex + correcao;
+
+  const brl = n => 'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  let h='';
+  h+='<div class="conf" style="margin-bottom:16px"><b>Estimativa simplificada.</b> Este é um cálculo aproximado para dimensionar o processo, gerado a partir das verbas deferidas e dos dados informados. <b>Não substitui a liquidação completa</b> (que apura mês a mês com evolução salarial, jornada real e correção precisa).</div>';
+  h+='<div class="meta">Período apurável: <b>'+(ini?ini.toLocaleDateString('pt-BR'):'?')+'</b> a <b>'+(fim?fim.toLocaleDateString('pt-BR'):'?')+'</b> ('+meses+' meses) · Salário: <b>'+brl(sal)+'</b> · Valor-hora: <b>'+brl(valorHora)+'</b></div>';
+  h+='<table><tr><th>Verba</th><th>Estimativa</th><th>Memória</th></tr>';
+  linhas.forEach(l=>h+='<tr><td><b>'+esc(l.v)+'</b>'+(l.conf?' ⚠':'')+'</td><td>'+brl(l.valor)+'</td><td style="font-size:12px;color:var(--muted)">'+esc(l.memo)+'</td></tr>');
+  h+='</table>';
+  h+='<table style="margin-top:12px">';
+  h+='<tr><td>Subtotal das verbas principais</td><td><b>'+brl(total)+'</b></td></tr>';
+  h+='<tr><td>Reflexos estimados (DSR, 13º, férias+1/3, FGTS ~40%)</td><td>'+brl(reflexos)+'</td></tr>';
+  h+='<tr><td>Correção e juros estimados (desde o ajuizamento)</td><td>'+brl(correcao)+'</td></tr>';
+  h+='<tr style="background:#eef4ff"><td style="font-size:16px;font-weight:800;color:var(--navy)">TOTAL ESTIMADO</td><td style="font-size:18px;font-weight:800;color:var(--orange)">'+brl(totalGeral)+'</td></tr>';
+  h+='</table>';
+  h+='<div class="hint" style="margin-top:12px">As premissas de quantidade (horas/mês, feriados, intervalo) usam valores médios de demonstração. Na liquidação completa, cada uma é apurada com os documentos do processo (cartão de ponto, evolução salarial, CCT).</div>';
+  return h;
+}
+// mapeia a descrição da verba (texto da decisão) para o id que o motor entende
+function mapearVerbaId(desc){
+  const d=(desc||'').toLowerCase();
+  if(/hora.?s?\s*extra|extraordin/.test(d)) return 'heTotais';
+  if(/domingo|feriado.*(100|dobro)|dobro.*feriado|100%/.test(d)) return 'he100';
+  if(/intervalo|intrajornada|art.*71/.test(d)) return 'heArt71';
+  if(/periculosidade/.test(d)) return 'periculosidade';
+  if(/insalubridade/.test(d)) return 'insalubridade';
+  if(/adicional noturno|noturn/.test(d)) return 'adicionalNoturno';
+  if(/férias vencidas|ferias vencidas/.test(d)) return 'feriasVencidas';
+  if(/vale.?refei|vale.?aliment|\bvr\b|\bva\b/.test(d)) return 'vr';
+  return null; // verba sem motor próprio → entra como verbaIA (complementar)
+}
+
+// monta o objeto `caso` que o motor consome, a partir da análise + formulário
+function montarCaso(j, d){
+  const parse = s => { if(!s) return null; if(/^\d{4}-\d{2}$/.test(s)) s+='-15'; return new Date(s+'T12:00:00'); };
+  const adm = parse(d.dataAdmissao), dem = parse(d.dataDemissao);
+  if(!adm || !dem){ alert('Preencha admissão e demissão para gerar o Excel.'); return null; }
+  if(dem<=adm){ alert('A demissão precisa ser depois da admissão.'); return null; }
+  const sal = d.salario || 0;
+  if(!sal){ alert('Informe o salário — sem ele o Excel sai zerado.'); return null; }
+  // PRESCRIÇÃO limita o início da apuração (igual à estimativa): max(admissão, marco)
+  const presc = (j.parametrosGlobais && j.parametrosGlobais.prescricao && j.parametrosGlobais.prescricao.marco)
+    ? parse(j.parametrosGlobais.prescricao.marco) : null;
+  const iniApur = (presc && presc>adm) ? presc : adm;
+  // salário em todas as competências do período APURÁVEL (evolução real fica pra liquidação completa)
+  const salariosMensais = {};
+  let y=iniApur.getFullYear(), m=iniApur.getMonth()+1;
+  while(y<dem.getFullYear() || (y===dem.getFullYear() && m<=dem.getMonth()+1)){
+    salariosMensais[y+'-'+String(m).padStart(2,'0')] = sal;
+    m++; if(m>12){m=1;y++;}
+  }
+  const p = j.parametrosGlobais||{};
+  const verbasAtivas=[], overrides={}, qtdHoras={}, verbasIA=[];
+  (j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA').forEach(v=>{
+    const id = mapearVerbaId(v.descricao);
+    const pctNum = (function(){ const mm=String(v.percentual||'').match(/(\d+)/); return mm?parseInt(mm[1],10)/100:null; })();
+    if(id){
+      if(verbasAtivas.indexOf(id)<0) verbasAtivas.push(id);
+      if(id==='periculosidade' && pctNum) overrides.periculosidade={percentual:pctNum};
+      if(id==='insalubridade' && pctNum) overrides.insalubridade={percentual:pctNum};
+      // horas: premissa de demonstração (20h/mês p/ HE) — editável na liquidação completa
+      if(['heTotais','he100','heArt71'].includes(id)){
+        qtdHoras[id]={}; Object.keys(salariosMensais).forEach(k=>qtdHoras[id][k]=20);
+      }
+    } else {
+      verbasIA.push({descricao:v.descricao, valor:0, formato:'unico'}); // aparece no Excel p/ o calculista preencher
+    }
+  });
+  const pr=j.processo||{};
+  const caso = {
+    reclamante: pr.reclamante||'', reclamada: (pr.reclamadas||[]).join(', '), numeroProcesso: pr.numero||'',
+    dataAdmissao: iniApur, dataDemissao: dem,
+    dataDistribuicao: parse(d.dataAjuizamento),
+    dataAtualizacao: parse(d.dataBaseAtualizacao),
+    salariosMensais,
+    verbasAtivas, overrides, qtdHoras, verbasIA,
+    divisor: 220,
+    honorarios: (p.honorariosSucumbenciais&&p.honorariosSucumbenciais.percentual)?{percentual:p.honorariosSucumbenciais.percentual}:null,
+    jornada: null,
+    fgtsDiferencaSalario: 'Nao'
+  };
+  caso._avisos = [];
+  if(presc && presc>adm) caso._avisos.push('Período apurado a partir da prescrição ('+iniApur.toLocaleDateString('pt-BR')+'), não da admissão. As RESCISÓRIAS (avos de 13º/férias e aviso prévio) saem calculadas dessa data — ajuste os avos/aviso na aba PREMISSAS com a admissão real ('+adm.toLocaleDateString('pt-BR')+').');
+  return caso;
+}
+
+async function gerarExcel(){
+  if(!window.FazAIEngine || !window.exportLiquidaXLSXFormulado){
+    alert('Motor de cálculo não carregou. Verifique se fazai_tabelas.js, fazai_engine.js, fazai_hook.js e fazai_estilo.js estão no site.');
+    return;
+  }
+  const d = {
+    dataAjuizamento:$('f_ajuiz').value||null, dataAdmissao:$('f_adm').value||null,
+    dataDemissao:$('f_dem').value||null, tipoRescisao:$('f_resc').value||'',
+    funcao:$('f_func').value||'', salario:parseFloat($('f_sal').value)||null,
+    dataBaseAtualizacao:$('f_db').value||null, evolucaoSalarial:$('f_evol').value||''
+  };
+  const caso = montarCaso(ultimoJson, d);
+  if(!caso) return;
+  window._fazaiCasoAtual = caso;
+  const st=$('f_status');
+  st.innerHTML='<span style="color:var(--muted)">Gerando Excel formulado…</span>';
+  try{
+    await window.exportLiquidaXLSXFormulado();
+    let msg='<span class="okmsg">✓ Excel gerado e baixado. Abra para conferir e editar.</span>';
+    if(caso._avisos && caso._avisos.length){
+      msg+='<div class="conf" style="margin-top:8px"><b>⚠ Conferir no Excel:</b><ul class="att">'+caso._avisos.map(a=>'<li>'+a+'</li>').join('')+'<li>Quantidades de horas (HE/intervalo/feriados) usam premissa de 20h/mês — ajustar com o cartão de ponto.</li><li>Reflexos e rescisórias saem no padrão do motor — conferir contra o que a decisão deferiu.</li></ul></div>';
+    } else {
+      msg+='<div class="hint" style="margin-top:6px">Premissas de demonstração: 20h/mês nas verbas de hora; reflexos/rescisórias no padrão do motor. Ajustar na conferência.</div>';
+    }
+    st.innerHTML=msg;
+  }catch(e){
+    console.error(e);
+    st.innerHTML='<span style="color:#a11">Falha ao gerar o Excel: '+e.message+'</span>';
+  }
+}
+
 function tab(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
   document.querySelectorAll('.pane').forEach(pn=>pn.classList.remove('on'));
