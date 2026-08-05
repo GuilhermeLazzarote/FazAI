@@ -72,6 +72,30 @@
   .err{background:#fdecec;border:1px solid #f0b0b0;color:#a11;padding:12px 14px;border-radius:8px;font-size:14px}
   .meta{font-size:13px;color:var(--muted);margin-bottom:14px}
   .meta b{color:var(--navy)}
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin:10px 0 18px}
+  .vcard{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff;box-shadow:0 1px 3px rgba(20,33,62,.06)}
+  .vcard-warn{border-left:4px solid var(--orange)}
+  .vcard-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #eef1f6}
+  .vcard-title{font-weight:700;color:var(--navy);font-size:14.5px;line-height:1.3}
+  .vcard-flag{font-size:11px;font-weight:700;color:#8a5a00;background:var(--warn-bg);border:1px solid var(--warn-line);padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .vcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-bottom:8px}
+  .vfield{margin-bottom:8px}
+  .vfull{grid-column:1/-1}
+  .vlabel{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .vval{font-size:13.5px;color:var(--ink)}
+  .vbase{font-weight:600;color:var(--navy2)}
+  .vchips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{display:inline-block;font-size:11.5px;background:#e8eefb;color:#2a4a8a;padding:3px 9px;border-radius:20px;font-weight:600}
+  .chip-off{background:#f0f0f2;color:#999;font-weight:500}
+  .chip-tec{background:#eaf5ec;color:#1B7A3D}
+  .vobs{margin-top:8px;font-size:12.5px;color:#8a5a00;background:var(--warn-bg);border-radius:6px;padding:8px 10px;line-height:1.4}
+  .prem-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fff;flex-wrap:wrap}
+  .prem-manual{background:#f7f9fc}
+  .prem-nome{flex:1;min-width:140px;font-weight:600;font-size:13.5px;color:var(--navy)}
+  .prem-in{display:flex;align-items:center;gap:6px}
+  .prem-in input{width:88px;padding:7px;border:1px solid var(--line);border-radius:6px;font-size:14px}
+  .prem-in span{font-size:12px;color:var(--muted)}
+  .prem-row select{padding:7px;border:1px solid var(--line);border-radius:6px;font-size:13px}
 </style>
 </head>
 <body>
@@ -151,12 +175,14 @@ PASSO 3 — DENTRO DE CADA PEÇA: tópico a tópico, comando ≠ raciocínio. Ca
 
 PASSO 4 — PARÂMETROS. Por verba DEFERIDA (só o expresso): período, base de cálculo, percentual/adicional/divisor, reflexos deferidos, exclusões, baseApuracao (evolução/fixo), abatimento (valores pagos a deduzir), observacoesTecnicas (OJs/Súmulas), decisão que deferiu. GERAIS: prescrição e marco, limitação ao pedido, honorários (sucumbenciais e periciais: % e base), contribuições previdenciárias/fiscais, dedução de valores pagos, data-base, responsáveis (grupo econômico/subsidiária + limite). CORREÇÃO/JUROS (não devolva só "omisso"): índice nominal fixado → transcreva; remissão sem nomear índice ("na forma da lei","ADCs 58/59","Lei 14.905/2024") → transcreva a remissão literal e aponte o índice que ela implica na data da decisão, marcando PONTO CONTROVERTIDO. Não presuma base/período/reflexo omissos → registre "omisso na decisão".
 
+CLASSIFICAÇÃO TÉCNICA (campo "motorId") — para CADA verba, classifique pela NATUREZA do que foi deferido, NÃO pelas palavras usadas. O juiz escreve de mil formas ("feriados laborados", "labor em dias destinados ao repouso", "trabalho em folgas"); você entende a natureza. Use exatamente um destes valores: "heTotais" (horas extras comuns: excedentes da 8ª/44ª, sobrejornada, banco de horas inválido — adicional típico 50%); "he100" (labor em dia que deveria ser de descanso: feriados, domingos, DSR/RSR trabalhados, folgas suprimidas, dias destinados ao repouso, em dobro — 100%); "heArt71" (intervalo intrajornada suprimido/reduzido art.71 §4º, art.384, art.66 interjornada, intervalos não usufruídos); "periculosidade"; "insalubridade"; "adicionalNoturno" (adicional noturno, hora reduzida, prorrogação); "feriasVencidas" (férias vencidas/dobradas); "vr" (vale-refeição/alimentação); "outro" (QUALQUER outra: multas 467/477, honorários, indenizações, dano moral, diferenças salariais, equiparação, PPP, verbas rescisórias etc.). Em dúvida entre dois, escolha o mais específico e explique em "observacao". NÃO invente categoria fora dessa lista. Classifique também as INDEFERIDAS/EXCLUÍDAS.
+
 PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não confirmado nos autos; data e documento; +/- 2 anos da rescisória art.975 CPC; parcial vs total; não presuma trânsito por ausência de recurso). Recursos pendentes/admitidos (tipo, parte, tema, situação). Impacto: para cada recurso da RECLAMADA, qual verba/parâmetro pode mudar e em que medida. Conclusão (até 3 linhas): crédito consolidado ou risco concreto? RR admitido que comprometa a condenação?
 
 TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula.
 
 IMPORTANTE — FORMATO DA RESPOSTA: responda EXCLUSIVAMENTE com o objeto JSON, começando com { e terminando com }. NÃO escreva nenhuma palavra antes ou depois. NÃO use blocos de código markdown. NÃO explique. Apenas o JSON puro. Estrutura do JSON:
-{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
 
 let arquivo=null, arquivoB64=null, arquivoTexto='';
 const $=id=>document.getElementById(id);
@@ -344,18 +370,32 @@ function montarResumo(j){
     h+='</table>';
   }
 
-  // verbas deferidas
+  // verbas deferidas — CARDS visuais com todos os parâmetros de cálculo
   const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
   const out=(j.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
-  h+='<div class="sec-title">Verbas para apurar</div>';
+  h+='<div class="sec-title">Verbas para apurar ('+def.length+')</div>';
   if(def.length){
-    h+='<table><tr><th>Verba</th><th>Período</th><th>Base</th><th>%/Adic/Divisor</th><th>Reflexos</th><th>Status</th></tr>';
+    h+='<div class="vgrid">';
     def.forEach(v=>{
-      const per=(v.periodo&&(v.periodo.inicio||v.periodo.fim))?esc((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'—';
-      const pd=[v.percentual,v.divisor?('div '+v.divisor):''].filter(Boolean).map(esc).join(' · ')||'—';
-      h+='<tr><td><b>'+esc(v.descricao)+'</b>'+(v.requerConferencia?' ⚠':'')+'</td><td>'+per+'</td><td>'+esc(v.baseCalculo||'—')+'</td><td>'+pd+'</td><td>'+esc(arr(v.reflexos))+'</td><td>'+tagStatus(v.statusFinal)+'</td></tr>';
+      const per=(v.periodo&&(v.periodo.inicio||v.periodo.fim))?esc((v.periodo.inicio||'início')+' a '+(v.periodo.fim||'fim'))+'':null;
+      const refl=(Array.isArray(v.reflexos)&&v.reflexos.length)?v.reflexos.map(r=>'<span class="chip">'+esc(r)+'</span>').join(''):'<span class="chip chip-off">sem reflexos indicados</span>';
+      h+='<div class="vcard'+(v.requerConferencia?' vcard-warn':'')+'">';
+      h+='<div class="vcard-head"><span class="vcard-title">'+esc(v.descricao)+'</span>'+(v.requerConferencia?'<span class="vcard-flag">⚠ conferir</span>':'')+'</div>';
+      h+='<div class="vcard-grid">';
+      h+='<div class="vfield"><div class="vlabel">Adicional / %</div><div class="vval">'+esc(v.percentual||'—')+'</div></div>';
+      if(v.divisor) h+='<div class="vfield"><div class="vlabel">Divisor</div><div class="vval">'+esc(v.divisor)+'</div></div>';
+      if(per) h+='<div class="vfield"><div class="vlabel">Período</div><div class="vval">'+per+'</div></div>';
+      if(v.baseApuracao) h+='<div class="vfield"><div class="vlabel">Apuração</div><div class="vval">'+esc(v.baseApuracao)+'</div></div>';
+      h+='</div>';
+      h+='<div class="vfield vfull"><div class="vlabel">Base de cálculo</div><div class="vval vbase">'+esc(v.baseCalculo||'não especificada na decisão')+'</div></div>';
+      h+='<div class="vfield vfull"><div class="vlabel">Reflexos deferidos</div><div class="vchips">'+refl+'</div></div>';
+      if(v.exclusoes&&v.exclusoes.length) h+='<div class="vfield vfull"><div class="vlabel">Exclusões</div><div class="vval">'+esc(arr(v.exclusoes))+'</div></div>';
+      if(v.abatimento) h+='<div class="vfield vfull"><div class="vlabel">Abatimento (valores pagos)</div><div class="vval">'+esc(v.abatimento)+'</div></div>';
+      if(v.observacoesTecnicas&&v.observacoesTecnicas.length) h+='<div class="vfield vfull"><div class="vlabel">Observar</div><div class="vchips">'+v.observacoesTecnicas.map(o=>'<span class="chip chip-tec">'+esc(o)+'</span>').join('')+'</div></div>';
+      if(v.observacao) h+='<div class="vobs">'+esc(v.observacao)+'</div>';
+      h+='</div>';
     });
-    h+='</table>';
+    h+='</div>';
   } else h+='<p class="hint">Nenhuma verba deferida identificada.</p>';
 
   // indeferidas/excluídas
@@ -399,6 +439,57 @@ function montarResumo(j){
   return h;
 }
 
+// define que tipo de input cada verba precisa para a estimativa
+function tipoPremissa(vid){
+  if(['heTotais','he100','heArt71'].includes(vid)) return 'horas';      // horas/mês
+  if(vid==='adicionalNoturno') return 'horasNot';                        // horas noturnas/mês
+  if(['periculosidade','insalubridade'].includes(vid)) return 'pct';     // % (já vem, editável)
+  return 'valor';                                                         // valor único/mês
+}
+let premissasManuais=[]; // verbas adicionadas na mão
+function montarPremissas(j){
+  const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  let h='';
+  def.forEach((v,idx)=>{
+    const vid=idDaVerba(v);
+    const tipo=tipoPremissa(vid);
+    const pctNum=(function(){const m=String(v.percentual||'').match(/(\d+)/);return m?parseInt(m[1],10):null;})();
+    h+='<div class="prem-row" data-desc="'+esc(v.descricao)+'" data-vid="'+(vid||'')+'">';
+    h+='<div class="prem-nome">'+esc(v.descricao)+'</div>';
+    if(tipo==='horas') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="20" min="0" step="1"><span>h/mês</span></div>';
+    else if(tipo==='horasNot') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="1"><span>h noturnas/mês</span></div>';
+    else if(tipo==='pct') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+(pctNum||(vid==='periculosidade'?30:20))+'" min="0" step="1"><span>% (sobre '+(vid==='periculosidade'?'salário':'base')+')</span></div>';
+    else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$ (valor único)</span></div>';
+    h+='<input type="hidden" id="premtipo_'+idx+'" value="'+tipo+'">';
+    h+='</div>';
+  });
+  return h;
+}
+function addPremissaManual(){
+  const box=$('premissas-box');
+  const id='man_'+(premissasManuais.length);
+  premissasManuais.push(id);
+  const div=document.createElement('div');
+  div.className='prem-row prem-manual';
+  div.innerHTML='<input type="text" placeholder="nome da verba" id="'+id+'_nome" style="flex:1;min-width:120px">'
+    +'<select id="'+id+'_tipo" onchange="document.getElementById(\''+id+'_un\').textContent=this.value===\'horas\'?\'h/mês\':(this.value===\'pct\'?\'%\':\'R$/mês\')">'
+    +'<option value="horas">horas/mês (50%)</option><option value="pct">% sobre salário</option><option value="valor">valor R$/mês</option></select>'
+    +'<div class="prem-in"><input type="number" id="'+id+'_val" value="0" min="0" step="0.01"><span id="'+id+'_un">h/mês</span></div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">×</button>';
+  box.appendChild(div);
+}
+function coletarPremissas(){
+  const out=[];
+  document.querySelectorAll('#premissas-box .prem-row:not(.prem-manual)').forEach((row,idx)=>{
+    const inp=document.getElementById('prem_'+idx); const tp=document.getElementById('premtipo_'+idx);
+    if(inp&&tp) out.push({descricao:row.dataset.desc, vid:row.dataset.vid, tipo:tp.value, valor:parseFloat(inp.value)||0});
+  });
+  premissasManuais.forEach(id=>{
+    const nome=document.getElementById(id+'_nome'), tipo=document.getElementById(id+'_tipo'), val=document.getElementById(id+'_val');
+    if(nome&&nome.value) out.push({descricao:nome.value, vid:'manual', tipo:tipo.value, valor:parseFloat(val.value)||0, manual:true});
+  });
+  return out;
+}
 function campo(label, id, valor, tipo, sugerido){
   const v = valor==null?'':valor;
   const badge = sugerido ? '<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>' : '';
@@ -408,6 +499,7 @@ function campo(label, id, valor, tipo, sugerido){
   return '<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">'+label+badge+'</label>'+inp+'</div>';
 }
 function montarDados(j){
+  premissasManuais=[];
   const d = j.dadosContratuais || {};
   const g = j.parametrosGlobais || {};
   const ajuiz = d.dataAjuizamento || null;
@@ -427,6 +519,10 @@ function montarDados(j){
   h+=campo('Salário (R$)','f_sal',d.salario,'number',s(d.salario));
   h+=campo('Data-base de atualização','f_db',dataBase,'date',s(dataBase));
   h+='<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">Evolução salarial'+(s(d.evolucaoSalarial)?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>':'')+'</label><textarea id="f_evol" style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px" placeholder="Reajustes/aumentos ao longo do contrato, se houver">'+(d.evolucaoSalarial||'')+'</textarea></div>';
+  h+='<div class="sec-title" style="margin-top:22px">Premissas de quantidade (para a estimativa)</div>';
+  h+='<div class="hint" style="margin-bottom:10px">Informe as médias mensais que você estima para cada verba. Quanto mais real, mais precisa a estimativa. Campos aparecem para as verbas deferidas; use o botão para adicionar outras.</div>';
+  h+='<div id="premissas-box">'+montarPremissas(j)+'</div>';
+  h+='<div class="row" style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="addPremissaManual()">+ adicionar verba</button></div>';
   h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar e estimar</button><button class="btn btn-primary" style="background:var(--navy)" onclick="gerarExcel()">Gerar Excel formulado</button></div>';
   h+='<div class="status" id="f_status"></div>';
   h+='</div>';
@@ -452,58 +548,49 @@ function salvarDados(){
   if(faltando.length){ st.innerHTML='<span style="color:#a11">Faltam datas essenciais: '+faltando.join(', ')+'. Sem elas o cálculo não fecha.</span>'; }
   else { st.innerHTML='<span class="okmsg">✓ Dados salvos. Veja a aba <b>Estimativa</b>.</span>'; }
   if(ultimoJson){ ultimoJson.dadosContratuais = Object.assign({}, ultimoJson.dadosContratuais, dados); $('jsonout').textContent=JSON.stringify(ultimoJson,null,2); }
-  // roda a estimativa e mostra
+  // roda a estimativa com as premissas informadas
   if(!faltando.length && ultimoJson){
-    $('pane-calculo').innerHTML = estimarCalculo(ultimoJson, dados);
+    const premissas=coletarPremissas();
+    $('pane-calculo').innerHTML = estimarCalculo(ultimoJson, dados, premissas);
     tab('calculo');
   }
 }
 
-// Estimativa simplificada por verba — número real a partir dos dados, NÃO substitui a liquidação completa
-function estimarCalculo(j, d){
+// Estimativa por verba a partir das PREMISSAS informadas pelo calculista — mais precisa que premissa fixa
+function estimarCalculo(j, d, premissas){
   const sal = d.salario || 0;
   if(!sal) return '<div class="err">Informe o salário para estimar os valores.</div>';
   const adm = d.dataAdmissao ? new Date(d.dataAdmissao) : null;
   const dem = d.dataDemissao ? new Date(d.dataDemissao) : null;
   const ajz = d.dataAjuizamento ? new Date(d.dataAjuizamento) : null;
   const presc = (j.parametrosGlobais && j.parametrosGlobais.prescricao && j.parametrosGlobais.prescricao.marco) ? new Date(j.parametrosGlobais.prescricao.marco) : null;
-  // período apurável: do maior entre (admissão, prescrição) até demissão
   let ini = adm, fim = dem;
   if(presc && (!ini || presc>ini)) ini = presc;
   const meses = (ini && fim) ? Math.max(0, (fim.getFullYear()-ini.getFullYear())*12 + (fim.getMonth()-ini.getMonth())) : 0;
   const valorHora = sal/220;
-  const def = (j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  premissas = premissas || [];
   const linhas=[]; let total=0;
 
-  def.forEach(v=>{
+  premissas.forEach(pr=>{
     let base=0, memo='';
-    const desc=(v.descricao||'').toLowerCase();
-    // heurística simples por tipo de verba (ESTIMATIVA)
-    const pctNum = (function(){ const m=String(v.percentual||'').match(/(\d+)\s*%/); return m?parseInt(m[1],10)/100:null; })();
-    if(/hora extra|extraordin/.test(desc)){
-      const p = pctNum || 0.5;
-      const heMes = 20; // premissa de demonstração: 20h/mês (editável no cálculo completo)
-      base = valorHora*(1+p)*heMes*meses; memo=heMes+'h/mês × '+meses+' meses × R$'+valorHora.toFixed(2)+' × '+(1+p);
-    } else if(/periculosidade/.test(desc)){
-      const p = pctNum || 0.30;
-      base = sal*p*meses; memo=(p*100)+'% × salário × '+meses+' meses';
-    } else if(/insalubridade/.test(desc)){
-      const p = pctNum || 0.20;
-      base = sal*p*meses; memo=(p*100)+'% × base × '+meses+' meses';
-    } else if(/intervalo|intrajornada|art.*71/.test(desc)){
-      const p = pctNum || 0.5;
-      const horaDia = 1; // 1h/dia de intervalo suprimido (premissa)
-      base = valorHora*(1+p)*horaDia*22*meses; memo='1h/dia × 22 dias × '+meses+' meses';
-    } else if(/feriado/.test(desc)){
-      const feriadosMes = 1;
-      base = valorHora*8*2*feriadosMes*meses; memo=feriadosMes+' feriado/mês em dobro × '+meses+' meses';
-    } else if(/adicional noturno|noturn/.test(desc)){
-      base = sal*0.2*meses; memo='20% × salário × '+meses+' meses';
-    } else {
-      base = sal*meses*0.05; memo='estimativa genérica (5% do salário/mês)';
+    const q=pr.valor||0;
+    // recupera o % da verba (para peric/insal) da análise
+    const vrb=(j.verbas||[]).find(v=>v.descricao===pr.descricao);
+    const pctNum=(function(){const m=vrb?String(vrb.percentual||'').match(/(\d+)/):null;return m?parseInt(m[1],10)/100:null;})();
+    if(pr.tipo==='horas'){
+      // horas extras: adicional do % da verba (ou 50%)
+      const adic=(pr.vid==='he100')?1.0:(pctNum||0.5);
+      base = valorHora*(1+adic)*q*meses; memo=q+'h/mês × '+meses+' meses × R$'+valorHora.toFixed(2)+' × (1+'+adic+')';
+    } else if(pr.tipo==='horasNot'){
+      // adicional noturno: só o adicional (20%) sobre as horas noturnas
+      base = valorHora*0.2*q*meses; memo=q+'h noturnas/mês × 20% × '+meses+' meses';
+    } else if(pr.tipo==='pct'){
+      const p=q/100;
+      base = sal*p*meses; memo=q+'% × salário × '+meses+' meses';
+    } else { // valor único/mês
+      base = q*meses; memo='R$'+q.toFixed(2)+'/mês × '+meses+' meses';
     }
-    total += base;
-    linhas.push({v:v.descricao, valor:base, memo, conf:v.requerConferencia});
+    if(base>0){ total+=base; linhas.push({v:pr.descricao, valor:base, memo, conf:vrb&&vrb.requerConferencia}); }
   });
 
   // reflexos aproximados (DSR, 13º, férias+1/3, FGTS) — acréscimo estimado de ~40%
@@ -531,11 +618,22 @@ function estimarCalculo(j, d){
   return h;
 }
 // mapeia a descrição da verba (texto da decisão) para o id que o motor entende
+// IDs que o motor sabe apurar
+const IDS_MOTOR=['heTotais','he100','heArt71','periculosidade','insalubridade','adicionalNoturno','feriasVencidas','vr'];
+// classificação da verba: a IA classifica (motorId); o regex é só rede de segurança
+function idDaVerba(v){
+  const mid=(v&&v.motorId||'').trim();
+  if(IDS_MOTOR.indexOf(mid)>=0) return mid;      // 1º: o que a IA classificou
+  if(mid==='outro') return null;                  // IA disse explicitamente que não é do motor
+  return mapearVerbaId(v&&v.descricao);           // 2º: fallback por palavra-chave
+}
 function mapearVerbaId(desc){
   const d=(desc||'').toLowerCase();
-  if(/hora.?s?\s*extra|extraordin/.test(d)) return 'heTotais';
-  if(/domingo|feriado.*(100|dobro)|dobro.*feriado|100%/.test(d)) return 'he100';
-  if(/intervalo|intrajornada|art.*71/.test(d)) return 'heArt71';
+  // intervalo primeiro (art. 71 tem regra própria, mesmo quando citado junto de HE)
+  if(/intervalo|intrajornada|art\.?\s*71/.test(d)) return 'heArt71';
+  // feriado/domingo/RSR laborado = 100% — checar ANTES de hora extra genérica
+  if(/feriado|domingo|repouso.*(laborad|trabalhad)|(laborad|trabalhad).*repouso|dsr.*(laborad|trabalhad)|100\s*%/.test(d)) return 'he100';
+  if(/hora.?s?\s*extra|extraordin|sobrejornada|excedente/.test(d)) return 'heTotais';
   if(/periculosidade/.test(d)) return 'periculosidade';
   if(/insalubridade/.test(d)) return 'insalubridade';
   if(/adicional noturno|noturn/.test(d)) return 'adicionalNoturno';
@@ -565,21 +663,37 @@ function montarCaso(j, d){
   }
   const p = j.parametrosGlobais||{};
   const verbasAtivas=[], overrides={}, qtdHoras={}, verbasIA=[];
+  const rescisorias={saldo:false, aviso:false, decimo:false, ferias:false}; // só o que a sentença deferiu
+  const HORAS_PREMISSA = 20; // premissa/mês para verbas de hora (editável na liquidação)
   (j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA').forEach(v=>{
-    const id = mapearVerbaId(v.descricao);
+    const id = idDaVerba(v);
+    const desc=(v.descricao||'').toLowerCase();
     const pctNum = (function(){ const mm=String(v.percentual||'').match(/(\d+)/); return mm?parseInt(mm[1],10)/100:null; })();
+    // rescisórias: detectar pelo texto (o motor não deve presumir)
+    if(/saldo\s*de\s*sal/.test(desc)) rescisorias.saldo=true;
+    else if(/aviso\s*pr[eé]vio/.test(desc)) rescisorias.aviso=true;
+    else if(/13|d[eé]cimo\s*terceiro|gratifica[çc][ãa]o\s*natalina/.test(desc)) rescisorias.decimo=true;
+    else if(/f[eé]rias\s*(proporc|indeniz|\+|vencid)/.test(desc) || /^f[eé]rias/.test(desc)) rescisorias.ferias=true;
     if(id){
       if(verbasAtivas.indexOf(id)<0) verbasAtivas.push(id);
       if(id==='periculosidade' && pctNum) overrides.periculosidade={percentual:pctNum};
       if(id==='insalubridade' && pctNum) overrides.insalubridade={percentual:pctNum};
-      // horas: premissa de demonstração (20h/mês p/ HE) — editável na liquidação completa
+      // toda verba de HORA deferida recebe a premissa (nunca zera se foi deferida)
       if(['heTotais','he100','heArt71'].includes(id)){
-        qtdHoras[id]={}; Object.keys(salariosMensais).forEach(k=>qtdHoras[id][k]=20);
+        if(!qtdHoras[id]) qtdHoras[id]={};
+        Object.keys(salariosMensais).forEach(k=>qtdHoras[id][k]=HORAS_PREMISSA);
       }
     } else {
-      verbasIA.push({descricao:v.descricao, valor:0, formato:'unico'}); // aparece no Excel p/ o calculista preencher
+      // verba sem motor próprio E que não é rescisória → complementar (calculista lança)
+      const ehResc=/saldo\s*de\s*sal|aviso\s*pr[eé]vio|13|d[eé]cimo|natalina|f[eé]rias/.test(desc);
+      if(!ehResc) verbasIA.push({descricao:v.descricao, valor:0, formato:'unico'});
     }
   });
+  // honorários periciais: valor FIXO da sentença (NÃO percentual) → entra como verba de valor único
+  const hp=p.honorariosPericiais;
+  if(hp && hp.valor>0){
+    verbasIA.push({descricao:'Honorários periciais (fixado em sentença'+(hp.aCargoDe?' - '+hp.aCargoDe:'')+')', valor:hp.valor, formato:'unico'});
+  }
   const pr=j.processo||{};
   const caso = {
     reclamante: pr.reclamante||'', reclamada: (pr.reclamadas||[]).join(', '), numeroProcesso: pr.numero||'',
@@ -588,13 +702,18 @@ function montarCaso(j, d){
     dataAtualizacao: parse(d.dataBaseAtualizacao),
     salariosMensais,
     verbasAtivas, overrides, qtdHoras, verbasIA,
+    rescisorias,
     divisor: 220,
     honorarios: (p.honorariosSucumbenciais&&p.honorariosSucumbenciais.percentual)?{percentual:p.honorariosSucumbenciais.percentual}:null,
     jornada: null,
     fgtsDiferencaSalario: 'Nao'
   };
   caso._avisos = [];
-  if(presc && presc>adm) caso._avisos.push('Período apurado a partir da prescrição ('+iniApur.toLocaleDateString('pt-BR')+'), não da admissão. As RESCISÓRIAS (avos de 13º/férias e aviso prévio) saem calculadas dessa data — ajuste os avos/aviso na aba PREMISSAS com a admissão real ('+adm.toLocaleDateString('pt-BR')+').');
+  const compl = verbasIA.filter(v=>!/Honorários periciais/.test(v.descricao));
+  if(compl.length) caso._avisos.push('<b>Verbas deferidas que o motor não apura automaticamente e entraram ZERADAS no Excel</b> (lançar manualmente): '+compl.map(v=>v.descricao).join(' · '));
+  const nenhumaResc = !rescisorias.saldo && !rescisorias.aviso && !rescisorias.decimo && !rescisorias.ferias;
+  if(nenhumaResc) caso._avisos.push('<b>Nenhuma verba rescisória foi deferida nas decisões</b> — a aba RESCISÓRIAS sai zerada. Se o processo tiver rescisórias deferidas que a leitura não pegou, ajuste manualmente.');
+  if(presc && presc>adm) caso._avisos.push('Período apurado a partir da prescrição ('+iniApur.toLocaleDateString('pt-BR')+'), não da admissão.');
   return caso;
 }
 
