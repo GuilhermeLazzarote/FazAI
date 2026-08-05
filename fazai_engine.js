@@ -282,13 +282,34 @@
     push(["LÍQUIDO DO AUTOR","","","",F(`=E${s}-E${d1}-E${d2}`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(RZ),"RESUMO");
 
+    // ---- ABA PJE_CALC: só as verbas PRINCIPAIS (sem reflexos, sem correção) p/ copiar e colar no PJe-Calc ----
+    const PJ=[["VALORES PARA O PJe-CALC — "+(p.reclamante||"")+" · "+(p.processo||"")],
+      ["Somente principais, sem reflexos e sem correção monetária/juros"],[],
+      ["Verba","Valor principal"]];
+    const pjRefs=[]; // linhas do RESUMO (1-based) com o Principal de cada verba apurada
+    RZ.forEach((row,i)=>{
+      const rot=String(row[0]||'');
+      if(/^\s*Principal/.test(rot) && row[1]!=null && row[1]!==''){
+        let titulo=''; for(let k=i-1;k>=0;k--){ const t=String(RZ[k][0]||''); if(t && !/^\s/.test(t)){ titulo=t.trim(); break; } }
+        // pula blocos de verba não apurada (título de bloco existe mas principal referencia célula zerada é ok — motor zera)
+        PJ.push([titulo, F(`=RESUMO!B${i+1}`)]);
+        pjRefs.push(4+pjRefs.length); // linha correspondente nesta aba (dados começam na 5)
+      }
+    });
+    PJ.push([]);
+    const somaRange = pjRefs.length? `B${pjRefs[0]+1}:B${pjRefs[pjRefs.length-1]+1}` : 'B5:B5';
+    PJ.push(["TOTAL PRINCIPAL (sem reflexos/correção)", F(`=SUM(${somaRange})`)]);
+    const wsPJ=mkSheet(PJ);
+    wsPJ['!cols']=[{wch:46},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsPJ,"PJE_CALC");
+
     // ---- FORMATAÇÃO (SheetJS free: número + largura; sem negrito/cor) ----
     const MONEY='"R$" #,##0.00;[Red]-"R$" #,##0.00';
     const moneyCols={ // colunas de VALOR por aba (0-based); demais ficam sem moeda (comp/qtd/%/fator/selic%)
       RESUMO:[1,2,3,4], EVOLUCAO:[1,2,3,4,5,7],
       HE_50:[2,4,5,6,7,8,9,11,13,14], HE_100_DOM:[2,4,5,6,7,8,9,11,13,14], HE_ART71:[2,4,5,6,7,8,9,11,13,14],
       PERICULOSIDADE:[1,3,4,5,6,7,9,11,12], INSALUBRIDADE:[1,3,4,5,6,7,9,11,12],
-      RESCISORIAS:[1], FGTS_MENSAL:[1,2,4], SEGURO:[1],
+      RESCISORIAS:[1], FGTS_MENSAL:[1,2,4], SEGURO:[1], PJE_CALC:[1],
       INSS_RECLAMANTE:[1,2,3,4,5,6], INSS_RECLAMADA:[1,3,5,6], IRRF_RRA:[1] };
     Object.keys(wb.Sheets).forEach(name=>{
       const ws=wb.Sheets[name]; if(!ws['!ref'])return;
@@ -308,7 +329,7 @@
       ws['!cols']=widths;
     });
     wb.Workbook={CalcPr:{fullCalcOnLoad:true}};
-    wb.SheetNames=["PREMISSAS","RESUMO","EVOLUCAO","JORNADA","HE_50","HE_100_DOM","HE_ART71","ADICIONAL_NOTURNO","PERICULOSIDADE","INSALUBRIDADE","RESCISORIAS","FGTS_MENSAL","INSS_RECLAMANTE","INSS_RECLAMADA","IRRF_RRA","TABELAS","TAB_IRRF"].filter(n=>wb.Sheets[n]);
+    wb.SheetNames=["PREMISSAS","RESUMO","EVOLUCAO","JORNADA","HE_50","HE_100_DOM","HE_ART71","ADICIONAL_NOTURNO","PERICULOSIDADE","INSALUBRIDADE","RESCISORIAS","FGTS_MENSAL","INSS_RECLAMANTE","INSS_RECLAMADA","IRRF_RRA","PJE_CALC","TABELAS","TAB_IRRF"].filter(n=>wb.Sheets[n]);
     return wb;
   }
 
