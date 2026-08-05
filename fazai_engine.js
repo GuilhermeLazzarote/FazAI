@@ -282,25 +282,37 @@
     push(["LÍQUIDO DO AUTOR","","","",F(`=E${s}-E${d1}-E${d2}`)]);
     XLSX.utils.book_append_sheet(wb,mkSheet(RZ),"RESUMO");
 
-    // ---- ABA PJE_CALC: só as verbas PRINCIPAIS (sem reflexos, sem correção) p/ copiar e colar no PJe-Calc ----
-    const PJ=[["VALORES PARA O PJe-CALC — "+(p.reclamante||"")+" · "+(p.processo||"")],
-      ["Somente principais, sem reflexos e sem correção monetária/juros"],[],
-      ["Verba","Valor principal"]];
-    const pjRefs=[]; // linhas do RESUMO (1-based) com o Principal de cada verba apurada
-    RZ.forEach((row,i)=>{
-      const rot=String(row[0]||'');
-      if(/^\s*Principal/.test(rot) && row[1]!=null && row[1]!==''){
-        let titulo=''; for(let k=i-1;k>=0;k--){ const t=String(RZ[k][0]||''); if(t && !/^\s/.test(t)){ titulo=t.trim(); break; } }
-        // pula blocos de verba não apurada (título de bloco existe mas principal referencia célula zerada é ok — motor zera)
-        PJ.push([titulo, F(`=RESUMO!B${i+1}`)]);
-        pjRefs.push(4+pjRefs.length); // linha correspondente nesta aba (dados começam na 5)
-      }
-    });
-    PJ.push([]);
-    const somaRange = pjRefs.length? `B${pjRefs[0]+1}:B${pjRefs[pjRefs.length-1]+1}` : 'B5:B5';
-    PJ.push(["TOTAL PRINCIPAL (sem reflexos/correção)", F(`=SUM(${somaRange})`)]);
+    // ---- ABA PJE_CALC: valores MÊS A MÊS, principal puro (sem reflexos, sem correção) p/ colar nas tabelas do PJe-Calc ----
+    // Cada verba apurada vira uma COLUNA; cada competência uma LINHA. Referencia o principal mensal de cada aba.
+    // Principal mensal: HE_* → coluna E ("Devido"); PERICULOSIDADE/INSALUBRIDADE → coluna D ("Valor Mês").
+    const pjCols=[]; // {nome, sheet, col} — só verbas efetivamente apuradas
+    if(wb.Sheets["HE_50"] && (p.qHE50>0)) pjCols.push({nome:"HE 50%", sheet:"HE_50", col:"E"});
+    if(wb.Sheets["HE_100_DOM"] && (p.qDom>0)) pjCols.push({nome:"HE 100%/Dom/Fer", sheet:"HE_100_DOM", col:"E"});
+    if(wb.Sheets["HE_ART71"] && (p.qInt>0)) pjCols.push({nome:"Intervalo art.71", sheet:"HE_ART71", col:"E"});
+    if(wb.Sheets["PERICULOSIDADE"] && p.aplicaPeric==="Sim") pjCols.push({nome:"Periculosidade", sheet:"PERICULOSIDADE", col:"D"});
+    if(wb.Sheets["INSALUBRIDADE"] && p.aplicaInsal==="Sim") pjCols.push({nome:"Insalubridade", sheet:"INSALUBRIDADE", col:"D"});
+    if(wb.Sheets["ADICIONAL_NOTURNO"] && p.temAdicNoturno) pjCols.push({nome:"Adic. noturno", sheet:"ADICIONAL_NOTURNO", col:"E"});
+    const PJ=[];
+    PJ.push(["VALORES MÊS A MÊS PARA O PJe-CALC — "+(p.reclamante||"")+" · "+(p.processo||"")]);
+    if(pjCols.length){
+      PJ.push(["Principal puro, sem reflexos e sem correção/juros. Copie a coluna da verba e cole na tabela correspondente do PJe-Calc."]);
+      PJ.push([]);
+      PJ.push(["Competência", ...pjCols.map(c=>c.nome)]);
+      const pjHeadRow=4;
+      C.forEach((c,i)=>{
+        const linha=[c.k];
+        pjCols.forEach(pc=>{ linha.push(F(`=${pc.sheet}!${pc.col}${4+i}`)); });
+        PJ.push(linha);
+      });
+      const pjIni=pjHeadRow+1, pjFim=pjHeadRow+n;
+      const totalLinha=["TOTAL"];
+      pjCols.forEach((pc,ci)=>{ const colLetra=String.fromCharCode(66+ci); totalLinha.push(F(`=SUM(${colLetra}${pjIni}:${colLetra}${pjFim})`)); });
+      PJ.push(totalLinha);
+    } else {
+      PJ.push(["Nenhuma verba de apuração mensal (horas, adicionais) foi deferida. As demais verbas (rescisórias, honorários) estão nas abas RESCISORIAS e RESUMO."]);
+    }
     const wsPJ=mkSheet(PJ);
-    wsPJ['!cols']=[{wch:46},{wch:18}];
+    wsPJ['!cols']=[{wch:14}, ...pjCols.map(()=>({wch:18}))];
     XLSX.utils.book_append_sheet(wb,wsPJ,"PJE_CALC");
 
     // ---- FORMATAÇÃO (SheetJS free: número + largura; sem negrito/cor) ----
@@ -309,7 +321,7 @@
       RESUMO:[1,2,3,4], EVOLUCAO:[1,2,3,4,5,7],
       HE_50:[2,4,5,6,7,8,9,11,13,14], HE_100_DOM:[2,4,5,6,7,8,9,11,13,14], HE_ART71:[2,4,5,6,7,8,9,11,13,14],
       PERICULOSIDADE:[1,3,4,5,6,7,9,11,12], INSALUBRIDADE:[1,3,4,5,6,7,9,11,12],
-      RESCISORIAS:[1], FGTS_MENSAL:[1,2,4], SEGURO:[1], PJE_CALC:[1],
+      RESCISORIAS:[1], FGTS_MENSAL:[1,2,4], SEGURO:[1], PJE_CALC:[1,2,3,4,5,6,7,8],
       INSS_RECLAMANTE:[1,2,3,4,5,6], INSS_RECLAMADA:[1,3,5,6], IRRF_RRA:[1] };
     Object.keys(wb.Sheets).forEach(name=>{
       const ws=wb.Sheets[name]; if(!ws['!ref'])return;
