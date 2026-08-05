@@ -519,8 +519,16 @@ function tipoPremissa(vid){
   return 'valor';                                                         // valor único/mês
 }
 let premissasManuais=[]; // verbas adicionadas na mão
+// verbas apuradas AUTOMATICAMENTE (não pedem input de premissa)
+function ehAutomatica(v){
+  const d=(v.descricao||'').toLowerCase();
+  if(/saldo\s*de\s*sal|aviso\s*pr[eé]vio|13|d[eé]cimo\s*terceiro|natalina|f[eé]rias/.test(d)) return true; // rescisórias
+  if(/honor[aá]rio/.test(d)) return true; // honorários
+  return false;
+}
 function montarPremissas(j){
-  const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA' && !ehAutomatica(v));
+  if(!def.length) return '<div class="hint">Nenhuma verba deferida precisa de premissa de quantidade. Rescisórias, honorários e valores fixos são apurados automaticamente na estimativa.</div>';
   let h='';
   def.forEach((v,idx)=>{
     const vid=idDaVerba(v);
@@ -531,7 +539,7 @@ function montarPremissas(j){
     if(tipo==='horas') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="20" min="0" step="1"><span>h/mês</span></div>';
     else if(tipo==='horasNot') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="1"><span>h noturnas/mês</span></div>';
     else if(tipo==='pct') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+(pctNum||(vid==='periculosidade'?30:20))+'" min="0" step="1"><span>% (sobre '+(vid==='periculosidade'?'salário':'base')+')</span></div>';
-    else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$ (valor único)</span></div>';
+    else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$/mês</span></div>';
     h+='<input type="hidden" id="premtipo_'+idx+'" value="'+tipo+'">';
     h+='</div>';
   });
