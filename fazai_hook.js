@@ -53,17 +53,20 @@
     const temFeriasVencidas = has("feriasVencidas") || has("ferias_vencidas");
     // (5) adicional noturno como verba própria só se pedido
     const temAdicNoturno = has("adicionalNoturno") || has("adic_noturno");
+    // CONTROLE DE RESCISÓRIAS: só apura o que a sentença deferiu (caso.rescisorias vindo da ponte).
+    // Se não vier (fluxo antigo pela inicial), mantém tudo (retrocompatível).
+    const R = caso.rescisorias || {saldo:true, aviso:true, decimo:true, ferias:true};
     return {
       reclamante:caso.reclamante||"", reclamada:caso.reclamada||"", processo:caso.numeroProcesso||"",
       ini, fim, dataBase, diasBordaIni, diasBordaFim,
-      diasSaldo, avosFerias, avos13, temFeriasVencidas, temAdicNoturno,
+      diasSaldo: R.saldo?diasSaldo:0, avosFerias: R.ferias?avosFerias:0, avos13: R.decimo?avos13:0, temFeriasVencidas, temAdicNoturno,
       salarioBase, valeRefeicao:num((caso.auxiliosPadrao||{}).vr), vrIntegra: has("vr")?"Sim":"Nao",
       divisor:num(caso.divisor)||220,
       aplicaDsrHe: caso.dsrCompoeBaseReflexos?"Sim":"Nao",
       aplicaPeric: has("periculosidade")?"Sim":"Nao", pctPeric:num((ov.periculosidade||{}).percentual)||0.30,
       aplicaInsal: has("insalubridade")?"Sim":"Nao", grauInsal:num((ov.insalubridade||{}).percentual)||0.40,
       baseInsal:"Salario Minimo", aplicaCumulacao:(has("periculosidade")&&has("insalubridade"))?"Sim":"Nao",
-      avisoDias, aplicaCorrecao:"Sim", selicPos,
+      avisoDias: R.aviso?avisoDias:0, aplicaCorrecao:"Sim", selicPos,
       ajuizamento: caso.dataDistribuicao ? ymOf(caso.dataDistribuicao) : undefined,
       pctHon:(caso.honorarios&&caso.honorarios.percentual)?num(caso.honorarios.percentual)/100:0.15,
       inssPatronal:0.23, pctFgts:0.08, aplicaMulta:"Sim", pctMulta:0.40,
