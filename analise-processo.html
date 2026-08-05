@@ -167,7 +167,9 @@ Você NÃO calcula valores. Você NÃO interpreta o que o juiz "quis dizer". Tra
 
 PASSO 1 — IDENTIFIQUE E ORDENE AS PEÇAS: liste todas as decisões em ordem cronológica (mais antiga → mais recente): tipo, data, ID/folhas, e o que cada uma ALTEROU.
 
-DADOS CONTRATUAIS (preencha em "dadosContratuais" SÓ o que constar EXPRESSO nas decisões; use null no que não constar — NÃO invente): dataAjuizamento (costuma aparecer na análise da prescrição), dataAdmissao, dataDemissao, tipoRescisao, funcao, salario, dataBaseAtualizacao, evolucaoSalarial. Esses dados serão confirmados/completados pelo calculista depois — sua função é só adiantar o que a decisão já revelou.
+DADOS CONTRATUAIS (preencha em "dadosContratuais" SÓ o que constar EXPRESSO nas decisões; use null no que não constar — NÃO invente): dataAjuizamento (costuma aparecer na análise da prescrição), dataAdmissao, dataDemissao, tipoRescisao, funcao, salario, dataBaseAtualizacao, evolucaoSalarial.
+
+JORNADA DE TRABALHO — se a decisão reconhecer/fixar a jornada (ex.: "jornada das 8h às 18h de segunda a sexta, com 1h de intervalo", "escala 12x36", "das 22h às 6h"), preencha "jornada": tipo="fixa" quando a sentença fixa horário certo; "variavel" quando manda apurar por cartão de ponto; "nao_consta" quando não trata. Em "descricao" copie o trecho que fixa a jornada. Em "dias", para cada dia trabalhado (chaves: 1=segunda ... 6=sábado, 0=domingo), preencha entrada e saida em HORA DECIMAL (8h=8; 18h30=18.5; 22h=22) e intervMin em MINUTOS (1h=60). Dias não trabalhados: deixe {}. Se a jornada for fixa e a decisão deferiu horas extras, ISSO é o que permite o cálculo real das HE — capriche na extração.
 
 PASSO 2 — CONSOLIDE CADA VERBA (regra de ouro): o que EXECUTA é o resultado final da cadeia. 1) A decisão MAIS RECENTE que tratou o ponto prevalece — indique quando reformar outra. 2) O que uma peça superior NÃO tocou PERMANECE. 3) Reforma de EXISTÊNCIA ≠ de PARÂMETRO: recurso que EXCLUI → statusFinal EXCLUÍDA; que MANTÉM mas altera parâmetro → DEFERIDA com o novo, demais HERDAM da anterior; que DEFERE verba antes indeferida → DEFERIDA; que SILENCIA → permanece. 4) HERANÇA DE PARÂMETRO (crítico): acórdão quase nunca repete base/reflexos/período; ao alterar só um, HERDE o resto E marque requerConferencia com "parâmetros herdados de <peça>; recurso alterou apenas <X>". Nunca presuma que o recurso zerou o que não mencionou. 5) Indeterminável ("provimento parcial nos termos do voto" sem dispositivo claro) → statusFinal INDEFINIDO + requerConferencia.
 
@@ -184,7 +186,7 @@ TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documen
 CONCISÃO (importante — resposta longa é cortada): todos os campos de texto são CURTOS. "observacao" e "risco": no máximo 1 frase. "transcricaoLiteral": só o trecho essencial sobre o índice (máx. ~15 palavras), não o parágrafo inteiro. "alterou" e "tema": no máximo 1 frase. "conclusaoRisco": no máximo 2 frases. Não repita informação entre campos. Prefira sempre a forma mais curta que preserve o dado técnico.
 
 IMPORTANTE — FORMATO DA RESPOSTA: responda EXCLUSIVAMENTE com o objeto JSON, começando com { e terminando com }. NÃO escreva nenhuma palavra antes ou depois. NÃO use blocos de código markdown. NÃO explique. Apenas o JSON puro. Estrutura do JSON:
-{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","dias":{"1":{"entrada":null,"saida":null,"intervMin":null},"2":{},"3":{},"4":{},"5":{},"6":{},"0":{}}},"fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
 
 let arquivo=null, arquivoB64=null, arquivoTexto='';
 const $=id=>document.getElementById(id);
@@ -470,6 +472,46 @@ function montarResumo(j){
 }
 
 // define que tipo de input cada verba precisa para a estimativa
+function montarJornada(j){
+  const jd=(j.dadosContratuais&&j.dadosContratuais.jornada)||{};
+  const dias=jd.dias||{};
+  const nomes=[['1','Segunda'],['2','Terça'],['3','Quarta'],['4','Quinta'],['5','Sexta'],['6','Sábado'],['0','Domingo']];
+  const sug=(jd.tipo==='fixa')?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">jornada sugerida pela IA — confira</span>':'';
+  let h='';
+  if(jd.descricao) h+='<div class="hint" style="margin-bottom:8px;font-style:italic">"'+esc(jd.descricao)+'"'+sug+'</div>';
+  h+='<table class="jtab"><tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Intervalo (min)</th></tr>';
+  nomes.forEach(([k,nome])=>{
+    const d=dias[k]||{};
+    const ent=d.entrada!=null?d.entrada:'';
+    const sai=d.saida!=null?d.saida:'';
+    const iv=d.intervMin!=null?d.intervMin:'';
+    h+='<tr><td>'+nome+'</td>'
+      +'<td><input type="number" step="0.5" id="j_'+k+'_ent" value="'+ent+'" placeholder="8"></td>'
+      +'<td><input type="number" step="0.5" id="j_'+k+'_sai" value="'+sai+'" placeholder="18"></td>'
+      +'<td><input type="number" step="5" id="j_'+k+'_iv" value="'+iv+'" placeholder="60"></td></tr>';
+  });
+  h+='</table>';
+  return h;
+}
+function coletarJornada(){
+  const map={'1':'50','2':'50','3':'50','4':'50','5':'50','6':'50','0':'100'};
+  const dias={}; let algum=false;
+  ['1','2','3','4','5','6','0'].forEach(k=>{
+    const ent=parseFloat(($('j_'+k+'_ent')||{}).value);
+    const sai=parseFloat(($('j_'+k+'_sai')||{}).value);
+    const iv=parseFloat(($('j_'+k+'_iv')||{}).value)||0;
+    // índice do motor: 0=domingo..6=sábado
+    const wd=(k==='0')?0:parseInt(k,10);
+    if(!isNaN(ent)&&!isNaN(sai)&&sai!==ent){
+      algum=true;
+      const base=(k==='0')?0:8; // seg-sex/sáb base 8h; domingo tudo é 100%
+      dias[wd]={entrada:ent, saida:sai, interv:iv, base:base, tipo:map[k]};
+    } else {
+      dias[wd]={};
+    }
+  });
+  return algum?{dias}:null;
+}
 function tipoPremissa(vid){
   if(['heTotais','he100','heArt71'].includes(vid)) return 'horas';      // horas/mês
   if(vid==='adicionalNoturno') return 'horasNot';                        // horas noturnas/mês
@@ -549,6 +591,9 @@ function montarDados(j){
   h+=campo('Salário (R$)','f_sal',d.salario,'number',s(d.salario));
   h+=campo('Data-base de atualização','f_db',dataBase,'date',s(dataBase));
   h+='<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">Evolução salarial'+(s(d.evolucaoSalarial)?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>':'')+'</label><textarea id="f_evol" style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px" placeholder="Reajustes/aumentos ao longo do contrato, se houver">'+(d.evolucaoSalarial||'')+'</textarea></div>';
+  h+='<div class="sec-title" style="margin-top:22px">Jornada de trabalho</div>';
+  h+='<div class="hint" style="margin-bottom:10px">Se a sentença fixou jornada, a IA já preencheu abaixo — confira. Quando há jornada fixa, o Excel calcula as horas extras a partir dela (bem mais preciso que estimar horas/mês). Deixe em branco os dias não trabalhados. Hora em decimal (18:30 = 18,5).</div>';
+  h+='<div id="jornada-box">'+montarJornada(j)+'</div>';
   h+='<div class="sec-title" style="margin-top:22px">Premissas de quantidade (para a estimativa)</div>';
   h+='<div class="hint" style="margin-bottom:10px">Informe as médias mensais que você estima para cada verba. Quanto mais real, mais precisa a estimativa. Campos aparecem para as verbas deferidas; use o botão para adicionar outras.</div>';
   h+='<div id="premissas-box">'+montarPremissas(j)+'</div>';
@@ -624,12 +669,33 @@ function estimarCalculo(j, d, premissas){
   });
 
   // reflexos aproximados (DSR, 13º, férias+1/3, FGTS) — acréscimo estimado de ~40%
+  // --- Verbas rescisórias: apuradas automaticamente a partir das datas (aproximação) ---
+  const rescLinhas=[];
+  const g=j.parametrosGlobais||{};
+  const defVerbas=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const txtVerbas=defVerbas.map(v=>(v.descricao||'').toLowerCase()).join(' | ');
+  const salDia=sal/30, mesTrab=fim?fim.getDate():30;
+  const anosCasa = (adm&&fim)?Math.max(0,fim.getFullYear()-adm.getFullYear()):0;
+  if(/saldo\s*de\s*sal/.test(txtVerbas)){ const v=salDia*mesTrab; rescLinhas.push({v:'Saldo de salário',valor:v,memo:mesTrab+' dias × R$'+salDia.toFixed(2)}); }
+  if(/aviso\s*pr[eé]vio/.test(txtVerbas)){ const dias=Math.min(30+3*anosCasa,90); const v=sal/30*dias; rescLinhas.push({v:'Aviso prévio indenizado',valor:v,memo:dias+' dias'}); }
+  if(/13|d[eé]cimo\s*terceiro|natalina/.test(txtVerbas)){ const v=sal/12*(fim?fim.getMonth()+1:12); rescLinhas.push({v:'13º proporcional',valor:v,memo:(fim?fim.getMonth()+1:12)+'/12 avos'}); }
+  if(/f[eé]rias\s*(proporc|indeniz|\+)/.test(txtVerbas)||/^f[eé]rias/.test(txtVerbas)){ const v=(sal+sal/3)*((fim?fim.getMonth()+1:12)/12); rescLinhas.push({v:'Férias proporcionais + 1/3',valor:v,memo:'aprox.'}); }
+  let totalResc=0; rescLinhas.forEach(l=>{totalResc+=l.valor; linhas.push({v:l.v,valor:l.valor,memo:l.memo});});
+  total+=totalResc;
+  // --- Verbas de valor único fixadas em sentença (honorários periciais, multas com valor) ---
+  let totalFixo=0;
+  if(g.honorariosPericiais && g.honorariosPericiais.valor>0){ totalFixo+=g.honorariosPericiais.valor; linhas.push({v:'Honorários periciais (fixado)',valor:g.honorariosPericiais.valor,memo:'valor de sentença'}); }
+  total+=totalFixo;
+
   const reflexos = total*0.40;
   const totalWReflex = total + reflexos;
-  // correção/juros aproximada por tempo até hoje (SELIC ~ estimativa demonstrativa)
   const anos = ajz ? Math.max(0,(new Date()-ajz)/(365.25*24*3600*1000)) : 0;
-  const correcao = totalWReflex * Math.min(0.6, anos*0.10); // ~10%/ano, teto demonstrativo
-  const totalGeral = totalWReflex + correcao;
+  const correcao = totalWReflex * Math.min(0.6, anos*0.10);
+  // --- Honorários sucumbenciais: % sobre o total (após reflexos e correção) ---
+  const hs=g.honorariosSucumbenciais;
+  const pctHon=(hs&&hs.percentual)?hs.percentual/100:0;
+  const honorarios=(totalWReflex+correcao)*pctHon;
+  const totalGeral = totalWReflex + correcao + honorarios;
 
   const brl = n => 'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   let h='';
@@ -642,6 +708,7 @@ function estimarCalculo(j, d, premissas){
   h+='<tr><td>Subtotal das verbas principais</td><td><b>'+brl(total)+'</b></td></tr>';
   h+='<tr><td>Reflexos estimados (DSR, 13º, férias+1/3, FGTS ~40%)</td><td>'+brl(reflexos)+'</td></tr>';
   h+='<tr><td>Correção e juros estimados (desde o ajuizamento)</td><td>'+brl(correcao)+'</td></tr>';
+  if(honorarios>0) h+='<tr><td>Honorários sucumbenciais ('+(hs.percentual)+'%)</td><td>'+brl(honorarios)+'</td></tr>';
   h+='<tr style="background:#eef4ff"><td style="font-size:16px;font-weight:800;color:var(--navy)">TOTAL ESTIMADO</td><td style="font-size:18px;font-weight:800;color:var(--orange)">'+brl(totalGeral)+'</td></tr>';
   h+='</table>';
   h+='<div class="hint" style="margin-top:12px">As premissas de quantidade (horas/mês, feriados, intervalo) usam valores médios de demonstração. Na liquidação completa, cada uma é apurada com os documentos do processo (cartão de ponto, evolução salarial, CCT).</div>';
@@ -760,14 +827,19 @@ async function gerarExcel(){
   };
   const caso = montarCaso(ultimoJson, d);
   if(!caso) return;
+  caso.jornada = coletarJornada(); // jornada informada/confirmada → motor calcula HE a partir dela
   window._fazaiCasoAtual = caso;
   const st=$('f_status');
   st.innerHTML='<span style="color:var(--muted)">Gerando Excel formulado…</span>';
   try{
     await window.exportLiquidaXLSXFormulado();
     let msg='<span class="okmsg">✓ Excel gerado e baixado. Abra para conferir e editar.</span>';
+    const temJornada = caso.jornada && caso.jornada.dias;
     if(caso._avisos && caso._avisos.length){
-      msg+='<div class="conf" style="margin-top:8px"><b>⚠ Conferir no Excel:</b><ul class="att">'+caso._avisos.map(a=>'<li>'+a+'</li>').join('')+'<li>Quantidades de horas (HE/intervalo/feriados) usam premissa de 20h/mês — ajustar com o cartão de ponto.</li><li>Reflexos e rescisórias saem no padrão do motor — conferir contra o que a decisão deferiu.</li></ul></div>';
+      let extra = temJornada
+        ? '<li>Horas extras calculadas pela JORNADA informada (aba JORNADA) — confira os horários.</li>'
+        : '<li>Sem jornada informada: as horas (HE/intervalo/feriados) usam premissa de 20h/mês — ajustar com o cartão de ponto ou informar a jornada.</li>';
+      msg+='<div class="conf" style="margin-top:8px"><b>⚠ Conferir no Excel:</b><ul class="att">'+caso._avisos.map(a=>'<li>'+a+'</li>').join('')+extra+'<li>Reflexos saem no padrão do motor — conferir contra o que a decisão deferiu.</li></ul></div>';
     } else {
       msg+='<div class="hint" style="margin-top:6px">Premissas de demonstração: 20h/mês nas verbas de hora; reflexos/rescisórias no padrão do motor. Ajustar na conferência.</div>';
     }
