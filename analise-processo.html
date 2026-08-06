@@ -100,7 +100,7 @@
 </head>
 <body>
 <header>
-  <div class="logo">Faz<b>AI</b></div>
+  <div class="logo" ondblclick="var t=document.getElementById('tab-json'); if(t) t.style.display=t.style.display==='none'?'block':'none';" title="">Faz<b>AI</b></div>
   <div class="sub">Análise de Processo · leitura de decisões</div>
 </header>
 
@@ -143,7 +143,7 @@
       <div class="tab on" data-p="resumo" onclick="tab('resumo')">Resumo para conferência</div>
       <div class="tab" data-p="dados" onclick="tab('dados')">Dados para o cálculo</div>
       <div class="tab" data-p="calculo" onclick="tab('calculo')">Estimativa</div>
-      <div class="tab" data-p="json" onclick="tab('json')">JSON (dados)</div>
+      <div class="tab" data-p="json" onclick="tab('json')" style="display:none" id="tab-json">JSON (dados)</div>
     </div>
     <div class="pane on" id="pane-resumo"></div>
     <div class="pane" id="pane-dados"></div>
