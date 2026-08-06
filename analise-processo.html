@@ -177,7 +177,7 @@ PASSO 3 — DENTRO DE CADA PEÇA: tópico a tópico, comando ≠ raciocínio. Ca
 
 PASSO 4 — PARÂMETROS. Por verba DEFERIDA (só o expresso): período, base de cálculo, percentual/adicional/divisor, reflexos deferidos, exclusões, baseApuracao (evolução/fixo), abatimento (valores pagos a deduzir), observacoesTecnicas (OJs/Súmulas), decisão que deferiu. GERAIS: prescrição e marco, limitação ao pedido, honorários (sucumbenciais e periciais: % e base), contribuições previdenciárias/fiscais, dedução de valores pagos, data-base, responsáveis (grupo econômico/subsidiária + limite). CORREÇÃO/JUROS (não devolva só "omisso"): índice nominal fixado → transcreva; remissão sem nomear índice ("na forma da lei","ADCs 58/59","Lei 14.905/2024") → transcreva a remissão literal e aponte o índice que ela implica na data da decisão, marcando PONTO CONTROVERTIDO. Não presuma base/período/reflexo omissos → registre "omisso na decisão".
 
-CLASSIFICAÇÃO TÉCNICA (campo "motorId") — para CADA verba, classifique pela NATUREZA do que foi deferido, NÃO pelas palavras usadas. O juiz escreve de mil formas ("feriados laborados", "labor em dias destinados ao repouso", "trabalho em folgas"); você entende a natureza. Use exatamente um destes valores: "heTotais" (horas extras comuns: excedentes da 8ª/44ª, sobrejornada, banco de horas inválido — adicional típico 50%); "he100" (labor em dia que deveria ser de descanso: feriados, domingos, DSR/RSR trabalhados, folgas suprimidas, dias destinados ao repouso, em dobro — 100%); "heArt71" (intervalo intrajornada suprimido/reduzido art.71 §4º, art.384, art.66 interjornada, intervalos não usufruídos); "periculosidade"; "insalubridade"; "adicionalNoturno" (adicional noturno, hora reduzida, prorrogação); "feriasVencidas" (férias vencidas/dobradas); "vr" (vale-refeição/alimentação); "outro" (QUALQUER outra: multas 467/477, honorários, indenizações, dano moral, diferenças salariais, equiparação, PPP, verbas rescisórias etc.). Em dúvida entre dois, escolha o mais específico e explique em "observacao". NÃO invente categoria fora dessa lista. Classifique também as INDEFERIDAS/EXCLUÍDAS.
+CLASSIFICAÇÃO TÉCNICA (campo "motorId") — para CADA verba, classifique pela NATUREZA do que foi deferido, NÃO pelas palavras usadas. O juiz escreve de mil formas ("feriados laborados", "labor em dias destinados ao repouso", "trabalho em folgas"); você entende a natureza. Use exatamente um destes valores: "heTotais" (horas extras comuns: excedentes da 8ª/44ª, sobrejornada, banco de horas inválido — adicional típico 50%); "he100" (labor em dia que deveria ser de descanso: feriados, domingos, DSR/RSR trabalhados, folgas suprimidas, dias destinados ao repouso, em dobro — 100%); "heArt71" (intervalo intrajornada suprimido/reduzido art.71 §4º, art.384, art.66 interjornada, intervalos não usufruídos); "periculosidade"; "insalubridade"; "adicionalNoturno" (adicional noturno, hora reduzida, prorrogação); "feriasVencidas" (férias vencidas/dobradas); "vr" (vale-refeição/alimentação); "outro" (QUALQUER outra: multas 467/477, honorários, indenizações, dano moral, diferenças salariais, equiparação, PPP, verbas rescisórias etc.). Em dúvida entre dois, escolha o mais específico e explique em "observacao". NÃO invente categoria fora dessa lista. Classifique também as INDEFERIDAS/EXCLUÍDAS. VALOR FIXADO ("valorFixado"): quando a decisão arbitrar VALOR EM DINHEIRO para a verba (ex.: "multa de R$ 570,00", "dano moral de R$ 5.000,00", "indenização de R$ 1.200,00"), coloque só o número em "valorFixado" (ex.: 570). Se a verba é apurada por cálculo (horas, %, base), deixe null. Vale principalmente para multas, danos morais e indenizações com valor cravado.
 
 PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não confirmado nos autos; data e documento; +/- 2 anos da rescisória art.975 CPC; parcial vs total; não presuma trânsito por ausência de recurso). Recursos pendentes/admitidos (tipo, parte, tema, situação). Impacto: para cada recurso da RECLAMADA, qual verba/parâmetro pode mudar e em que medida. Conclusão (até 3 linhas): crédito consolidado ou risco concreto? RR admitido que comprometa a condenação?
 
@@ -186,7 +186,7 @@ TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documen
 CONCISÃO (importante — resposta longa é cortada): todos os campos de texto são CURTOS. "observacao" e "risco": no máximo 1 frase. "transcricaoLiteral": só o trecho essencial sobre o índice (máx. ~15 palavras), não o parágrafo inteiro. "alterou" e "tema": no máximo 1 frase. "conclusaoRisco": no máximo 2 frases. Não repita informação entre campos. Prefira sempre a forma mais curta que preserve o dado técnico.
 
 IMPORTANTE — FORMATO DA RESPOSTA: responda EXCLUSIVAMENTE com o objeto JSON, começando com { e terminando com }. NÃO escreva nenhuma palavra antes ou depois. NÃO use blocos de código markdown. NÃO explique. Apenas o JSON puro. Estrutura do JSON:
-{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","dias":{"1":{"entrada":null,"saida":null,"intervMin":null},"2":{},"3":{},"4":{},"5":{},"6":{},"0":{}}},"fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"dataBaseAtualizacao":null,"evolucaoSalarial":"","jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","dias":{"1":{"entrada":null,"saida":null,"intervMin":null},"2":{},"3":{},"4":{},"5":{},"6":{},"0":{}}},"fonte":"o que foi localizado na decisão; null quando não consta"},"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],"resultadoConsolidado":"","parametrosGlobais":{"prescricao":{"marco":null,"requerConferencia":false,"observacao":""},"limitacaoAoPedido":false,"correcaoJuros":{"transcricaoLiteral":"","indiceImplicado":"","pontoControvertido":false,"observacao":""},"honorariosSucumbenciais":{"percentual":0,"base":"","requerConferencia":false},"honorariosPericiais":{"valor":0,"aCargoDe":""},"contribuicoes":{"previdenciaria":"","fiscal":""},"dataBase":"","responsaveis":[{"nome":"","tipo":"","limite":""}]},"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"baseApuracao":"","abatimento":"","observacoesTecnicas":[],"requerConferencia":false,"observacao":""}],"situacaoProcessual":{"transitoEmJulgado":"","dataTransito":null,"documentoComprova":"","transitoParcial":false,"recursosPendentes":[{"tipo":"","parte":"","tema":"","situacao":"","verbaImpactada":"","risco":""}],"conclusaoRisco":""},"pontosDeAtencao":[]}`;
 
 let arquivo=null, arquivoB64=null, arquivoTexto='';
 const $=id=>document.getElementById(id);
@@ -546,11 +546,12 @@ function montarPremissas(j){
     // valor default do campo de horas: da jornada se houver, senão 20
     let valHoras=20;
     if(hj){ if(vid==='heTotais'&&hj.he50>0)valHoras=hj.he50; else if(vid==='he100'&&hj.he100>0)valHoras=hj.he100; else if(vid==='heArt71'&&hj.art71>0)valHoras=hj.art71; }
-    const badgeJor=(hj&&['heTotais','he100','heArt71'].includes(vid))?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">da jornada</span>':'';
+    const valNot=(hj&&hj.noturnas>0)?hj.noturnas:0;
+    const badgeJor=(hj&&['heTotais','he100','heArt71'].includes(vid))?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">da jornada</span>':(hj&&vid==='adicionalNoturno'&&valNot>0?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">da jornada</span>':'');
     h+='<div class="prem-row" data-desc="'+esc(v.descricao)+'" data-vid="'+(vid||'')+'">';
     h+='<div class="prem-nome">'+esc(v.descricao)+badgeJor+'</div>';
     if(tipo==='horas') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+valHoras+'" min="0" step="1"><span>h/mês</span></div>';
-    else if(tipo==='horasNot') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="1"><span>h noturnas/mês</span></div>';
+    else if(tipo==='horasNot') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+valNot+'" min="0" step="1"><span>h noturnas/mês</span></div>';
     else if(tipo==='pct') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+(pctNum||(vid==='periculosidade'?30:20))+'" min="0" step="1"><span>% (sobre '+(vid==='periculosidade'?'salário':'base')+')</span></div>';
     else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$/mês</span></div>';
     h+='<input type="hidden" id="premtipo_'+idx+'" value="'+tipo+'">';
@@ -672,14 +673,14 @@ function horasDaJornada(jornada){
     const he50=(d.tipo==='50')?Math.max(labor-base,0):0;
     const he100=(d.tipo==='100')?labor:0;
     const art71=Math.max((60-interv)/60,0);                          // art.71/dia (se houve supressão)
-    porDia[wd]={he50,he100,art71};
+    porDia[wd]={he50,he100,art71,noturnas};
   }
   if(!temAlgum) return null;
   // média de dias por mês de cada dia-da-semana ≈ 4,345 semanas/mês
   const SEM=4.345;
-  let he50=0,he100=0,art71=0;
-  for(let wd=0;wd<=6;wd++){ he50+=porDia[wd].he50*SEM; he100+=porDia[wd].he100*SEM; art71+=porDia[wd].art71*SEM; }
-  return {he50:Math.round(he50*10)/10, he100:Math.round(he100*10)/10, art71:Math.round(art71*10)/10};
+  let he50=0,he100=0,art71=0,noturnas=0;
+  for(let wd=0;wd<=6;wd++){ he50+=porDia[wd].he50*SEM; he100+=porDia[wd].he100*SEM; art71+=porDia[wd].art71*SEM; noturnas+=(porDia[wd].noturnas||0)*SEM; }
+  return {he50:Math.round(he50*10)/10, he100:Math.round(he100*10)/10, art71:Math.round(art71*10)/10, noturnas:Math.round(noturnas*10)/10};
 }
 function estimarCalculo(j, d, premissas){
   const sal = d.salario || 0;
@@ -715,7 +716,9 @@ function estimarCalculo(j, d, premissas){
       base = valorHora*(1+adic)*qh*meses; memo=qh.toFixed(1)+'h/mês'+(fonte==='jornada'?' (da jornada)':'')+' × '+meses+' meses × R$'+valorHora.toFixed(2)+' × (1+'+adic+')';
     } else if(pr.tipo==='horasNot'){
       // adicional noturno: só o adicional (20%) sobre as horas noturnas
-      base = valorHora*0.2*q*meses; memo=q+'h noturnas/mês × 20% × '+meses+' meses';
+      let qn=q, fonte='informado';
+      if(horasJor && horasJor.noturnas>0){ qn=horasJor.noturnas; fonte='jornada'; }
+      base = valorHora*0.2*qn*meses; memo=qn.toFixed(1)+'h noturnas/mês'+(fonte==='jornada'?' (da jornada)':'')+' × 20% × '+meses+' meses';
     } else if(pr.tipo==='pct'){
       const p=q/100;
       base = sal*p*meses; memo=q+'% × salário × '+meses+' meses';
@@ -739,9 +742,14 @@ function estimarCalculo(j, d, premissas){
   if(/f[eé]rias\s*(proporc|indeniz|\+)/.test(txtVerbas)||/^f[eé]rias/.test(txtVerbas)){ const v=(sal+sal/3)*((fim?fim.getMonth()+1:12)/12); rescLinhas.push({v:'Férias proporcionais + 1/3',valor:v,memo:'aprox.'}); }
   let totalResc=0; rescLinhas.forEach(l=>{totalResc+=l.valor; linhas.push({v:l.v,valor:l.valor,memo:l.memo});});
   total+=totalResc;
-  // --- Verbas de valor único fixadas em sentença (honorários periciais, multas com valor) ---
+  // --- Verbas de valor único fixadas em sentença (honorários periciais, multas, danos morais com valor) ---
   let totalFixo=0;
   if(g.honorariosPericiais && g.honorariosPericiais.valor>0){ totalFixo+=g.honorariosPericiais.valor; linhas.push({v:'Honorários periciais (fixado)',valor:g.honorariosPericiais.valor,memo:'valor de sentença'}); }
+  // verbas com valorFixado (multa 477, dano moral, indenizações)
+  defVerbas.forEach(v=>{
+    const vf=parseFloat(v.valorFixado);
+    if(!isNaN(vf) && vf>0){ totalFixo+=vf; linhas.push({v:v.descricao+' (valor fixado)',valor:vf,memo:'R$'+vf.toFixed(2)+' arbitrado na decisão'}); }
+  });
   total+=totalFixo;
 
   const reflexos = total*0.40;
@@ -840,7 +848,7 @@ function montarCaso(j, d){
     } else {
       // verba sem motor próprio E que não é rescisória → complementar (calculista lança)
       const ehResc=/saldo\s*de\s*sal|aviso\s*pr[eé]vio|13|d[eé]cimo|natalina|f[eé]rias/.test(desc);
-      if(!ehResc) verbasIA.push({descricao:v.descricao, valor:0, formato:'unico'});
+      if(!ehResc){ const vf=parseFloat(v.valorFixado); verbasIA.push({descricao:v.descricao, valor:(!isNaN(vf)&&vf>0)?vf:0, formato:'unico'}); }
     }
   });
   // honorários periciais: valor FIXO da sentença (NÃO percentual) → entra como verba de valor único
