@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
 <script src="fazai_tabelas.js"></script>
 <script src="fazai_engine.js"></script>
 <script src="fazai_estilo.js"></script>
@@ -620,7 +621,7 @@ function montarDados(j){
   h+='<div class="hint" style="margin-bottom:10px">Informe as médias mensais que você estima para cada verba. Quanto mais real, mais precisa a estimativa. Campos aparecem para as verbas deferidas; use o botão para adicionar outras.</div>';
   h+='<div id="premissas-box">'+montarPremissas(j)+'</div>';
   h+='<div class="row" style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="addPremissaManual()">+ adicionar verba</button></div>';
-  h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar e estimar</button><button class="btn btn-primary" style="background:var(--navy)" onclick="gerarExcel()">Gerar Excel formulado</button></div>';
+  h+='<div class="row"><button class="btn btn-primary" onclick="salvarDados()">Salvar e estimar</button><button class="btn btn-primary" style="background:var(--navy)" onclick="gerarExcel()">Gerar Excel formulado</button><button class="btn btn-primary" style="background:#3a5a8a" onclick="gerarParecer()">Gerar parecer (Word)</button></div>';
   h+='<div class="status" id="f_status"></div>';
   h+='</div>';
   return h;
@@ -806,7 +807,17 @@ function mapearVerbaId(desc){
 
 // monta o objeto `caso` que o motor consome, a partir da análise + formulário
 function montarCaso(j, d){
-  const parse = s => { if(!s) return null; if(/^\d{4}-\d{2}$/.test(s)) s+='-15'; return new Date(s+'T12:00:00'); };
+  const parse = s => {
+    if(!s) return null;
+    s=String(s).trim();
+    let dt=null;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) dt=new Date(s+'T12:00:00');
+    else if(/^\d{4}-\d{2}$/.test(s)) dt=new Date(s+'-15T12:00:00');
+    else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){ const p=s.split('/'); dt=new Date(p[2]+'-'+p[1]+'-'+p[0]+'T12:00:00'); }
+    else if(/^\d{2}\/\d{4}$/.test(s)){ const p=s.split('/'); dt=new Date(p[1]+'-'+p[0]+'-15T12:00:00'); }
+    else dt=new Date(s);
+    return (dt && !isNaN(dt.getTime())) ? dt : null;
+  };
   const adm = parse(d.dataAdmissao), dem = parse(d.dataDemissao);
   if(!adm || !dem){ alert('Preencha admissão e demissão para gerar o Excel.'); return null; }
   if(dem<=adm){ alert('A demissão precisa ser depois da admissão.'); return null; }
@@ -815,13 +826,22 @@ function montarCaso(j, d){
   // PRESCRIÇÃO limita o início da apuração (igual à estimativa): max(admissão, marco)
   const presc = (j.parametrosGlobais && j.parametrosGlobais.prescricao && j.parametrosGlobais.prescricao.marco)
     ? parse(j.parametrosGlobais.prescricao.marco) : null;
-  const iniApur = (presc && presc>adm) ? presc : adm;
+  let iniApur = (presc && presc>adm) ? presc : adm;
+  // BLINDAGEM: se a prescrição for igual/posterior à demissão, algo está errado na leitura — usa a admissão e avisa
+  if(iniApur >= dem){
+    if(presc && presc>=dem){ iniApur = adm; } // prescrição furada, ignora
+    if(iniApur >= dem){ alert('Período de apuração inválido: a admissão ('+adm.toLocaleDateString('pt-BR')+') não é anterior à demissão ('+dem.toLocaleDateString('pt-BR')+'). Verifique as datas.'); return null; }
+  }
   // salário em todas as competências do período APURÁVEL (evolução real fica pra liquidação completa)
   const salariosMensais = {};
   let y=iniApur.getFullYear(), m=iniApur.getMonth()+1;
   while(y<dem.getFullYear() || (y===dem.getFullYear() && m<=dem.getMonth()+1)){
     salariosMensais[y+'-'+String(m).padStart(2,'0')] = sal;
     m++; if(m>12){m=1;y++;}
+  }
+  // guarda-chuva: se por qualquer motivo saiu 1 mês ou menos num contrato real, avisa
+  if(Object.keys(salariosMensais).length<=1 && (dem.getFullYear()!==adm.getFullYear() || dem.getMonth()!==adm.getMonth())){
+    console.warn('Apuração colapsou para 1 mês — verifique prescrição/datas. presc:', presc, 'adm:', adm, 'dem:', dem);
   }
   const p = j.parametrosGlobais||{};
   const verbasAtivas=[], overrides={}, qtdHoras={}, verbasIA=[];
@@ -879,6 +899,114 @@ function montarCaso(j, d){
   return caso;
 }
 
+async function gerarParecer(){
+  if(!window.docx){ alert('Biblioteca de Word não carregou. Recarregue a página.'); return; }
+  if(!ultimoJson){ alert('Faça a análise primeiro.'); return; }
+  const j=ultimoJson;
+  const d={dataAjuizamento:($('f_ajuiz')||{}).value,dataAdmissao:($('f_adm')||{}).value,dataDemissao:($('f_dem')||{}).value,funcao:($('f_func')||{}).value,salario:($('f_sal')||{}).value};
+  const D=window.docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType,BorderStyle}=D;
+  const pr=j.processo||{}, g=j.parametrosGlobais||{};
+  const NAVY="16213E", ORANGE="F15A22", LINE="CFD8E6";
+  const cell=(txt,opts={})=>new TableCell({width:{size:opts.w||2000,type:WidthType.DXA},shading:opts.head?{type:ShadingType.CLEAR,fill:NAVY}:(opts.fill?{type:ShadingType.CLEAR,fill:opts.fill}:undefined),
+    children:[new Paragraph({children:[new TextRun({text:String(txt==null?'':txt),bold:!!opts.head||!!opts.bold,color:opts.head?'FFFFFF':(opts.color||'222222'),size:opts.size||18})]})]});
+  const P=(txt,opts={})=>new Paragraph({spacing:{after:opts.after==null?120:opts.after},children:[new TextRun({text:txt,bold:opts.bold,italics:opts.ital,color:opts.color||'222222',size:opts.size||20})]});
+  const H=(txt,lvl)=>new Paragraph({heading:lvl===2?HeadingLevel.HEADING_2:HeadingLevel.HEADING_1,spacing:{before:240,after:120},children:[new TextRun({text:txt,bold:true,color:NAVY,size:lvl===2?24:28})]});
+
+  const kids=[];
+  // Cabeçalho
+  kids.push(new Paragraph({spacing:{after:40},children:[new TextRun({text:'PARECER TÉCNICO DE CRÉDITO',bold:true,color:NAVY,size:34})]}));
+  kids.push(P('Apoio à decisão de aquisição de ativo judicial — natureza trabalhista',{ital:true,color:'5A6472',size:20,after:40}));
+  kids.push(P('Processo nº '+(pr.numero||'—')+(pr.vara?' · '+pr.vara:''),{color:'5A6472',size:18,after:200}));
+
+  // 1. Identificação
+  kids.push(H('Identificação',1));
+  const idRows=[
+    ['Nº do processo',pr.numero||'—'],
+    ['Credor (reclamante)',pr.reclamante||'—'],
+    ['Devedor (reclamada)',(pr.reclamadas||[]).join(', ')||'—'],
+    ['Vara / Tribunal',pr.vara||'—'],
+    ['Resultado consolidado',j.resultadoConsolidado||'—'],
+  ];
+  kids.push(new Table({columnWidths:[2600,6400],width:{size:9000,type:WidthType.DXA},
+    rows:idRows.map(r=>new TableRow({children:[cell(r[0],{w:2600,bold:true,fill:'F2F5FA'}),cell(r[1],{w:6400})]}))}));
+  kids.push(P('',{after:120}));
+
+  // Resumo das decisões — cadeia consolidada (tabela-estrela)
+  kids.push(H('Resumo das decisões — cadeia consolidada',1));
+  const chainHead=new TableRow({children:[
+    cell('Verba',{head:true,w:2800}),cell('Sentença',{head:true,w:1400}),cell('Acórdão',{head:true,w:1400}),
+    cell('TST',{head:true,w:1200}),cell('Consolidado',{head:true,w:1400}),cell('Fonte',{head:true,w:800})]});
+  const statusMap={'DEFERIDA':'Deferido','EXCLUÍDA':'Excluído','INDEFERIDA':'Indeferido','INDEFINIDO':'A definir'};
+  const chainRows=[chainHead];
+  (j.verbas||[]).forEach(v=>{
+    const fonte=(v.definidaEm&&v.definidaEm.id)?v.definidaEm.id:'—';
+    const cons=statusMap[v.statusFinal]||v.statusFinal||'—';
+    const fill=(v.statusFinal==='EXCLUÍDA'||v.statusFinal==='INDEFERIDA')?'FBECEC':(v.statusFinal==='DEFERIDA'?'EAF5EC':'FFF0D8');
+    chainRows.push(new TableRow({children:[
+      cell(v.descricao||'—',{w:2800,bold:true}),
+      cell(v.statusFinal==='INDEFERIDA'?'Indeferido':'—',{w:1400}),
+      cell((v.definidaEm&&/ac[óo]rd/i.test(v.definidaEm.tipo||''))?cons:'—',{w:1400}),
+      cell('—',{w:1200}),
+      cell(cons,{w:1400,bold:true,fill}),
+      cell(fonte,{w:800,size:16})]}));
+  });
+  kids.push(new Table({columnWidths:[2800,1400,1400,1200,1400,800],width:{size:9000,type:WidthType.DXA},rows:chainRows}));
+  kids.push(P('',{after:120}));
+
+  // 1. Parâmetros para cálculo
+  kids.push(H('1. Parâmetros para cálculo',1));
+  kids.push(H('1.1 Verbas a apurar (lista consolidada)',2));
+  const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  def.forEach(v=>{
+    let linha=v.descricao||'';
+    const det=[];
+    if(v.percentual) det.push('adicional '+v.percentual);
+    if(v.divisor) det.push('divisor '+v.divisor);
+    if(v.baseCalculo) det.push('base: '+v.baseCalculo);
+    if(v.reflexos&&v.reflexos.length) det.push('reflexos: '+v.reflexos.join(', '));
+    if(v.valorFixado) det.push('valor fixado R$ '+v.valorFixado);
+    if(det.length) linha+=' — '+det.join('; ');
+    if(v.definidaEm&&v.definidaEm.id) linha+=' ['+v.definidaEm.id+']';
+    kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:linha,size:19})]}));
+  });
+
+  // 1.2 Jornada
+  const jor=(j.dadosContratuais&&j.dadosContratuais.jornada)||null;
+  if(jor&&(jor.descricao||jor.tipo==='fixa')){
+    kids.push(H('1.2 Critérios de apuração da jornada',2));
+    kids.push(P(jor.descricao||'Jornada fixa reconhecida na decisão. Divisor 220; hora noturna reduzida quando aplicável.',{size:19}));
+  }
+
+  // 1.3 Correção e juros
+  if(g.correcaoJuros&&(g.correcaoJuros.transcricaoLiteral||g.correcaoJuros.indiceImplicado)){
+    kids.push(H('1.3 Índice de correção e juros',2));
+    kids.push(P((g.correcaoJuros.transcricaoLiteral||'')+(g.correcaoJuros.indiceImplicado?' Índice aplicável: '+g.correcaoJuros.indiceImplicado+'.':'')+(g.correcaoJuros.pontoControvertido?' [PONTO CONTROVERTIDO — confirmar antes do cálculo]':''),{size:19}));
+  }
+
+  // 1.4 Honorários, custas e contribuições
+  kids.push(H('1.4 Honorários, custas e contribuições',2));
+  if(g.honorariosSucumbenciais&&g.honorariosSucumbenciais.percentual) kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:'Honorários advocatícios: '+g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'o valor apurado em liquidação')+'.',size:19})]}));
+  if(g.honorariosPericiais&&g.honorariosPericiais.valor) kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:'Honorários periciais: R$ '+g.honorariosPericiais.valor+(g.honorariosPericiais.aCargoDe?' — a cargo de '+g.honorariosPericiais.aCargoDe:'')+'.',size:19})]}));
+  if(g.contribuicoes&&g.contribuicoes.previdenciaria) kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:'Contribuições previdenciárias: '+g.contribuicoes.previdenciaria,size:19})]}));
+
+  // Pontos de atenção
+  if((j.pontosDeAtencao||[]).length){
+    kids.push(H('2. Pontos de atenção para o cálculo',1));
+    j.pontosDeAtencao.forEach(pt=>kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:pt,size:19})]})));
+  }
+
+  // Rodapé
+  kids.push(P('',{after:200}));
+  kids.push(P('Parecer elaborado a partir da leitura das decisões do processo. Os valores e parâmetros devem ser conferidos por calculista antes da liquidação definitiva.',{ital:true,color:'8A5A00',size:17}));
+
+  const doc=new Document({sections:[{properties:{page:{margin:{top:1000,bottom:1000,left:1000,right:1000}}},children:kids}]});
+  const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='Parecer_'+((pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_'))+'.docx'; a.click();
+  URL.revokeObjectURL(url);
+  const st=$('f_status'); if(st) st.innerHTML='<span class="okmsg">✓ Parecer gerado e baixado.</span>';
+}
 async function gerarExcel(){
   if(!window.FazAIEngine || !window.exportLiquidaXLSXFormulado){
     alert('Motor de cálculo não carregou. Verifique se fazai_tabelas.js, fazai_engine.js, fazai_hook.js e fazai_estilo.js estão no site.');
