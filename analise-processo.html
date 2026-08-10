@@ -463,7 +463,7 @@ function montarResumo(j){
   // pontos de atenção
   const pa=[];
   (j.verbas||[]).forEach(v=>{ if(v.requerConferencia&&v.observacao) pa.push('<b>'+esc(v.descricao)+':</b> '+esc(v.observacao)); });
-  (j.pontosDeAtencao||[]).forEach(x=>pa.push(esc(x)));
+  (Array.isArray(j.pontosDeAtencao)?j.pontosDeAtencao:(j.pontosDeAtencao?[j.pontosDeAtencao]:[])).forEach(x=>pa.push(esc(x)));
   if(pa.length){
     h+='<div class="sec-title">⚠ Conferir antes de calcular</div><div class="conf"><ul class="att">';
     pa.forEach(x=>h+='<li>'+x+'</li>');
@@ -527,17 +527,38 @@ function ehAutomatica(v){
   if(/honor[aá]rio/.test(d)) return true; // honorários
   return false;
 }
+function reaplicarJornada(){
+  // recalcula os campos de horas a partir da jornada atual da tabela e remonta as premissas
+  const box=$('premissas-box');
+  if(box && ultimoJson){
+    premissasManuais=[]; // reset dos manuais (serão remontados)
+    box.innerHTML=montarPremissas(ultimoJson);
+    const cj=coletarJornada();
+    const hj=cj?horasDaJornada(cj):null;
+    if(hj && (hj.he50>0||hj.he100>0||hj.art71>0)){
+      // feedback visual
+      const st=$('f_status'); if(st) st.innerHTML='<span class="okmsg">✓ Horas recalculadas pela jornada: '+hj.he50.toFixed(1)+'h/mês (HE 50%)'+(hj.noturnas>0?', '+hj.noturnas.toFixed(1)+'h noturnas':'')+'.</span>';
+    } else {
+      const st=$('f_status'); if(st) st.innerHTML='<span class="hint">Jornada não preenchida ou sem horas extras — informe entrada/saída na tabela acima.</span>';
+    }
+  }
+}
 function montarPremissas(j){
   const def=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA' && !ehAutomatica(v));
   if(!def.length) return '<div class="hint">Nenhuma verba deferida precisa de premissa de quantidade. Rescisórias, honorários e valores fixos são apurados automaticamente na estimativa.</div>';
-  // horas da jornada informada pela IA (se houver) — pré-preenche os campos de hora
-  const jor=(j.dadosContratuais&&j.dadosContratuais.jornada)||null;
+  // horas da jornada: prioriza a TABELA editável (coletarJornada); se ainda não há tabela no DOM, usa o que a IA leu
   let hj=null;
-  if(jor && jor.dias){
-    const dias={};
-    ['1','2','3','4','5','6','0'].forEach(k=>{const dd=jor.dias[k]||{};const wd=(k==='0')?0:parseInt(k,10);
-      if(dd.entrada!=null&&dd.saida!=null){dias[wd]={entrada:dd.entrada,saida:dd.saida,interv:(dd.intervMin||0),base:(k==='0'?0:8),tipo:(k==='0'?'100':'50')};}});
-    hj=horasDaJornada({dias});
+  const daTabela = (typeof coletarJornada==='function') ? coletarJornada() : null;
+  if(daTabela){
+    hj=horasDaJornada(daTabela);
+  } else {
+    const jor=(j.dadosContratuais&&j.dadosContratuais.jornada)||null;
+    if(jor && jor.dias){
+      const dias={};
+      ['1','2','3','4','5','6','0'].forEach(k=>{const dd=jor.dias[k]||{};const wd=(k==='0')?0:parseInt(k,10);
+        if(dd.entrada!=null&&dd.saida!=null){dias[wd]={entrada:dd.entrada,saida:dd.saida,interv:(dd.intervMin||0),base:(k==='0'?0:8),tipo:(k==='0'?'100':'50')};}});
+      hj=horasDaJornada({dias});
+    }
   }
   let h='';
   def.forEach((v,idx)=>{
@@ -546,7 +567,7 @@ function montarPremissas(j){
     const pctNum=(function(){const m=String(v.percentual||'').match(/(\d+)/);return m?parseInt(m[1],10):null;})();
     // valor default do campo de horas: da jornada se houver, senão 20
     let valHoras=20;
-    if(hj){ if(vid==='heTotais'&&hj.he50>0)valHoras=hj.he50; else if(vid==='he100'&&hj.he100>0)valHoras=hj.he100; else if(vid==='heArt71'&&hj.art71>0)valHoras=hj.art71; }
+    if(hj){ if(vid==='heTotais'&&hj.he50>0)valHoras=hj.he50; else if(vid==='he100'&&hj.he100>0)valHoras=hj.he100; else if(vid==='heArt71'&&(hj.art71>0||hj.interjornada>0))valHoras=hj.art71+(hj.interjornada||0); }
     const valNot=(hj&&hj.noturnas>0)?hj.noturnas:0;
     const badgeJor=(hj&&['heTotais','he100','heArt71'].includes(vid))?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">da jornada</span>':(hj&&vid==='adicionalNoturno'&&valNot>0?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">da jornada</span>':'');
     h+='<div class="prem-row" data-desc="'+esc(v.descricao)+'" data-vid="'+(vid||'')+'">';
@@ -554,7 +575,7 @@ function montarPremissas(j){
     if(tipo==='horas') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+valHoras+'" min="0" step="1"><span>h/mês</span></div>';
     else if(tipo==='horasNot') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+valNot+'" min="0" step="1"><span>h noturnas/mês</span></div>';
     else if(tipo==='pct') h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="'+(pctNum||(vid==='periculosidade'?30:20))+'" min="0" step="1"><span>% (sobre '+(vid==='periculosidade'?'salário':'base')+')</span></div>';
-    else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$/mês</span></div>';
+    else h+='<div class="prem-in"><input type="number" id="prem_'+idx+'" value="0" min="0" step="0.01"><span>R$ único</span></div>';
     h+='<input type="hidden" id="premtipo_'+idx+'" value="'+tipo+'">';
     h+='</div>';
   });
@@ -567,8 +588,8 @@ function addPremissaManual(){
   const div=document.createElement('div');
   div.className='prem-row prem-manual';
   div.innerHTML='<input type="text" placeholder="nome da verba" id="'+id+'_nome" style="flex:1;min-width:120px">'
-    +'<select id="'+id+'_tipo" onchange="document.getElementById(\''+id+'_un\').textContent=this.value===\'horas\'?\'h/mês\':(this.value===\'pct\'?\'%\':\'R$/mês\')">'
-    +'<option value="horas">horas/mês (50%)</option><option value="pct">% sobre salário</option><option value="valor">valor R$/mês</option></select>'
+    +'<select id="'+id+'_tipo" onchange="document.getElementById(\''+id+'_un\').textContent=this.value===\'horas\'?\'h/mês\':(this.value===\'pct\'?\'%\':(this.value===\'valorMensal\'?\'R$/mês\':\'R$ único\'))">'
+    +'<option value="horas">horas/mês (50%)</option><option value="pct">% sobre salário</option><option value="valor">valor único (dano moral, multa)</option><option value="valorMensal">valor mensal (diferença)</option></select>'
     +'<div class="prem-in"><input type="number" id="'+id+'_val" value="0" min="0" step="0.01"><span id="'+id+'_un">h/mês</span></div>'
     +'<button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">×</button>';
   box.appendChild(div);
@@ -617,6 +638,7 @@ function montarDados(j){
   h+='<div class="sec-title" style="margin-top:22px">Jornada de trabalho</div>';
   h+='<div class="hint" style="margin-bottom:10px">Se a sentença fixou jornada, a IA já preencheu abaixo — confira. Quando há jornada fixa, o Excel calcula as horas extras a partir dela (bem mais preciso que estimar horas/mês). Deixe em branco os dias não trabalhados. Hora em decimal (18:30 = 18,5).</div>';
   h+='<div id="jornada-box">'+montarJornada(j)+'</div>';
+  h+='<div class="row" style="margin:8px 0"><button class="btn btn-ghost btn-sm" onclick="reaplicarJornada()">↻ aplicar jornada aos campos de horas</button></div>';
   h+='<div class="sec-title" style="margin-top:22px">Premissas de quantidade (para a estimativa)</div>';
   h+='<div class="hint" style="margin-bottom:10px">Informe as médias mensais que você estima para cada verba. Quanto mais real, mais precisa a estimativa. Campos aparecem para as verbas deferidas; use o botão para adicionar outras.</div>';
   h+='<div id="premissas-box">'+montarPremissas(j)+'</div>';
@@ -660,12 +682,11 @@ function salvarDados(){
 function horasDaJornada(jornada){
   if(!jornada || !jornada.dias) return null;
   const D=jornada.dias;
-  // por dia-da-semana: labor = permanência + redução noturna − intervalo; HE50 = max(labor−base,0)
-  const porDia={}; // wd -> {he50, he100, art71}
+  const porDia={}; // wd -> {he50, he100, art71, noturnas, interjornada}
   let temAlgum=false;
   for(let wd=0;wd<=6;wd++){
     const d=D[wd];
-    if(!d || d.entrada==null || d.saida==null){ porDia[wd]={he50:0,he100:0,art71:0}; continue; }
+    if(!d || d.entrada==null || d.saida==null){ porDia[wd]={he50:0,he100:0,art71:0,noturnas:0,interj:0}; continue; }
     temAlgum=true;
     const ent=+d.entrada, sai=+d.saida, interv=(+d.interv||0), base=(+d.base||0);
     const perm=((sai-ent)+24)%24;                                   // permanência
@@ -673,15 +694,30 @@ function horasDaJornada(jornada){
     const labor=perm + noturnas*(60/52.5-1) - interv/60;            // labor ajustado
     const he50=(d.tipo==='50')?Math.max(labor-base,0):0;
     const he100=(d.tipo==='100')?labor:0;
-    const art71=Math.max((60-interv)/60,0);                          // art.71/dia (se houve supressão)
-    porDia[wd]={he50,he100,art71,noturnas};
+    const art71=Math.max((60-interv)/60,0);                          // art.71/dia (se houve supressão do intervalo)
+    porDia[wd]={he50,he100,art71,noturnas,ent,sai,perm,interj:0};
   }
   if(!temAlgum) return null;
-  // média de dias por mês de cada dia-da-semana ≈ 4,345 semanas/mês
-  const SEM=4.345;
-  let he50=0,he100=0,art71=0,noturnas=0;
-  for(let wd=0;wd<=6;wd++){ he50+=porDia[wd].he50*SEM; he100+=porDia[wd].he100*SEM; art71+=porDia[wd].art71*SEM; noturnas+=(porDia[wd].noturnas||0)*SEM; }
-  return {he50:Math.round(he50*10)/10, he100:Math.round(he100*10)/10, art71:Math.round(art71*10)/10, noturnas:Math.round(noturnas*10)/10};
+  // INTERJORNADA (art. 66): descanso mínimo de 11h entre o fim de uma jornada e o início da seguinte.
+  // Compara saída de cada dia trabalhado com a entrada do próximo dia trabalhado; horas faltantes = extra.
+  const ordem=[1,2,3,4,5,6,0]; // seg..dom
+  for(let i=0;i<ordem.length;i++){
+    const hoje=porDia[ordem[i]];
+    if(!hoje || hoje.ent==null) continue;
+    // acha o próximo dia trabalhado
+    let prox=null;
+    for(let k=1;k<=7;k++){ const w=ordem[(i+k)%ordem.length]; if(porDia[w] && porDia[w].ent!=null){ prox=porDia[w]; break; } }
+    if(!prox) continue;
+    // descanso = (24 - saída) + entrada do próximo (saída pode passar da meia-noite)
+    const saiAjust = hoje.sai<=hoje.ent ? hoje.sai+24 : hoje.sai; // se vira o dia
+    const descanso = (24 - (saiAjust%24)) + prox.ent;
+    if(descanso < 11) hoje.interj = 11 - descanso; // horas de interjornada suprimida naquele dia
+  }
+  const SEM=4.345; // semanas/mês
+  let he50=0,he100=0,art71=0,noturnas=0,interj=0;
+  for(let wd=0;wd<=6;wd++){ const p=porDia[wd]; he50+=p.he50*SEM; he100+=p.he100*SEM; art71+=p.art71*SEM; noturnas+=(p.noturnas||0)*SEM; interj+=(p.interj||0)*SEM; }
+  const r=x=>Math.round(x*10)/10;
+  return {he50:r(he50), he100:r(he100), art71:r(art71), noturnas:r(noturnas), interjornada:r(interj)};
 }
 function estimarCalculo(j, d, premissas){
   const sal = d.salario || 0;
@@ -712,7 +748,7 @@ function estimarCalculo(j, d, premissas){
       if(horasJor){
         if(pr.vid==='heTotais'&&horasJor.he50>0){ qh=horasJor.he50; fonte='jornada'; }
         else if(pr.vid==='he100'&&horasJor.he100>0){ qh=horasJor.he100; fonte='jornada'; }
-        else if(pr.vid==='heArt71'&&horasJor.art71>0){ qh=horasJor.art71; fonte='jornada'; }
+        else if(pr.vid==='heArt71'&&(horasJor.art71>0||horasJor.interjornada>0)){ qh=horasJor.art71+(horasJor.interjornada||0); fonte='jornada'; }
       }
       base = valorHora*(1+adic)*qh*meses; memo=qh.toFixed(1)+'h/mês'+(fonte==='jornada'?' (da jornada)':'')+' × '+meses+' meses × R$'+valorHora.toFixed(2)+' × (1+'+adic+')';
     } else if(pr.tipo==='horasNot'){
@@ -721,10 +757,12 @@ function estimarCalculo(j, d, premissas){
       if(horasJor && horasJor.noturnas>0){ qn=horasJor.noturnas; fonte='jornada'; }
       base = valorHora*0.2*qn*meses; memo=qn.toFixed(1)+'h noturnas/mês'+(fonte==='jornada'?' (da jornada)':'')+' × 20% × '+meses+' meses';
     } else if(pr.tipo==='pct'){
-      const p=q/100;
-      base = sal*p*meses; memo=q+'% × salário × '+meses+' meses';
-    } else { // valor único/mês
+      const pp=q/100;
+      base = sal*pp*meses; memo=q+'% × salário × '+meses+' meses';
+    } else if(pr.tipo==='valorMensal'){ // valor que se repete todo mês (ex.: diferença salarial)
       base = q*meses; memo='R$'+q.toFixed(2)+'/mês × '+meses+' meses';
+    } else { // valor ÚNICO (dano moral, multa, indenização) — NÃO multiplica por meses
+      base = q; memo='R$'+q.toFixed(2)+' (valor único)';
     }
     if(base>0){ total+=base; linhas.push({v:pr.descricao, valor:base, memo, conf:vrb&&vrb.requerConferencia}); }
   });
@@ -734,13 +772,22 @@ function estimarCalculo(j, d, premissas){
   const rescLinhas=[];
   const g=j.parametrosGlobais||{};
   const defVerbas=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
-  const txtVerbas=defVerbas.map(v=>(v.descricao||'').toLowerCase()).join(' | ');
   const salDia=sal/30, mesTrab=fim?fim.getDate():30;
   const anosCasa = (adm&&fim)?Math.max(0,fim.getFullYear()-adm.getFullYear()):0;
-  if(/saldo\s*de\s*sal/.test(txtVerbas)){ const v=salDia*mesTrab; rescLinhas.push({v:'Saldo de salário',valor:v,memo:mesTrab+' dias × R$'+salDia.toFixed(2)}); }
-  if(/aviso\s*pr[eé]vio/.test(txtVerbas)){ const dias=Math.min(30+3*anosCasa,90); const v=sal/30*dias; rescLinhas.push({v:'Aviso prévio indenizado',valor:v,memo:dias+' dias'}); }
-  if(/13|d[eé]cimo\s*terceiro|natalina/.test(txtVerbas)){ const v=sal/12*(fim?fim.getMonth()+1:12); rescLinhas.push({v:'13º proporcional',valor:v,memo:(fim?fim.getMonth()+1:12)+'/12 avos'}); }
-  if(/f[eé]rias\s*(proporc|indeniz|\+)/.test(txtVerbas)||/^f[eé]rias/.test(txtVerbas)){ const v=(sal+sal/3)*((fim?fim.getMonth()+1:12)/12); rescLinhas.push({v:'Férias proporcionais + 1/3',valor:v,memo:'aprox.'}); }
+  // rescisória PRÓPRIA: a verba É a rescisória, não uma que só menciona 13º/aviso nos reflexos
+  function ehRescPropria(desc, tipo){
+    const base = desc.split(/\breflex|\bsobre\b|\bincid|\(/)[0];
+    if(tipo==='saldo') return /saldo\s*de\s*sal/.test(base);
+    if(tipo==='aviso') return /aviso\s*pr[eé]vio/.test(base) && !/fgts|multa/.test(base);
+    if(tipo==='decimo') return /(^|\s)(13[ºo°]?|d[eé]cimo\s*terceiro|gratifica[çc][ãa]o\s*natalina)(\s|$)/.test(base) && !/%/.test(base);
+    if(tipo==='ferias') return /f[eé]rias/.test(base) && /(proporc|indeniz|vencid|\+\s*1\/3|ter[çc]o)/.test(base);
+    return false;
+  }
+  const temResc = (tipo)=>defVerbas.some(v=>ehRescPropria((v.descricao||'').toLowerCase(),tipo));
+  if(temResc('saldo')){ const v=salDia*mesTrab; rescLinhas.push({v:'Saldo de salário',valor:v,memo:mesTrab+' dias × R$'+salDia.toFixed(2)}); }
+  if(temResc('aviso')){ const dias=Math.min(30+3*anosCasa,90); const v=sal/30*dias; rescLinhas.push({v:'Aviso prévio indenizado',valor:v,memo:dias+' dias'}); }
+  if(temResc('decimo')){ const v=sal/12*(fim?fim.getMonth()+1:12); rescLinhas.push({v:'13º proporcional',valor:v,memo:(fim?fim.getMonth()+1:12)+'/12 avos'}); }
+  if(temResc('ferias')){ const v=(sal+sal/3)*((fim?fim.getMonth()+1:12)/12); rescLinhas.push({v:'Férias proporcionais + 1/3',valor:v,memo:'aprox.'}); }
   let totalResc=0; rescLinhas.forEach(l=>{totalResc+=l.valor; linhas.push({v:l.v,valor:l.valor,memo:l.memo});});
   total+=totalResc;
   // --- Verbas de valor único fixadas em sentença (honorários periciais, multas, danos morais com valor) ---
@@ -846,28 +893,59 @@ function montarCaso(j, d){
   const p = j.parametrosGlobais||{};
   const verbasAtivas=[], overrides={}, qtdHoras={}, verbasIA=[];
   const rescisorias={saldo:false, aviso:false, decimo:false, ferias:false}; // só o que a sentença deferiu
-  const HORAS_PREMISSA = 20; // premissa/mês para verbas de hora (editável na liquidação)
+  const HORAS_FALLBACK = 20; // último recurso, só se não houver jornada nem premissa informada
+  // horas por verba, na ordem: (1) jornada informada, (2) premissa digitada, (3) fallback 20
+  const jornadaCaso = (typeof coletarJornada==='function') ? coletarJornada() : null;
+  const horasJor = jornadaCaso ? horasDaJornada(jornadaCaso) : null;
+  const premInformadas = (typeof coletarPremissas==='function') ? coletarPremissas() : [];
+  const horasPorVid = {};
+  premInformadas.forEach(pr=>{ if(pr.tipo==='horas'||pr.tipo==='horasNot') horasPorVid[pr.vid]=pr.valor; });
+  function horasDaVerba(id){
+    // mesma metodologia para TODAS as horas: jornada informada → premissa digitada → fallback
+    if(horasJor){
+      if(id==='heTotais'&&horasJor.he50>0) return horasJor.he50;
+      if(id==='he100'&&horasJor.he100>0) return horasJor.he100;
+      if(id==='heArt71'&&horasJor.art71>0){
+        // art71 do motor = intervalo intrajornada + interjornada (art.66), ambos na mesma cesta
+        return horasJor.art71 + (horasJor.interjornada||0);
+      }
+      if(id==='adicionalNoturno'&&horasJor.noturnas>0) return horasJor.noturnas;
+    }
+    if(horasPorVid[id]!=null && horasPorVid[id]>0) return horasPorVid[id];
+    return HORAS_FALLBACK;
+  }
+  // rescisória PRÓPRIA: a verba É a rescisória, não uma verba que só menciona 13º/aviso nos reflexos.
+  // Checa o INÍCIO da descrição (a verba principal), ignorando o que vier depois de "reflexo/sobre/incidência".
+  function ehRescisoriaPropria(desc, tipo){
+    const base = desc.split(/\breflex|\bsobre\b|\bincid|\(/)[0]; // corta antes dos reflexos
+    if(tipo==='saldo') return /saldo\s*de\s*sal/.test(base);
+    if(tipo==='aviso') return /aviso\s*pr[eé]vio/.test(base) && !/fgts|multa/.test(base);
+    if(tipo==='decimo') return /(^|\s)(13[ºo°]?|d[eé]cimo\s*terceiro|gratifica[çc][ãa]o\s*natalina)(\s|$)/.test(base) && !/%/.test(base);
+    if(tipo==='ferias') return /f[eé]rias/.test(base) && /(proporc|indeniz|vencid|\+\s*1\/3|ter[çc]o)/.test(base);
+    return false;
+  }
   (j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA').forEach(v=>{
     const id = idDaVerba(v);
     const desc=(v.descricao||'').toLowerCase();
     const pctNum = (function(){ const mm=String(v.percentual||'').match(/(\d+)/); return mm?parseInt(mm[1],10)/100:null; })();
-    // rescisórias: detectar pelo texto (o motor não deve presumir)
-    if(/saldo\s*de\s*sal/.test(desc)) rescisorias.saldo=true;
-    else if(/aviso\s*pr[eé]vio/.test(desc)) rescisorias.aviso=true;
-    else if(/13|d[eé]cimo\s*terceiro|gratifica[çc][ãa]o\s*natalina/.test(desc)) rescisorias.decimo=true;
-    else if(/f[eé]rias\s*(proporc|indeniz|\+|vencid)/.test(desc) || /^f[eé]rias/.test(desc)) rescisorias.ferias=true;
+    // rescisórias: só se a verba for ELA MESMA a rescisória (não reflexo de outra)
+    if(ehRescisoriaPropria(desc,'saldo')) rescisorias.saldo=true;
+    else if(ehRescisoriaPropria(desc,'aviso')) rescisorias.aviso=true;
+    else if(ehRescisoriaPropria(desc,'decimo')) rescisorias.decimo=true;
+    else if(ehRescisoriaPropria(desc,'ferias')) rescisorias.ferias=true;
     if(id){
       if(verbasAtivas.indexOf(id)<0) verbasAtivas.push(id);
       if(id==='periculosidade' && pctNum) overrides.periculosidade={percentual:pctNum};
       if(id==='insalubridade' && pctNum) overrides.insalubridade={percentual:pctNum};
-      // toda verba de HORA deferida recebe a premissa (nunca zera se foi deferida)
+      // verba de HORA: usa jornada > premissa > fallback (nunca trava em 20 se há jornada/premissa)
       if(['heTotais','he100','heArt71'].includes(id)){
+        const qh=horasDaVerba(id);
         if(!qtdHoras[id]) qtdHoras[id]={};
-        Object.keys(salariosMensais).forEach(k=>qtdHoras[id][k]=HORAS_PREMISSA);
+        Object.keys(salariosMensais).forEach(k=>qtdHoras[id][k]=qh);
       }
     } else {
       // verba sem motor próprio E que não é rescisória → complementar (calculista lança)
-      const ehResc=/saldo\s*de\s*sal|aviso\s*pr[eé]vio|13|d[eé]cimo|natalina|f[eé]rias/.test(desc);
+      const ehResc=ehRescisoriaPropria(desc,'saldo')||ehRescisoriaPropria(desc,'aviso')||ehRescisoriaPropria(desc,'decimo')||ehRescisoriaPropria(desc,'ferias');
       if(!ehResc){ const vf=parseFloat(v.valorFixado); verbasIA.push({descricao:v.descricao, valor:(!isNaN(vf)&&vf>0)?vf:0, formato:'unico'}); }
     }
   });
@@ -964,7 +1042,7 @@ async function gerarParecer(){
     if(v.percentual) det.push('adicional '+v.percentual);
     if(v.divisor) det.push('divisor '+v.divisor);
     if(v.baseCalculo) det.push('base: '+v.baseCalculo);
-    if(v.reflexos&&v.reflexos.length) det.push('reflexos: '+v.reflexos.join(', '));
+    if(v.reflexos&&(Array.isArray(v.reflexos)?v.reflexos.length:String(v.reflexos).trim())) det.push('reflexos: '+(Array.isArray(v.reflexos)?v.reflexos.join(', '):v.reflexos));
     if(v.valorFixado) det.push('valor fixado R$ '+v.valorFixado);
     if(det.length) linha+=' — '+det.join('; ');
     if(v.definidaEm&&v.definidaEm.id) linha+=' ['+v.definidaEm.id+']';
@@ -991,9 +1069,10 @@ async function gerarParecer(){
   if(g.contribuicoes&&g.contribuicoes.previdenciaria) kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:'Contribuições previdenciárias: '+g.contribuicoes.previdenciaria,size:19})]}));
 
   // Pontos de atenção
-  if((j.pontosDeAtencao||[]).length){
+  const pontosAt = Array.isArray(j.pontosDeAtencao)?j.pontosDeAtencao:(j.pontosDeAtencao?[j.pontosDeAtencao]:[]);
+  if(pontosAt.length){
     kids.push(H('2. Pontos de atenção para o cálculo',1));
-    j.pontosDeAtencao.forEach(pt=>kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:pt,size:19})]})));
+    pontosAt.forEach(pt=>kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:String(pt),size:19})]})));
   }
 
   // Rodapé
