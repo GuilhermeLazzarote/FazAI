@@ -182,7 +182,7 @@ CLASSIFICAÇÃO TÉCNICA (campo "motorId") — para CADA verba, classifique pela
 
 PASSO 5 — SITUAÇÃO PROCESSUAL E RISCO. Trânsito em julgado (sim/não/não confirmado nos autos; data e documento; +/- 2 anos da rescisória art.975 CPC; parcial vs total; não presuma trânsito por ausência de recurso). Recursos pendentes/admitidos (tipo, parte, tema, situação). Impacto: para cada recurso da RECLAMADA, qual verba/parâmetro pode mudar e em que medida. Conclusão (até 3 linhas): crédito consolidado ou risco concreto? RR admitido que comprometa a condenação?
 
-TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula.
+TRAVAS: sem dispositivo em nenhuma peça (parece petição) → {"erro":"documento não é decisão liquidável"}. Parâmetro não localizado EXPRESSO ou herdado sem repetição = requerConferencia; nunca presuma. Verba INDEFERIDA/EXCLUÍDA: liste sempre (não omita). Você transcreve, reconcilia e sinaliza — não calcula. STATUS PELO VERBO DO DISPOSITIVO (crítico): só marque DEFERIDA se o dispositivo DEFERIU/CONDENOU/PROCEDENTE a verba. "Indefiro", "julgo improcedente", "rejeito", "nego provimento (ao pedido do autor)", "não faz jus", "indevido" → INDEFERIDA/EXCLUÍDA. NUNCA marque DEFERIDA só porque a verba foi MENCIONADA ou DISCUTIDA — a menção do nome não é deferimento. Em especial SEGURO-DESEMPREGO / guias CD-SD / indenização substitutiva do seguro-desemprego: leia o verbo com atenção (é frequentemente INDEFERIDO); e mesmo quando deferido, é obrigação de FAZER (expedir guias) ou indenização com VALOR ARBITRADO — nunca verba de apuração por horas/reflexos; marque requerConferencia. Na dúvida sobre o status, use INDEFINIDO + requerConferencia, jamais DEFERIDA.
 
 CONCISÃO (importante — resposta longa é cortada): todos os campos de texto são CURTOS. "observacao" e "risco": no máximo 1 frase. "transcricaoLiteral": só o trecho essencial sobre o índice (máx. ~15 palavras), não o parágrafo inteiro. "alterou" e "tema": no máximo 1 frase. "conclusaoRisco": no máximo 2 frases. Não repita informação entre campos. Prefira sempre a forma mais curta que preserve o dado técnico.
 
@@ -523,8 +523,16 @@ let premissasManuais=[]; // verbas adicionadas na mão
 // verbas apuradas AUTOMATICAMENTE (não pedem input de premissa)
 function ehAutomatica(v){
   const d=(v.descricao||'').toLowerCase();
-  if(/saldo\s*de\s*sal|aviso\s*pr[eé]vio|13|d[eé]cimo\s*terceiro|natalina|f[eé]rias/.test(d)) return true; // rescisórias
-  if(/honor[aá]rio/.test(d)) return true; // honorários
+  // corta a descrição antes dos reflexos, para não confundir "HE com reflexo em 13º" com a rescisória 13º
+  const base=d.split(/\breflex|\bsobre\b|\bincid|\(/)[0];
+  // rescisória PRÓPRIA (a verba é ela mesma a rescisória, não um reflexo de outra)
+  if(/saldo\s*de\s*sal/.test(base)) return true;
+  if(/aviso\s*pr[eé]vio/.test(base) && !/fgts|multa/.test(base)) return true;
+  if(/(^|\s)(13[ºo°]?|d[eé]cimo\s*terceiro|gratifica[çc][ãa]o\s*natalina)(\s|$)/.test(base) && !/%/.test(base)) return true;
+  if(/f[eé]rias/.test(base) && /(proporc|indeniz|vencid|\+\s*1\/3|ter[çc]o)/.test(base)) return true;
+  if(/honor[aá]rio/.test(base)) return true; // honorários
+  // seguro-desemprego / guias CD-SD: obrigação de fazer ou indenização arbitrada — não se apura por horas/premissa
+  if(/seguro[\s-]*desemprego|guias?\s*(do\s*)?(seguro|cd\s*\/?\s*sd|sd)|\bcd\s*\/?\s*sd\b/.test(base)) return true;
   return false;
 }
 function reaplicarJornada(){
@@ -796,7 +804,16 @@ function estimarCalculo(j, d, premissas){
   // verbas com valorFixado (multa 477, dano moral, indenizações)
   defVerbas.forEach(v=>{
     const vf=parseFloat(v.valorFixado);
-    if(!isNaN(vf) && vf>0){ totalFixo+=vf; linhas.push({v:v.descricao+' (valor fixado)',valor:vf,memo:'R$'+vf.toFixed(2)+' arbitrado na decisão'}); }
+    if(!isNaN(vf) && vf>0){
+      const desc=(v.descricao||'').toLowerCase();
+      const ehSegDesemp=/seguro[\s-]*desemprego|guias?\s*(do\s*)?(seguro|cd\s*\/?\s*sd|sd)|\bcd\s*\/?\s*sd\b/.test(desc);
+      if(ehSegDesemp){
+        // seguro-desemprego: obrigação de fazer / indenização — não somar automático, sinalizar conferência
+        linhas.push({v:v.descricao+' (⚠ conferir deferimento)',valor:0,memo:'seguro-desemprego é obrigação de fazer ou indenização arbitrada — confirmar se foi deferido e o valor antes de incluir',conf:true});
+      } else {
+        totalFixo+=vf; linhas.push({v:v.descricao+' (valor fixado)',valor:vf,memo:'R$'+vf.toFixed(2)+' arbitrado na decisão'});
+      }
+    }
   });
   total+=totalFixo;
 
@@ -946,7 +963,9 @@ function montarCaso(j, d){
     } else {
       // verba sem motor próprio E que não é rescisória → complementar (calculista lança)
       const ehResc=ehRescisoriaPropria(desc,'saldo')||ehRescisoriaPropria(desc,'aviso')||ehRescisoriaPropria(desc,'decimo')||ehRescisoriaPropria(desc,'ferias');
-      if(!ehResc){ const vf=parseFloat(v.valorFixado); verbasIA.push({descricao:v.descricao, valor:(!isNaN(vf)&&vf>0)?vf:0, formato:'unico'}); }
+      const ehSegDesemp=/seguro[\s-]*desemprego|guias?\s*(do\s*)?(seguro|cd\s*\/?\s*sd|sd)|\bcd\s*\/?\s*sd\b/.test(desc);
+      // seguro-desemprego: obrigação de fazer / indenização — não lança valor automático (conferência do calculista)
+      if(!ehResc && !ehSegDesemp){ const vf=parseFloat(v.valorFixado); verbasIA.push({descricao:v.descricao, valor:(!isNaN(vf)&&vf>0)?vf:0, formato:'unico'}); }
     }
   });
   // honorários periciais: valor FIXO da sentença (NÃO percentual) → entra como verba de valor único
