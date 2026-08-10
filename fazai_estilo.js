@@ -100,6 +100,20 @@ async function aplicarEstiloPjeCalc(buffer, ExcelJS){
       else row.height=isTitle?22:(isHeader?18:15);
     });
   });
+  // CRÍTICO p/ Excel Windows: fórmulas geradas por SheetJS não têm valor em cache.
+  // Sem forçar recálculo, o Windows tenta ler o cache inexistente e acusa "arquivo corrompido".
+  // fullCalcOnLoad manda o Excel recalcular tudo ao abrir, resolvendo a trava.
+  try{
+    if(!wb.calcProperties) wb.calcProperties={};
+    wb.calcProperties.fullCalcOnLoad = true;
+    wb.calcProperties.calcId = 0;
+    if(wb.model){
+      wb.model.calcProperties = wb.model.calcProperties || {};
+      wb.model.calcProperties.fullCalcOnLoad = true;
+      wb.model.calcProperties.calcId = 0;
+      wb.model.fullCalcOnLoad = true;
+    }
+  }catch(e){ console.warn('[FazAI] fullCalcOnLoad:', e); }
   return await wb.xlsx.writeBuffer();
 }
 if(typeof module!=='undefined') module.exports={aplicarEstiloPjeCalc};
