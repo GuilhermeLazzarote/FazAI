@@ -161,7 +161,7 @@
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){ console.warn('pdf.js worker não configurado:',e); }
 
 const PROMPT = `Você é um perito contábil que elabora cálculos para processos judiciais trabalhistas. Vou te enviar um processo trabalhista — pode ser UMA peça (só a sentença) ou VÁRIAS (sentença, embargos, acórdão do TRT, acórdão de embargos, decisão de recurso de revista, agravo de petição, agravo de instrumento e demais decisões modificativas). Analise TODAS as decisões e devolva: (1) o mapa consolidado de verbas e parâmetros para liquidação, e (2) a situação processual e o risco de alteração do crédito.
 
