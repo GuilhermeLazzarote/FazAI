@@ -12,6 +12,7 @@
 <script src="fazai_tabelas.js"></script>
 <script src="fazai_engine.js"></script>
 <script src="fazai_estilo.js"></script>
+<script src="pontes_extrator.js"></script>
 <script src="fazai_hook.js"></script>
 <style>
   :root{
@@ -641,10 +642,12 @@ function montarDados(j){
   h+=campo('Tipo de rescisão','f_resc',rescOpts,'select',s(d.tipoRescisao));
   h+=campo('Função / cargo','f_func',d.funcao,'text',s(d.funcao));
   h+=campo('Salário (R$)','f_sal',d.salario,'number',s(d.salario));
+  h+='<div class="row" style="margin:-6px 0 12px"><label class="btn btn-ghost btn-sm" style="cursor:pointer">📄 Importar holerite (extrator)<input type="file" accept=".xlsx,.xls" style="display:none" onchange="onImportHolerite(this)"></label><span class="hint" style="margin-left:8px">preenche salário, evolução e deduções a partir do Excel do extrator</span></div>';
   h+=campo('Data-base de atualização','f_db',dataBase,'date',s(dataBase));
   h+='<div style="margin-bottom:14px"><label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px">Evolução salarial'+(s(d.evolucaoSalarial)?'<span class="tag" style="background:#e8eefb;color:#2a4a8a;margin-left:6px">sugerido pela IA — confira</span>':'')+'</label><textarea id="f_evol" style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px" placeholder="Reajustes/aumentos ao longo do contrato, se houver">'+(d.evolucaoSalarial||'')+'</textarea></div>';
   h+='<div class="sec-title" style="margin-top:22px">Jornada de trabalho</div>';
   h+='<div class="hint" style="margin-bottom:10px">Se a sentença fixou jornada, a IA já preencheu abaixo — confira. Quando há jornada fixa, o Excel calcula as horas extras a partir dela (bem mais preciso que estimar horas/mês). Deixe em branco os dias não trabalhados. Hora em decimal (18:30 = 18,5).</div>';
+  h+='<div class="row" style="margin:6px 0"><label class="btn btn-ghost btn-sm" style="cursor:pointer">🕐 Importar ponto (extrator)<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="onImportPonto(this)"></label><span class="hint" style="margin-left:8px">CSV PJe-Calc ou Excel de auditoria — preenche a jornada abaixo</span></div>';
   h+='<div id="jornada-box">'+montarJornada(j)+'</div>';
   h+='<div class="row" style="margin:8px 0"><button class="btn btn-ghost btn-sm" onclick="reaplicarJornada()">↻ aplicar jornada aos campos de horas</button></div>';
   h+='<div class="sec-title" style="margin-top:22px">Premissas de quantidade (para a estimativa)</div>';
