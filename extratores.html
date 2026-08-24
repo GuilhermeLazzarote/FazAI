@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FazAI · Extratores</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{ --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
@@ -128,7 +129,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
-let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc';
+let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc', arquivoAB=null, numPaginas=0;
 let jornada=[];        // ponto
 let holerite=null;     // {caso,competencias,rubricas:[{codigo,descricao,tipo,valores:{comp:val}}],salarioFixo,avisos}
 
@@ -192,44 +193,125 @@ async function selec(file){
   $('fstatus').innerHTML='Lendo o arquivo…';
   try{
     const ab=await file.arrayBuffer();
+    arquivoAB=ab.slice(0); // guarda cópia pra fatiar depois
     let texto='';
+    let np=0;
     try{
       const pdf=await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
+      np=pdf.numPages;
       for(let i=1;i<=pdf.numPages;i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); texto+=c.items.map(x=>x.str).join(' ')+'\n'; }
     }catch(e){ texto=''; }
+    numPaginas=np;
     arquivoTexto=texto.trim();
     const bytes=new Uint8Array(ab); let bin=''; for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
     arquivoB64=btoa(bin);
     const md = arquivoTexto.length>200 ? 'texto' : 'imagem (escaneado)';
-    $('fstatus').innerHTML='<span class="okmsg">✓ '+file.name+' carregado</span> — leitura por '+md+'.';
+    const pgInfo = np>0 ? np+' páginas · ' : '';
+    const aviso = np>=16 ? ' <span style="color:#8a5a1a">— documento grande, será lido em lotes automáticos.</span>' : '';
+    $('fstatus').innerHTML='<span class="okmsg">✓ '+file.name+' carregado</span> — '+pgInfo+'leitura por '+md+'.'+aviso;
     $('btn-go').disabled=false;
   }catch(e){ $('fstatus').innerHTML='<span class="err">Erro ao ler: '+e.message+'</span>'; }
 }
 
 async function extrair(){
   $('card-input').style.display='none'; $('loader').style.display='block';
-  const PROMPT = modo==='ponto'?PROMPT_PONTO:PROMPT_HOLERITE;
-  const rotulo = modo==='ponto'?'CARTÃO DE PONTO':'HOLERITES / FICHA FINANCEIRA';
   try{
-    let content;
-    if(arquivoTexto && arquivoTexto.length>200){
-      content=[{type:'text',text:rotulo+' (texto extraído do PDF):\n\n'+arquivoTexto+'\n\n---\n'+PROMPT}];
-    } else if(arquivoB64){
-      content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:arquivoB64}},{type:'text',text:PROMPT}];
-    } else throw new Error('Arquivo não carregado. Recarregue.');
-    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:32000,messages:[{role:'user',content}]})});
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Erro na API');
-    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    const obj=extrairJson(txt);
-    if(!obj) throw new Error('Não consegui estruturar a leitura. Tente PDF mais legível ou menos páginas.');
-    if(modo==='ponto'){ if(!obj.dias) throw new Error('Não achei jornada. É mesmo um cartão de ponto?'); jornada=obj.dias; renderPonto(obj); }
-    else { if(!obj.rubricas) throw new Error('Não achei rubricas. É mesmo um holerite?'); holerite=obj; renderHolerite(obj); }
+    // decide se fatia: PDF grande (>=10 pág) processa em lotes; senão, uma vez só
+    const PAGS_POR_LOTE = 14;
+    if(numPaginas>=16 && arquivoAB){
+      await extrairEmLotes(PAGS_POR_LOTE);
+    } else {
+      const obj=await chamarIA(arquivoTexto, arquivoB64);
+      finalizar(obj, false);
+    }
   }catch(e){
     $('loader').style.display='none'; $('card-input').style.display='block';
     $('fstatus').innerHTML='<span class="err">'+e.message+'</span>';
   }
+}
+
+// processa o PDF em blocos de páginas e junta os resultados
+async function extrairEmLotes(pagsPorLote){
+  const src=await PDFLib.PDFDocument.load(arquivoAB);
+  const total=src.getPageCount();
+  const nLotes=Math.ceil(total/pagsPorLote);
+  let acumDias=[], acumRubricas={}, caso='', periodos=[], avisos=[];
+  for(let l=0;l<nLotes;l++){
+    const ini=l*pagsPorLote, fim=Math.min(ini+pagsPorLote,total);
+    $('loadmsg').innerHTML='Lendo lote '+(l+1)+' de '+nLotes+' (páginas '+(ini+1)+'–'+fim+')…';
+    // monta um PDF só com as páginas do lote
+    const novo=await PDFLib.PDFDocument.create();
+    const idx=[]; for(let i=ini;i<fim;i++) idx.push(i);
+    const pgs=await novo.copyPages(src, idx);
+    pgs.forEach(p=>novo.addPage(p));
+    const b64=await novo.saveAsBase64();
+    // tenta texto do lote (pra PDFs de texto, mais barato/preciso)
+    let textoLote='';
+    try{
+      const pdfjs=await pdfjsLib.getDocument({data:_b64ToU8(b64)}).promise;
+      for(let i=1;i<=pdfjs.numPages;i++){ const pg=await pdfjs.getPage(i); const c=await pg.getTextContent(); textoLote+=c.items.map(x=>x.str).join(' ')+'\n'; }
+    }catch(e){ textoLote=''; }
+    const obj=await chamarIA(textoLote.trim(), b64);
+    if(obj){
+      if(obj.caso && !caso) caso=obj.caso;
+      if(obj.periodo) periodos.push(obj.periodo);
+      if(obj.avisos) avisos=avisos.concat(obj.avisos);
+      if(modo==='ponto' && obj.dias) acumDias=acumDias.concat(obj.dias);
+      if(modo==='holerite'){
+        if(obj.caso && !caso) caso=obj.caso;
+        (obj.rubricas||[]).forEach(r=>{
+          const k=(r.descricao||r.codigo||'?').toLowerCase().trim();
+          if(!acumRubricas[k]) acumRubricas[k]={codigo:r.codigo||'',descricao:r.descricao||r.codigo||'?',tipo:r.tipo||'provento',obs:r.obs||'',valores:{}};
+          Object.assign(acumRubricas[k].valores, r.valores||{});
+        });
+        if(obj.salarioFixo && obj.salarioFixo.valor){ window._salFixo=obj.salarioFixo; }
+      }
+    }
+  }
+  // monta o objeto final juntando todos os lotes
+  if(modo==='ponto'){
+    // ordena por data e remove duplicatas
+    const vistos={}; const dias=[];
+    acumDias.forEach(d=>{ if(d.data && !vistos[d.data]){ vistos[d.data]=1; dias.push(d); } });
+    dias.sort((a,b)=>_dataKey(a.data)-_dataKey(b.data));
+    finalizar({caso,periodo:periodos.join('; '),dias,avisos}, false);
+  } else {
+    const rubricas=Object.values(acumRubricas);
+    finalizar({caso,rubricas,salarioFixo:window._salFixo||null,avisos}, false);
+  }
+}
+function _b64ToU8(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
+function _dataKey(d){ const p=String(d||'').split('/'); return p.length===3 ? (+p[2]*10000 + +p[1]*100 + +p[0]) : 0; }
+
+// chama a IA uma vez (texto se houver, senão o PDF em base64)
+async function chamarIA(texto, b64){
+  const PROMPT = modo==='ponto'?PROMPT_PONTO:PROMPT_HOLERITE;
+  const rotulo = modo==='ponto'?'CARTÃO DE PONTO':'HOLERITES / FICHA FINANCEIRA';
+  let content;
+  if(texto && texto.length>200){
+    content=[{type:'text',text:rotulo+' (texto extraído do PDF):\n\n'+texto+'\n\n---\n'+PROMPT}];
+  } else if(b64){
+    content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT}];
+  } else throw new Error('Arquivo não carregado. Recarregue.');
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-5',max_tokens:64000,messages:[{role:'user',content}]})});
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Erro na API');
+  const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  const cortou = data.stop_reason==='max_tokens';
+  const obj=extrairJson(txt);
+  if(!obj){
+    if(cortou) throw new Error('Um lote ainda ficou grande demais e foi cortado. Me avise: dá pra reduzir o tamanho do lote.');
+    if(!txt || txt.trim().length<5) throw new Error('A IA não retornou conteúdo para um trecho. Se o PDF é escaneado, pode estar ilegível.');
+    const amostra=txt.replace(/\s+/g,' ').slice(0,180);
+    throw new Error('Não consegui montar a planilha. A IA respondeu: "'+amostra+'…". O documento pode não ser um '+(modo==='ponto'?'cartão de ponto':'holerite')+' legível.');
+  }
+  return obj;
+}
+
+function finalizar(obj, cortou){
+  if(modo==='ponto'){ if(!obj.dias||!obj.dias.length) throw new Error('Li o documento mas não encontrei jornada diária. Confirme que é um cartão/espelho de ponto (marcação por dia), não um holerite.'); jornada=obj.dias; renderPonto(obj); }
+  else { if(!obj.rubricas||!obj.rubricas.length) throw new Error('Li o documento mas não encontrei rubricas. Confirme que é um holerite/demonstrativo (proventos e descontos), não um cartão de ponto.'); holerite=obj; renderHolerite(obj); }
 }
 
 function extrairJson(txt){
