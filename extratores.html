@@ -129,6 +129,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
+try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){}
 let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc', arquivoAB=null, numPaginas=0;
 let jornada=[];        // ponto
 let holerite=null;     // {caso,competencias,rubricas:[{codigo,descricao,tipo,valores:{comp:val}}],salarioFixo,avisos}
@@ -207,7 +208,7 @@ async function selec(file){
     arquivoB64=btoa(bin);
     const md = arquivoTexto.length>200 ? 'texto' : 'imagem (escaneado)';
     const pgInfo = np>0 ? np+' páginas · ' : '';
-    const aviso = np>=16 ? ' <span style="color:#8a5a1a">— documento grande, será lido em lotes automáticos.</span>' : '';
+    const aviso = np>=8 ? ' <span style="color:#8a5a1a">— documento grande, será lido em lotes automáticos.</span>' : '';
     $('fstatus').innerHTML='<span class="okmsg">✓ '+file.name+' carregado</span> — '+pgInfo+'leitura por '+md+'.'+aviso;
     $('btn-go').disabled=false;
   }catch(e){ $('fstatus').innerHTML='<span class="err">Erro ao ler: '+e.message+'</span>'; }
@@ -217,8 +218,8 @@ async function extrair(){
   $('card-input').style.display='none'; $('loader').style.display='block';
   try{
     // decide se fatia: PDF grande (>=10 pág) processa em lotes; senão, uma vez só
-    const PAGS_POR_LOTE = 14;
-    if(numPaginas>=16 && arquivoAB){
+    const PAGS_POR_LOTE = 6;
+    if(numPaginas>=8 && arquivoAB){
       await extrairEmLotes(PAGS_POR_LOTE);
     } else {
       const obj=await chamarIA(arquivoTexto, arquivoB64);
@@ -293,8 +294,19 @@ async function chamarIA(texto, b64){
   } else if(b64){
     content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT}];
   } else throw new Error('Arquivo não carregado. Recarregue.');
-  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-5',max_tokens:64000,messages:[{role:'user',content}]})});
+  // fetch com retry: rede pode oscilar (ERR_NETWORK_CHANGED) — tenta até 3x
+  let res, ultimoErro;
+  for(let tent=1; tent<=3; tent++){
+    try{
+      res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-5',max_tokens:16000,messages:[{role:'user',content}]})});
+      break; // sucesso na conexão
+    }catch(e){
+      ultimoErro=e;
+      if(tent<3){ await new Promise(r=>setTimeout(r,1500*tent)); continue; } // espera e tenta de novo
+      throw new Error('A conexão caiu durante a leitura (rede instável). Tente de novo — o app relê. Detalhe: '+e.message);
+    }
+  }
   const data=await res.json();
   if(!res.ok) throw new Error(data.error||'Erro na API');
   const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
