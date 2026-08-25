@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FazAI · Impugnação ao cálculo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+<style>
+  :root{
+    --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
+    --line:#cfd8e6; --bg:#EEF1F6; --panel:#f7f9fc; --muted:#5A6472;
+    --warn-bg:#fff4e8; --warn-line:#f0c088; --ok:#1B7A3D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:12px}
+  header .logo{font-weight:800;font-size:20px;letter-spacing:.5px;cursor:default}
+  header .logo b{color:var(--orange)}
+  header .sub{font-size:13px;color:#AEB8CC;margin-left:auto}
+  header .sub a{color:#fff;text-decoration:none;margin-left:14px;background:var(--orange);padding:4px 12px;border-radius:6px;font-weight:600}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:20px}
+  .card.off{opacity:.55}
+  h1{font-size:22px;color:var(--navy);margin:0 0 6px}
+  h2{font-size:17px;color:var(--navy);margin:0 0 6px}
+  .lead{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .step{display:inline-block;background:var(--navy);color:#fff;font-size:12px;font-weight:700;border-radius:20px;padding:2px 11px;margin-bottom:8px}
+  .step.done{background:var(--ok)}
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:.15s;background:var(--panel)}
+  .drop:hover{border-color:var(--orange);background:#fff}
+  .drop .big{font-size:15px;font-weight:600;color:var(--navy)}
+  .drop .small{font-size:12.5px;color:var(--muted);margin-top:4px}
+  input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-family:inherit}
+  textarea{resize:vertical}
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-weight:600;cursor:pointer;font-size:14px}
+  .btn-primary{background:var(--orange);color:#fff}
+  .btn-primary:disabled{background:#c9ccd2;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--line)}
+  .btn-sm{padding:6px 12px;font-size:12.5px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .status{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px}
+  .okmsg{color:var(--ok);font-weight:600}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .err{background:#fdecec;border:1px solid #f0b0b0;color:#a11;padding:12px 14px;border-radius:8px;font-size:14px;margin-top:10px}
+  .loader{display:none;text-align:center;padding:30px}
+  .spin{width:38px;height:38px;border:4px solid #e3e8f0;border-top-color:var(--orange);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 14px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 18px}
+  th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+  td{padding:7px 10px;border-bottom:1px solid #e7ebf1;vertical-align:top}
+  tr:nth-child(even) td{background:#f6f8fb}
+  .sec-title{font-weight:700;color:var(--navy);font-size:15px;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--orange);display:inline-block}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .tag-def{background:#e3f4e8;color:#1B7A3D}
+  .tag-ind{background:#f4e3e3;color:#a11}
+  .tag-und{background:#fff0d8;color:#8a5a00}
+  .conf{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 14px;margin:8px 0;font-size:13px}
+  .conf b{color:#8a5a00}
+  /* cards de divergência */
+  .dcard{border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fff}
+  .dcard.certo{border-left-color:#a11}
+  .dcard.provavel{border-left-color:var(--orange)}
+  .dcard.conferir{border-left-color:#c9a227}
+  .dcard.off{opacity:.5;background:#fafbfd}
+  .dhead{display:flex;gap:10px;align-items:flex-start}
+  .dhead input[type=checkbox]{margin-top:4px;width:17px;height:17px;flex:none;cursor:pointer}
+  .dtitle{font-weight:700;color:var(--navy);font-size:14.5px;flex:1}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+  .b-certo{background:#f4e3e3;color:#a11}
+  .b-provavel{background:#ffe9dc;color:#a03b0d}
+  .b-conferir{background:#fff0d8;color:#8a5a00}
+  .dbody{margin-top:10px;display:none}
+  .dbody.on{display:block}
+  .fld{margin-bottom:9px}
+  .flab{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .fld textarea{font-size:13px;padding:7px}
+  .toggle{font-size:12px;color:var(--orange);cursor:pointer;font-weight:600;margin-top:8px;display:inline-block}
+  .sugcard{background:var(--panel);border:1px dashed var(--warn-line);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+  .sugcard input{margin-top:3px;width:16px;height:16px;flex:none}
+  details summary{cursor:pointer;font-weight:600;color:var(--navy);font-size:14px;margin-bottom:8px}
+  .counter{font-size:13px;color:var(--muted);margin:6px 0 14px}
+  .counter b{color:var(--navy)}
+  pre{background:#1e1e2e;color:#d4d4e8;padding:16px;border-radius:8px;overflow:auto;font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" ondblclick="var t=document.getElementById('debug'); t.style.display=t.style.display==='none'?'block':'none';">Faz<b>AI</b></div>
+  <div class="sub">Impugnação ao cálculo da parte contrária
+    <a href="analise-processo.html">← Análise / Cálculo</a>
+    <a href="extratores.html">Extratores</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ETAPA 1 -->
+  <div class="card" id="c1">
+    <div class="step" id="s1">Etapa 1</div>
+    <h1>Parâmetros da condenação</h1>
+    <p class="lead">Suba a decisão (ou a cadeia completa: sentença, acórdão, TST). O sistema extrai <b>o que foi deferido</b> — é a régua contra a qual o cálculo do adversário será confrontado. Se você já analisou o processo na outra tela, cole o JSON e pule esta leitura.</p>
+
+    <input type="file" id="fileDec" accept=".pdf" style="display:none">
+    <div class="drop" id="dropDec">
+      <div class="big">Clique para selecionar o PDF da decisão</div>
+      <div class="small">sentença, acórdão, embargos, TST — uma peça ou todas</div>
+    </div>
+
+    <div class="status" id="stDec"></div>
+    <div class="row">
+      <button class="btn btn-primary" id="goDec" disabled onclick="lerDecisao()">Ler decisão</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('boxJson').style.display='block'">Colar JSON do parecer</button>
+    </div>
+
+    <div id="boxJson" style="display:none;margin-top:14px">
+      <div class="flab">JSON exportado da tela de Análise de Processo</div>
+      <textarea id="jsonParecer" rows="5" placeholder='{"processo":{...},"verbas":[...]}'></textarea>
+      <div class="row"><button class="btn btn-ghost btn-sm" onclick="carregarJson()">Carregar</button></div>
+    </div>
+
+    <div class="loader" id="ldDec"><div class="spin"></div><div style="font-weight:600;color:var(--navy)">Lendo a decisão…</div><div class="hint">30s a 2min conforme o tamanho.</div></div>
+    <div id="outDec"></div>
+  </div>
+
+  <!-- ETAPA 2 -->
+  <div class="card off" id="c2">
+    <div class="step" id="s2">Etapa 2</div>
+    <h1>Cálculo da parte contrária</h1>
+    <p class="lead">Suba o cálculo apresentado pela outra parte (ou o laudo pericial). O PDF <b>inteiro</b> é lido — se for grande, o sistema quebra em lotes automaticamente para não estourar o limite de resposta.</p>
+
+    <input type="file" id="fileCalc" accept=".pdf" style="display:none">
+    <div class="drop" id="dropCalc">
+      <div class="big">Clique para selecionar o PDF do cálculo adverso</div>
+      <div class="small">cálculo da autora, laudo pericial, PJe-Calc — qualquer tamanho</div>
+    </div>
+
+    <div class="status" id="stCalc"></div>
+    <div class="row">
+      <button class="btn btn-primary" id="goCalc" disabled onclick="confrontar()">Confrontar com o deferido</button>
+    </div>
+
+    <div class="loader" id="ldCalc"><div class="spin"></div><div style="font-weight:600;color:var(--navy)" id="msgCalc">Lendo o cálculo…</div><div class="hint">Cálculos longos são lidos em lotes — pode levar alguns minutos.</div></div>
+    <div id="outCalc"></div>
+  </div>
+
+  <!-- ETAPA 3 -->
+  <div class="card off" id="c3">
+    <div class="step" id="s3">Etapa 3</div>
+    <h1>Pontos de impugnação</h1>
+    <p class="lead">O sistema <b>sugere</b>; você decide. Marque o que entra, edite o texto, descarte o que não cabe. Impugnar ponto errado enfraquece a peça inteira.</p>
+    <div class="counter" id="contador"></div>
+    <div id="listaDiv"></div>
+    <div id="listaSug"></div>
+
+    <details style="margin-top:18px">
+      <summary>Seu modelo de estilo (opcional — fica salvo neste navegador)</summary>
+      <div class="hint">Cole um trecho de uma impugnação sua. O sistema imita o tom, os jargões e os fechamentos. Sem isso o texto sai correto, mas na voz do sistema — e você reescreve.</div>
+      <textarea id="modeloBase" rows="6" placeholder="Ex.: Equivocado o Reclamante ao... Vejamos. ... Resta impugnado o cálculo obreiro."></textarea>
+      <div class="row"><button class="btn btn-ghost btn-sm" onclick="salvarModelo()">Salvar modelo</button><span class="status" id="stModelo" style="margin:0"></span></div>
+    </details>
+
+    <div class="row" style="margin-top:18px">
+      <button class="btn btn-primary" onclick="gerarDocumento()">Gerar parecer + impugnação (Word)</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Recomeçar</button>
+    </div>
+    <div class="status" id="stDoc"></div>
+  </div>
+
+  <div class="card" id="debug" style="display:none">
+    <h2>Debug</h2>
+    <pre id="dbg">—</pre>
+  </div>
+</div>
+
+<script>
+try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){ console.warn('pdf.js worker não configurado:',e); }
+
+const $=id=>document.getElementById(id);
+const MODEL='claude-sonnet-5';
+
+/* ============================================================
+   CATÁLOGO DE TESES (Catalogo_Teses_Impugnacao.md)
+   O motor varre o cálculo adverso contra TODO o repertório —
+   não só os erros óbvios. c = confiança padrão da detecção.
+   ============================================================ */
+const CATALOGO=[
+ {id:'correcao_indice',t:'Índice de correção monetária divergente (ADC 58/59)',g:'índice usado ≠ IPCA-E (pré-judicial) / SELIC (judicial) deferido',f:'ADC 58/59 STF; coisa julgada',c:'certo'},
+ {id:'selic_correcao',t:'SELIC lançada como correção E como juros (bis in idem)',g:'SELIC no campo da correção monetária somada a juros de mora',f:'ADC 58 — a SELIC já engloba juros e correção na fase judicial',c:'certo'},
+ {id:'trd_prejudicial',t:'TRD/TR na fase pré-judicial',g:'juros/TRD incluídos antes do ajuizamento',f:'fase pré-judicial é IPCA-E + juros do art. 39 da Lei 8.177/91, não TRD',c:'certo'},
+ {id:'data_atualizacao',t:'Data de atualização do laudo posterior à devida',g:'atualização em data posterior à correta, inflando juros',f:'juros interrompidos na data correta',c:'conferir'},
+
+ {id:'he_adicional',t:'Adicional de horas extras incorreto',g:'adicional aplicado ≠ o deferido (ex.: 50% onde norma coletiva fixa outro)',f:'coisa julgada / CCT',c:'provavel'},
+ {id:'he_base',t:'Base de cálculo das horas extras divergente',g:'base usada ≠ salário/rubricas do contrato ou do deferido',f:'Súmula 264 TST',c:'provavel'},
+ {id:'he_cumulacao',t:'Cumulação de adicionais na base da HE',g:'adicional noturno (ou outro) incidindo na base da HE em cascata sobre o próprio adicional',f:'vedada a cumulação em cascata',c:'certo'},
+ {id:'he_noturno_base',t:'Adicional noturno compondo indevidamente a base da HE',g:'adic. noturno somado à base horária da HE sem deferimento',f:'Súmula 264 TST',c:'provavel'},
+ {id:'he_verba_indenizatoria',t:'Verba indenizatória na base da HE (auxílio-condutor e afins)',g:'verba de natureza indenizatória incluída na base de cálculo da HE',f:'natureza indenizatória não integra a base',c:'provavel'},
+ {id:'sumula340',t:'Súmula 340 TST / OJ 397 — comissionista misto',g:'HE sobre parte variável com divisor fixo (180/220) em vez de divisor variável, ou hora+adicional onde só cabe o adicional',f:'Súmula 340 TST e OJ 397 SDI-1',c:'certo'},
+ {id:'he_quantidade',t:'Quantidade de horas extras sem lastro probatório',g:'quantidade de HE sem cartão de ponto juntado / valores arbitrados aleatoriamente',f:'ônus da prova; Súmula 338 TST',c:'provavel'},
+ {id:'he_feriados',t:'Feriados/sábados/domingos computados fora da jornada fixada',g:'HE apurada em feriado, sábado ou domingo quando a jornada deferida é seg-sex',f:'coisa julgada — jornada fixada na decisão',c:'certo'},
+ {id:'he_art71',t:'Intervalo intrajornada (art. 71 §4º) apurado em divergência',g:'apuração do intervalo diferente do deferido (hora cheia x adicional; período)',f:'art. 71 §4º CLT; Súmula 437 TST',c:'provavel'},
+ {id:'he_art66_67',t:'Interjornada (art. 66) / DSR (art. 67) não deferidos',g:'apuração de verba de descanso que não foi deferida na decisão',f:'coisa julgada — apuração além do deferido',c:'provavel'},
+ {id:'dobras_compensacao',t:'Horas em dobro ignorando a compensação declarada',g:'dobras apuradas sem considerar a compensação reconhecida',f:'coisa julgada',c:'provavel'},
+
+ {id:'insalubridade_valores',t:'Adicional de insalubridade — base/grau divergente',g:'base ou grau diferente do fixado no laudo/decisão',f:'art. 192 CLT; laudo pericial',c:'provavel'},
+ {id:'periculosidade_valores',t:'Adicional de periculosidade — base ou percentual divergente',g:'base sobre remuneração em vez do salário-base, ou percentual ≠ 30%',f:'art. 193 §1º CLT; Súmula 191 TST',c:'provavel'},
+ {id:'deducao_insalubridade',t:'Periculosidade sem dedução da insalubridade já quitada',g:'periculosidade apurada sem deduzir insalubridade paga no período',f:'adicionais não são cumuláveis — art. 193 §2º CLT',c:'certo'},
+
+ {id:'fgts_reflexos',t:'FGTS incidindo sobre reflexos (bis in idem)',g:'FGTS calculado sobre os reflexos, e não apenas sobre a parcela principal',f:'bis in idem — FGTS incide sobre a parcela principal, salvo deferimento expresso',c:'certo'},
+ {id:'reflexo_sobre_reflexo',t:'Reflexo sobre reflexo',g:'reflexo de uma verba entrando na base de cálculo de outro reflexo',f:'bis in idem',c:'certo'},
+ {id:'reflexo_integralidade',t:'Reflexo sobre a integralidade, sem abater o já pago',g:'reflexo de HE/adic. noturno sobre o valor cheio, sem dedução do quitado',f:'OJ 415 SDI-1; vedação do enriquecimento sem causa',c:'provavel'},
+ {id:'reflexo_aviso',t:'Reflexos em aviso prévio indenizado — indevidos ou dias errados',g:'reflexo indevido no aviso, ou quantidade de dias divergente (Lei 12.506/2011)',f:'Súmula 305 TST; Lei 12.506/2011',c:'provavel'},
+
+ {id:'abatimento_pagos',t:'Verba apurada sem abatimento dos valores pagos (OJ 415)',g:'verba calculada "cheia", sem deduzir pagamentos comprovados nos autos',f:'OJ 415 SDI-1 TST — dedução global por título',c:'certo'},
+ {id:'deducao_aviso',t:'Aviso prévio não deduzido em pedido de demissão',g:'aviso não deduzido apesar de a rescisão ser por pedido de demissão',f:'art. 487 §2º CLT',c:'certo'},
+ {id:'deducao_he100',t:'HE a 100% / folgas quitadas não deduzidas',g:'HE apurada sem deduzir as horas/folgas já pagas no mesmo período',f:'OJ 415 SDI-1',c:'provavel'},
+ {id:'deducao_incentivo',t:'Incentivo variável / comissões pagas não deduzidos',g:'reflexos de incentivo ou comissão apurados sem dedução do pago',f:'OJ 415 SDI-1',c:'provavel'},
+ {id:'abatimento_rescisorias',t:'Verbas rescisórias sem abatimento das médias já pagas',g:'rescisórias apuradas sem deduzir o que consta do TRCT',f:'vedação do enriquecimento sem causa',c:'provavel'},
+
+ {id:'modalidade_rescisao',t:'Modalidade de rescisão divergente da reconhecida',g:'apuração de verbas de dispensa sem justa causa onde foi reconhecido pedido de demissão (ou vice-versa)',f:'coisa julgada',c:'certo'},
+ {id:'multa_477',t:'Base de cálculo da multa do art. 477 divergente',g:'multa apurada sobre base diversa da remuneração do empregado',f:'art. 477 §8º CLT',c:'provavel'},
+ {id:'multa_fazer',t:'Multa por descumprimento de obrigação de fazer sem lastro',g:'multa apurada sem previsão na decisão ou sem comprovação do descumprimento',f:'coisa julgada; necessidade de lastro',c:'conferir'},
+ {id:'base_estabilidade',t:'Base de cálculo da estabilidade e reflexos divergente',g:'base ou período da estabilidade diferente do deferido',f:'coisa julgada; Súmula 396 TST',c:'provavel'},
+
+ {id:'inss_sat',t:'INSS patronal / alíquota SAT (RAT) divergente',g:'alíquota SAT diferente da atividade da empresa; cota patronal incorreta',f:'Lei 8.212/91; FAP/RAT da empresa',c:'provavel'},
+ {id:'honorarios_periodo',t:'Honorários sucumbenciais — período ou base divergente',g:'percentual, base ou período de apuração dos honorários diferente do deferido',f:'art. 791-A CLT; coisa julgada',c:'provavel'},
+ {id:'honorarios_autor',t:'Sucumbência recíproca não apurada contra o autor',g:'pedidos improcedentes sem honorários apurados em favor da ré',f:'art. 791-A §3º CLT',c:'provavel'},
+ {id:'honorarios_periciais',t:'Honorários periciais atribuídos à parte errada',g:'honorário pericial lançado contra quem não sucumbiu no objeto da perícia',f:'art. 790-B CLT; Súmula 341 TST',c:'conferir'},
+
+ {id:'verba_excluida',t:'Apuração de verba indeferida ou excluída na cadeia decisória',g:'o cálculo apura verba que a sentença indeferiu ou que o acórdão excluiu',f:'coisa julgada — vedada apuração além do deferido',c:'certo'},
+ {id:'prescricao_marco',t:'Apuração de período anterior ao marco prescricional',g:'período apurado começa antes do marco da prescrição declarado',f:'art. 7º, XXIX, CF; coisa julgada',c:'certo'},
+ {id:'periodo_divergente',t:'Período de apuração além do deferido',g:'início ou fim do período apurado diverge do fixado na decisão',f:'coisa julgada',c:'certo'},
+ {id:'limitacao_inicial',t:'Apuração acima dos valores da inicial',g:'valores apurados superiores aos indicados na exordial quando há limitação deferida',f:'art. 840 §1º CLT; coisa julgada',c:'certo'},
+ {id:'inovacao_recursal',t:'Inovação — verba não constante da fase de conhecimento',g:'cálculo traz pedido/verba que não foi objeto da condenação',f:'coisa julgada; vedada inovação em liquidação',c:'conferir'},
+ {id:'nulidade_homologacao',t:'Nulidade da homologação das contas',g:'contas homologadas sem intimação/contraditório da parte',f:'art. 879 §2º CLT; contraditório',c:'conferir'},
+ {id:'indenizacao_suplementar',t:'Indenização suplementar apurada sem critério',g:'verba "indenização suplementar" lançada sem lastro ou critério de apuração',f:'necessidade de lastro na decisão',c:'conferir'}
+];
+
+/* ============================================================
+   PROMPT 1 — leitura da decisão (foco: o que foi DEFERIDO,
+   com a citação para poder ser confrontado depois)
+   ============================================================ */
+const PROMPT_DECISAO=`Você é um perito contábil trabalhista. Vou te enviar a(s) decisão(ões) de um processo (pode ser uma peça ou a cadeia inteira: sentença, embargos, acórdão TRT, TST). Sua função é extrair OS PARÂMETROS EXPRESSAMENTE DEFERIDOS, para que o cálculo apresentado pela parte contrária possa ser confrontado com eles.
+
+Você NÃO calcula. Você NÃO interpreta o que o juiz "quis dizer". Transcreve o que está EXPRESSO e sinaliza o omisso.
+
+REGRAS:
+1) CADEIA: o que vale é o resultado consolidado. A decisão MAIS RECENTE que tratou o ponto prevalece; o que a instância superior não tocou PERMANECE; reforma que altera só um parâmetro faz os demais serem HERDADOS (marque requerConferencia).
+2) STATUS PELO VERBO DO DISPOSITIVO: só DEFERIDA se o dispositivo deferiu/condenou. "Indefiro", "improcedente", "rejeito", "nego provimento", "indevido" => INDEFERIDA/EXCLUÍDA. Menção não é deferimento. Na dúvida use INDEFINIDO.
+3) CITAÇÃO: para CADA parâmetro relevante preencha "citacao" com o trecho curto e literal que o fixa (máx. ~20 palavras) e "fonte" com a peça/folha/ID onde está (ex.: "Sentença, fl. 412"). Essa citação é o que sustenta a impugnação — sem ela o ponto não pode ser afirmado.
+4) Não presuma base, período, reflexo ou índice omissos. Registre "omisso na decisão" e requerConferencia=true.
+5) CONCISÃO: todo campo de texto é CURTO (máx. 1 frase). Resposta longa é cortada.
+
+CLASSIFICAÇÃO TÉCNICA ("motorId") — classifique CADA verba (deferida ou não) pela NATUREZA do que foi tratado, não pelas palavras: "heTotais" (horas extras comuns, sobrejornada), "he100" (labor em dia de descanso: feriados, domingos, DSR, folgas, em dobro), "heArt71" (intervalo intrajornada art.71, art.66 interjornada, art.384), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, dano moral, diferenças salariais, rescisórias, seguro-desemprego etc.). Use EXATAMENTE um desses valores.
+
+CAMPOS CRÍTICOS PARA A IMPUGNAÇÃO (capriche):
+- correcaoJuros: transcreva a remissão literal (ADC 58/59, Lei 14.905/2024, "na forma da lei") e o índice implicado por fase (pré-judicial e judicial).
+- limitacaoAoPedido: houve limitação aos valores da inicial? Transcreva.
+- deducoes: a decisão autorizou dedução/abatimento de valores pagos? Transcreva (OJ 415 e afins).
+- jornada: se a decisão FIXA a jornada (dias e horários), transcreva — é o que permite impugnar feriado/sábado/domingo computado indevidamente.
+- honorarios: percentual, base e a cargo de quem (inclusive sucumbência recíproca).
+- rescisao: modalidade reconhecida.
+
+RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},
+"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","citacao":"","fonte":""}},
+"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],
+"resultadoConsolidado":"",
+"parametrosGlobais":{
+ "prescricao":{"marco":null,"citacao":"","fonte":"","requerConferencia":false},
+ "limitacaoAoPedido":{"houve":false,"citacao":"","fonte":""},
+ "correcaoJuros":{"transcricaoLiteral":"","indicePreJudicial":"","indiceJudicial":"","juros":"","pontoControvertido":false,"fonte":""},
+ "deducoes":{"autorizada":false,"criterio":"","citacao":"","fonte":""},
+ "honorariosSucumbenciais":{"percentual":0,"base":"","aCargoDe":"","reciproca":false,"citacao":"","fonte":""},
+ "honorariosPericiais":{"valor":0,"aCargoDe":"","fonte":""},
+ "contribuicoes":{"previdenciaria":"","fiscal":"","fonte":""},
+ "responsaveis":[{"nome":"","tipo":"","limite":""}]},
+"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false,"observacao":""}],
+"pontosDeAtencao":[]}`;
+
+/* ============================================================
+   PROMPT 2 — leitura do cálculo adverso (roda em lotes)
+   ============================================================ */
+const PROMPT_CALC=`Você está lendo o CÁLCULO DE LIQUIDAÇÃO apresentado pela PARTE CONTRÁRIA (ou o laudo pericial) em processo trabalhista. Sua função é APENAS EXTRAIR o que o cálculo fez — não julgue, não corrija, não calcule.
+
+Extraia com precisão os PARÂMETROS que o cálculo utilizou, porque eles serão confrontados com o que a decisão deferiu:
+- índice de correção monetária usado em cada fase, juros aplicados (tipo, %, marco inicial), data de atualização;
+- por verba: descrição, período apurado, base de cálculo declarada, percentual/adicional, divisor, quantidade (horas/dias/meses), valor principal, reflexos apurados;
+- deduções/abatimentos efetuados (e se NÃO houve, registre expressamente em "deducoes" com valor 0 e observação "nenhuma dedução localizada");
+- FGTS: sobre o quê incidiu (principal, reflexos);
+- honorários (percentual, base, a cargo de quem), contribuições previdenciárias/fiscais e alíquota SAT/RAT;
+- dias computados como feriado/sábado/domingo, se identificáveis;
+- total geral e total por verba.
+
+Classifique CADA verba apurada em "motorId" pela NATUREZA, usando EXATAMENTE um destes valores: "heTotais" (horas extras comuns/sobrejornada), "he100" (feriados, domingos, DSR, folgas, em dobro), "heArt71" (intervalo intrajornada/interjornada), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, rescisórias etc.). É o que permite casar a rubrica do cálculo com a verba deferida.
+
+Se um dado não estiver no trecho, use null — NÃO invente. Transcreva números exatamente como impressos.
+
+RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
+{"autorDoCalculo":"","dataAtualizacao":null,"indiceCorrecao":{"preJudicial":"","judicial":"","juros":"","observacao":""},
+"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","periodo":"","baseCalculo":"","percentual":"","divisor":null,"quantidade":"","valorPrincipal":null,"reflexos":[],"observacao":""}],
+"deducoes":[{"descricao":"","valor":null}],
+"fgts":{"incidiuSobre":"","observacao":""},
+"honorarios":{"percentual":null,"base":"","aCargoDe":""},
+"contribuicoes":{"previdenciaria":"","sat":"","fiscal":""},
+"diasEspeciais":{"feriados":"","sabados":"","domingos":""},
+"totalGeral":null,
+"observacoes":[]}`;
+
+/* ============================================================
+   PROMPT 3 — confronto (parecer x cálculo adverso x catálogo)
+   ============================================================ */
+function promptConfronto(parecer,calc,modelo){
+  const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g+' | FUNDAMENTO: '+x.f+' | confiança padrão: '+x.c).join('\n');
+  return `Você é um assistente técnico de calculista trabalhista. Sua função é IDENTIFICAR E REDIGIR os pontos de IMPUGNAÇÃO ao cálculo apresentado pela parte contrária, confrontando cada desvio com os PARÂMETROS EXPRESSAMENTE DEFERIDOS na decisão.
+
+REGRAS ABSOLUTAS:
+- Você NÃO calcula e NÃO decide o mérito. Você CONFRONTA o deferido com o que a parte contrária fez.
+- Só impugne o que tiver base no que foi DEFERIDO. Se o parâmetro deferido for omisso ou exigir conferência humana (norma coletiva, interpretação), classifique confianca="conferir" e NÃO afirme o erro — sinalize.
+- NUNCA invente um dado do cálculo adverso. Se o dado não foi extraído, não afirme o desvio: use confianca="conferir" e diga o que precisa ser verificado.
+- Fundamente na COISA JULGADA sempre que o desvio contrarie o deferido (é vedada, em liquidação, alteração do que transitou em julgado).
+
+CADA ponto de impugnação segue OBRIGATORIAMENTE 4 movimentos:
+1) deferido — o comando expresso da decisão, com a citação e a folha. Use "A R. Sentença determinou, de forma EXPRESSA, ..." / "autorizou EXPRESSAMENTE ...".
+2) oQueFez — o desvio ("O cálculo da Autora não observou...", "computou...", "NÃO procedeu a qualquer dedução...").
+3) prova — abra com "Vejamos" e aponte o dado concreto (índice usado, valor, dia computado, divisor).
+4) conclusao — feche ("Resta impugnado o cálculo obreiro." / "imprestáveis os cálculos apresentados, devendo ser ignorados por Vossa Excelência.").
+
+VARREDURA DO CATÁLOGO: além dos desvios que você detectar diretamente, varra o cálculo adverso contra TODO o catálogo abaixo. Para cada tese cujo gatilho esteja presente, gere um ponto em "impugnacoes". Para teses que você NÃO consegue confirmar com os dados disponíveis mas que PODEM caber neste caso, coloque em "sugestoes" (apenas o lembrete para o calculista verificar — sem redigir acusação). O objetivo é ser a MEMÓRIA DE TESES do calculista.
+
+CATÁLOGO DE TESES:
+${cat}
+
+ESTILO: ${modelo? 'siga o MODELO-BASE do calculista abaixo — reproduza o tom, os jargões e os fechamentos dele. NÃO invente estilo novo.\n\nMODELO-BASE:\n"""'+modelo.slice(0,6000)+'"""' : 'texto técnico, impessoal, na terceira pessoa, no padrão forense brasileiro.'}
+
+=== PARÂMETROS DEFERIDOS (decisão) ===
+${JSON.stringify(parecer)}
+
+=== CÁLCULO DA PARTE CONTRÁRIA (extraído) ===
+${JSON.stringify(calc)}
+
+RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
+{"sintese":"1 a 2 frases sobre o cálculo adverso como um todo",
+"impugnacoes":[{"id":"","tese":"id da tese do catálogo ou 'direta'","titulo":"","deferido":"","oQueFez":"","prova":"","conclusao":"","confianca":"certo|provavel|conferir","fundamento":"","impacto":"em uma frase, o efeito no valor (majoração indevida, ausência de dedução etc.)"}],
+"sugestoes":[{"id":"","titulo":"","porque":"por que pode caber neste caso","oQueVerificar":"o que o calculista precisa checar"}],
+"conclusaoGeral":"síntese enumerada (i), (ii), (iii) dos pontos impugnados"}`;
+}
+
+/* ============================================================
+   TRAVAS DETERMINÍSTICAS
+   Não dependem da IA acertar: comparam campo a campo o que foi
+   deferido com o que o cálculo adverso fez. O que a trava pega,
+   pega sempre. A IA fica por conta do resto e da redação.
+   ============================================================ */
+const STOP=new Set(['adicional','horas','extras','hora','extra','verba','verbas','valores','valor','reflexos','reflexo','diferencas','diferenças','indenizacao','indenização','sobre','pagamento','pagamentos','trabalho','de','da','do','das','dos','e','em','a','o','por']);
+function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function tokens(s){ return norm(s).split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)); }
+function casa(a,b){ const ta=tokens(a), tb=norm(b); return ta.some(w=>tb.indexOf(w)>=0); }
+// casa a verba deferida com a rubrica do cálculo: motorId primeiro (robusto),
+// texto como reserva. "outro" é genérico demais para casar sozinho.
+function mesmaVerba(vp,vc){
+  if(!vp||!vc) return false;
+  if(vp.motorId&&vc.motorId&&vp.motorId===vc.motorId&&vp.motorId!=='outro') return true;
+  return casa(vp.descricao,vc.descricao)||casa(vc.descricao,vp.descricao);
+}
+function num(x){ if(x==null) return null; const m=String(x).replace(/\./g,'').replace(',','.').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):null; }
+function ano(s){ const m=String(s||'').match(/(19|20)\d{2}/); return m?parseInt(m[0],10):null; }
+
+function travas(p,c){
+  const out=[]; if(!p||!c) return out;
+  const g=p.parametrosGlobais||{}, vDef=(p.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const vNao=(p.verbas||[]).filter(v=>v.statusFinal==='EXCLUÍDA'||v.statusFinal==='INDEFERIDA');
+  const vCalc=arr(c.verbas).filter(v=>v&&v.descricao);
+  const add=o=>out.push(Object.assign({id:'trava_'+o.tese,origem:'trava'},o));
+
+  // 1) verba indeferida/excluída apurada
+  vNao.forEach(vn=>{
+    const hit=vCalc.find(vc=>mesmaVerba(vn,vc));
+    if(hit) add({tese:'verba_excluida',titulo:'Apuração de verba não deferida — '+vn.descricao,
+      deferido:'A verba "'+vn.descricao+'" foi '+(vn.statusFinal==='EXCLUÍDA'?'EXPRESSAMENTE EXCLUÍDA':'INDEFERIDA')+(vn.fonte?' ('+vn.fonte+')':'')+'.'+(vn.citacao?' "'+vn.citacao+'"':''),
+      oQueFez:'Ainda assim, o cálculo da parte contrária apurou a rubrica "'+hit.descricao+'".',
+      prova:'Vejamos: o demonstrativo traz a verba "'+hit.descricao+'"'+(hit.valorPrincipal!=null?', no valor de '+hit.valorPrincipal:'')+'.',
+      conclusao:'Resta impugnado o cálculo, por apurar verba não deferida — vedada, em liquidação, a alteração do julgado.',
+      confianca:'certo',fundamento:'coisa julgada',impacto:'Inclusão indevida de verba no total.'});
+  });
+
+  // 2) índice de correção
+  const cj=g.correcaoJuros||{}, ic=c.indiceCorrecao||{};
+  const pPre=norm(cj.indicePreJudicial||cj.transcricaoLiteral), cPre=norm(ic.preJudicial);
+  if(pPre.indexOf('ipca')>=0 && /\btrd?\b/.test(cPre)) add({tese:'trd_prejudicial',titulo:'TR/TRD aplicada na fase pré-judicial',
+    deferido:'A decisão determinou EXPRESSAMENTE a aplicação do IPCA-E na fase pré-judicial'+(cj.fonte?' ('+cj.fonte+')':'')+'.',
+    oQueFez:'O cálculo aplicou TR/TRD no período anterior ao ajuizamento.',
+    prova:'Vejamos: o demonstrativo indica "'+(ic.preJudicial||'')+'" na fase pré-judicial.',
+    conclusao:'Resta impugnado o cálculo obreiro.',confianca:'certo',fundamento:'ADC 58/59 STF; coisa julgada',impacto:'Alteração indevida do principal atualizado.'});
+  const pJud=norm(cj.indiceJudicial), cJur=norm(ic.juros||'')+' '+norm(ic.judicial);
+  if(pJud.indexOf('selic')>=0 && /1\s*%/.test(cJur) && cJur.indexOf('selic')>=0)
+    add({tese:'selic_correcao',titulo:'Cumulação de juros de 1% ao mês com a SELIC',
+      deferido:'A decisão determinou a incidência da SELIC a partir do ajuizamento'+(cj.fonte?' ('+cj.fonte+')':'')+', índice que já engloba juros e correção monetária.',
+      oQueFez:'O cálculo cumulou juros de mora de 1% ao mês com a própria SELIC.',
+      prova:'Vejamos: o demonstrativo registra "'+(ic.juros||ic.judicial||'')+'".',
+      conclusao:'Resta impugnado o cálculo, sob pena de bis in idem.',confianca:'certo',fundamento:'ADC 58 STF',impacto:'Duplicidade de juros sobre o mesmo período.'});
+
+  // 3) dedução autorizada e não realizada
+  const ded=arr(c.deducoes).filter(d=>d&&(num(d.valor)||0)!==0);
+  if(g.deducoes&&g.deducoes.autorizada&&!ded.length)
+    add({tese:'abatimento_pagos',titulo:'Ausência de dedução dos valores pagos',
+      deferido:'A decisão autorizou EXPRESSAMENTE a dedução dos valores pagos'+(g.deducoes.criterio?' ('+g.deducoes.criterio+')':'')+(g.deducoes.fonte?' — '+g.deducoes.fonte:'')+'.',
+      oQueFez:'O cálculo NÃO procedeu a qualquer dedução.',
+      prova:'Vejamos: não há linha de dedução ou abatimento no demonstrativo apresentado.',
+      conclusao:'imprestáveis os cálculos apresentados, devendo ser retificados.',confianca:'certo',fundamento:'OJ 415 SDI-1 TST',impacto:'Enriquecimento sem causa.'});
+
+  // 4) divisor divergente
+  vDef.forEach(vd=>{
+    if(!vd.divisor) return;
+    const hit=vCalc.find(vc=>mesmaVerba(vd,vc)&&vc.divisor!=null);
+    if(hit && num(hit.divisor)!==num(vd.divisor))
+      add({tese:'periodo_divergente',titulo:'Divisor divergente do deferido — '+vd.descricao,
+        deferido:'A decisão adotou EXPRESSAMENTE o divisor '+vd.divisor+(vd.fonte?' ('+vd.fonte+')':'')+'.',
+        oQueFez:'O cálculo utilizou divisor '+hit.divisor+'.',
+        prova:'Vejamos: o demonstrativo indica divisor '+hit.divisor+' para a rubrica "'+hit.descricao+'".',
+        conclusao:'Resta impugnado o cálculo.',confianca:'certo',fundamento:'coisa julgada',impacto:'Alteração do valor da hora.'});
+  });
+
+  // 5) prescrição
+  const marco=ano((g.prescricao||{}).marco);
+  if(marco){
+    const antes=vCalc.filter(vc=>{ const a=ano(vc.periodo); return a&&a<marco; });
+    if(antes.length) add({tese:'prescricao_marco',titulo:'Apuração de período anterior ao marco prescricional',
+      deferido:'A decisão declarou prescritos os créditos anteriores a '+((g.prescricao||{}).marco)+(g.prescricao&&g.prescricao.fonte?' ('+g.prescricao.fonte+')':'')+'.',
+      oQueFez:'O cálculo apurou período anterior ao marco em '+antes.length+' rubrica(s).',
+      prova:'Vejamos: '+antes.map(v=>'"'+v.descricao+'" — período '+v.periodo).join('; ')+'.',
+      conclusao:'Resta impugnado o cálculo quanto ao período prescrito.',confianca:'provavel',fundamento:'art. 7º, XXIX, CF; coisa julgada',impacto:'Apuração de período fulminado pela prescrição.'});
+  }
+
+  // 6) honorários
+  const ph=num((g.honorariosSucumbenciais||{}).percentual), ch=num((c.honorarios||{}).percentual);
+  if(ph&&ch&&ph!==ch) add({tese:'honorarios_periodo',titulo:'Percentual de honorários divergente',
+    deferido:'A decisão fixou honorários em '+ph+'%'+((g.honorariosSucumbenciais||{}).fonte?' ('+g.honorariosSucumbenciais.fonte+')':'')+'.',
+    oQueFez:'O cálculo aplicou '+ch+'%.',
+    prova:'Vejamos: o demonstrativo apura honorários de '+ch+'% sobre '+((c.honorarios||{}).base||'a condenação')+'.',
+    conclusao:'Resta impugnado o cálculo.',confianca:'certo',fundamento:'art. 791-A CLT; coisa julgada',impacto:'Majoração indevida da verba honorária.'});
+
+  // 7) FGTS sobre reflexos
+  if(/reflex/.test(norm((c.fgts||{}).incidiuSobre)))
+    add({tese:'fgts_reflexos',titulo:'FGTS incidindo sobre reflexos',
+      deferido:'O FGTS é devido sobre a parcela principal, salvo deferimento expresso quanto aos reflexos.',
+      oQueFez:'O cálculo fez o FGTS incidir também sobre os reflexos.',
+      prova:'Vejamos: o demonstrativo registra incidência do FGTS sobre "'+((c.fgts||{}).incidiuSobre||'')+'".',
+      conclusao:'Resta impugnado o cálculo, sob pena de bis in idem.',confianca:'provavel',fundamento:'bis in idem',impacto:'Duplicidade na base do FGTS.'});
+
+  // 8) limitação à inicial — lembrete
+  if(g.limitacaoAoPedido&&g.limitacaoAoPedido.houve)
+    add({tese:'limitacao_inicial',titulo:'Limitação aos valores da inicial — conferir totais',
+      deferido:'A decisão limitou a condenação aos valores indicados na inicial'+(g.limitacaoAoPedido.fonte?' ('+g.limitacaoAoPedido.fonte+')':'')+'.',
+      oQueFez:'Confira, verba a verba, se o apurado excede o valor da exordial.',
+      prova:'Vejamos: total apurado '+(c.totalGeral!=null?c.totalGeral:'—')+'.',
+      conclusao:'Havendo excesso, resta impugnado o cálculo no que superar os valores da inicial.',
+      confianca:'conferir',fundamento:'art. 840 §1º CLT; coisa julgada',impacto:'Possível excesso de execução.'});
+
+  return out;
+}
+
+// travas primeiro; texto da IA prevalece quando trata da mesma tese
+function mesclar(tv,ia){
+  const saida=tv.slice();
+  arr(ia).forEach(d=>{
+    if(!d||typeof d!=='object') return;
+    const i=saida.findIndex(t=>t.tese && d.tese && t.tese===d.tese);
+    if(i>=0){ saida[i]=Object.assign({},d,{confianca:saida[i].confianca,fundamento:d.fundamento||saida[i].fundamento,origem:'trava+ia'}); }
+    else saida.push(d);
+  });
+  return saida;
+}
+
+/* ============================================================
+   Estado
+   ============================================================ */
+let parecer=null, calcAdv=null, confronto=null;
+let arqDec=null, txtDec='', b64Dec=null;
+let arqCalc=null, pagsCalc=[], b64Calc=null;
+
+/* ============================================================
+   PDF helpers
+   ============================================================ */
+async function lerPaginas(file){
+  const ab=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+  const out=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const pg=await pdf.getPage(i);
+    const c=await pg.getTextContent();
+    out.push(c.items.map(x=>x.str).join(' '));
+  }
+  return out;
+}
+function b64de(file){
+  return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.readAsDataURL(file); });
+}
+// quebra as páginas em lotes de no máximo LIMITE caracteres
+function lotes(pags, LIMITE){
+  const out=[]; let cur=[], n=0;
+  pags.forEach((p,i)=>{
+    const bloco='\n--- pág. '+(i+1)+' ---\n'+p;
+    if(n+bloco.length>LIMITE && cur.length){ out.push(cur.join('')); cur=[]; n=0; }
+    cur.push(bloco); n+=bloco.length;
+  });
+  if(cur.length) out.push(cur.join(''));
+  return out;
+}
+
+async function chamar(content, maxTokens){
+  const res=await fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens||32000,messages:[{role:'user',content}]})
+  });
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Erro na API');
+  const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  return {txt, cortou:data.stop_reason==='max_tokens'};
+}
+
+/* ---- parser de JSON robusto (mesmo do analise-processo) ---- */
+function extrairJson(txt){
+  if(!txt) return null;
+  const tent=[];
+  let m=txt.match(/```json\s*([\s\S]*?)```/i); if(m) tent.push(m[1]);
+  m=txt.match(/```\s*([\s\S]*?)```/); if(m) tent.push(m[1]);
+  const a=txt.indexOf('{'), b=txt.lastIndexOf('}');
+  if(a>=0&&b>a) tent.push(txt.slice(a,b+1));
+  tent.push(txt);
+  for(const t of tent){ try{ return JSON.parse(t.trim()); }catch(e){} }
+  // tenta reparar corte
+  if(a>=0){ const rep=fecharBalanceado(txt.slice(a)); try{ return JSON.parse(rep); }catch(e){} }
+  return null;
+}
+function fecharBalanceado(s){
+  let out='',dentro=false,esc=false; const pilha=[];
+  for(const ch of s){
+    if(esc){ out+=ch; esc=false; continue; }
+    if(ch==='\\'){ out+=ch; esc=true; continue; }
+    if(ch==='"'){ dentro=!dentro; out+=ch; continue; }
+    if(!dentro){
+      if(ch==='{'||ch==='[') pilha.push(ch);
+      else if(ch==='}'||ch===']') pilha.pop();
+    }
+    out+=ch;
+  }
+  if(dentro) out+='"';
+  out=out.replace(/,\s*$/,'');
+  while(pilha.length){ const c=pilha.pop(); out+= c==='{'?'}':']'; }
+  return out;
+}
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function arr(a){ return Array.isArray(a)?a:(a?[a]:[]); }
+function dbg(o){ $('dbg').textContent=JSON.stringify(o,null,2); }
+
+/* ============================================================
+   ETAPA 1 — decisão
+   ============================================================ */
+$('dropDec').onclick=()=>$('fileDec').click();
+$('fileDec').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  arqDec=f; txtDec=''; b64Dec=null;
+  $('stDec').innerHTML='Lendo o arquivo…';
+  try{ txtDec=(await lerPaginas(f)).join('\n').trim(); }catch(err){ txtDec=''; }
+  b64Dec=await b64de(f);
+  $('stDec').innerHTML='<span class="okmsg">✓ '+esc(f.name)+' ('+(f.size/1048576).toFixed(2)+' MB'+(txtDec.length>200?', texto extraído':', PDF escaneado — será lido por imagem')+')</span>';
+  $('goDec').disabled=false;
+};
+
+async function lerDecisao(){
+  $('goDec').disabled=true; $('ldDec').style.display='block'; $('outDec').innerHTML='';
+  try{
+    let content;
+    if(txtDec.length>200) content=[{type:'text',text:'DECISÕES DO PROCESSO (texto extraído do PDF):\n\n'+txtDec+'\n\n---\n'+PROMPT_DECISAO}];
+    else if(b64Dec) content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Dec}},{type:'text',text:PROMPT_DECISAO}];
+    else throw new Error('Não consegui ler o arquivo.');
+    const r=await chamar(content,32000);
+    const j=extrairJson(r.txt);
+    if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
+    parecer=j; dbg({parecer});
+    $('ldDec').style.display='none';
+    renderDecisao(j, r.cortou);
+    liberarEtapa2();
+  }catch(e){
+    $('ldDec').style.display='none'; $('goDec').disabled=false;
+    $('outDec').innerHTML='<div class="err">'+esc(e.message)+'</div>';
+  }
+}
+
+function carregarJson(){
+  try{
+    const j=JSON.parse($('jsonParecer').value);
+    parecer=j; dbg({parecer});
+    renderDecisao(j,false); liberarEtapa2();
+    $('boxJson').style.display='none';
+  }catch(e){ $('outDec').innerHTML='<div class="err">JSON inválido.</div>'; }
+}
+
+function renderDecisao(j, cortou){
+  const pr=j.processo||{}, g=j.parametrosGlobais||{};
+  const defs=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const nao=(j.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
+  let h='';
+  if(cortou) h+='<div class="conf"><b>Atenção:</b> a resposta foi cortada por limite de tamanho. Confira se todas as verbas apareceram.</div>';
+  h+='<div class="sec-title">Régua da condenação</div>';
+  h+='<table><tr><th>Processo</th><td>'+esc(pr.numero||'—')+'</td></tr>'
+   +'<tr><th>Reclamante</th><td>'+esc(pr.reclamante||'—')+'</td></tr>'
+   +'<tr><th>Reclamada(s)</th><td>'+esc(arr(pr.reclamadas).join(', ')||'—')+'</td></tr>'
+   +'<tr><th>Vara</th><td>'+esc(pr.vara||'—')+'</td></tr></table>';
+
+  h+='<table><tr><th>Verba deferida</th><th>Período</th><th>Base / %</th><th>Reflexos</th><th>Fonte</th></tr>';
+  defs.forEach(v=>{
+    const p=(v.periodo&&(v.periodo.inicio||v.periodo.fim))?((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'—';
+    h+='<tr><td><b>'+esc(v.descricao)+'</b>'+(v.requerConferencia?' <span class="tag tag-und">conferir</span>':'')+'</td><td>'+esc(p)+'</td><td>'+esc([v.baseCalculo,v.percentual,v.divisor?'divisor '+v.divisor:''].filter(Boolean).join(' · ')||'—')+'</td><td>'+esc(arr(v.reflexos).join(', ')||'—')+'</td><td style="font-size:11.5px;color:#5A6472">'+esc(v.fonte||'—')+'</td></tr>';
+  });
+  h+='</table>';
+  if(nao.length){
+    h+='<div class="hint" style="margin-bottom:10px"><b>Não deferidas:</b> '+nao.map(v=>esc(v.descricao)+' ('+esc(v.statusFinal)+')').join(' · ')+'</div>';
+  }
+  const cj=g.correcaoJuros||{};
+  h+='<div class="conf"><b>Parâmetros-chave para o confronto:</b><br>'
+   +'Correção: '+esc([cj.indicePreJudicial,cj.indiceJudicial].filter(Boolean).join(' / ')||cj.transcricaoLiteral||'omisso')+(cj.pontoControvertido?' <span class="tag tag-und">controvertido</span>':'')+'<br>'
+   +'Limitação à inicial: '+esc((g.limitacaoAoPedido&&g.limitacaoAoPedido.houve)?'SIM — '+(g.limitacaoAoPedido.citacao||''):'não localizada')+'<br>'
+   +'Dedução de valores pagos: '+esc((g.deducoes&&g.deducoes.autorizada)?'autorizada — '+(g.deducoes.criterio||''):'não localizada')+'<br>'
+   +'Honorários: '+esc((g.honorariosSucumbenciais&&g.honorariosSucumbenciais.percentual)?g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'—'):'omisso')+'</div>';
+  $('outDec').innerHTML=h;
+}
+
+function liberarEtapa2(){
+  $('c2').classList.remove('off');
+  $('s1').classList.add('done'); $('s1').textContent='Etapa 1 ✓';
+  $('c2').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ============================================================
+   ETAPA 2 — cálculo adverso + confronto
+   ============================================================ */
+$('dropCalc').onclick=()=>$('fileCalc').click();
+$('fileCalc').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  arqCalc=f; pagsCalc=[]; b64Calc=null;
+  $('stCalc').innerHTML='Lendo o arquivo…';
+  try{ pagsCalc=await lerPaginas(f); }catch(err){ pagsCalc=[]; }
+  const chars=pagsCalc.join('').length;
+  if(chars<300){ b64Calc=await b64de(f); }
+  const n=chars<300?1:lotes(pagsCalc,120000).length;
+  $('stCalc').innerHTML='<span class="okmsg">✓ '+esc(f.name)+' · '+(pagsCalc.length||'?')+' páginas'
+    +(chars<300?' · PDF escaneado — será lido por imagem':' · '+n+' lote'+(n>1?'s':'')+' de leitura')+'</span>';
+  $('goCalc').disabled=false;
+};
+
+async function confrontar(){
+  if(!parecer){ alert('Faça a Etapa 1 primeiro.'); return; }
+  $('goCalc').disabled=true; $('ldCalc').style.display='block'; $('outCalc').innerHTML='';
+  try{
+    // --- fase A: extrair o cálculo adverso (em lotes) ---
+    let calc;
+    const chars=pagsCalc.join('').length;
+    if(chars<300){
+      $('msgCalc').textContent='Lendo o cálculo (PDF escaneado, por imagem)…';
+      const r=await chamar([{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Calc}},{type:'text',text:PROMPT_CALC}],32000);
+      calc=extrairJson(r.txt)||{};
+    } else {
+      const ls=lotes(pagsCalc,120000);
+      const parciais=[];
+      for(let i=0;i<ls.length;i++){
+        $('msgCalc').textContent='Lendo o cálculo — lote '+(i+1)+' de '+ls.length+'…';
+        const r=await chamar([{type:'text',text:'CÁLCULO DA PARTE CONTRÁRIA (trecho '+(i+1)+' de '+ls.length+', texto extraído do PDF):\n\n'+ls[i]+'\n\n---\n'+PROMPT_CALC}],32000);
+        const p=extrairJson(r.txt); if(p) parciais.push(p);
+      }
+      calc=fundirCalc(parciais);
+    }
+    calcAdv=calc; dbg({parecer,calcAdv});
+
+    // --- fase B: confronto ---
+    $('msgCalc').textContent='Confrontando com o que foi deferido…';
+    const modelo=($('modeloBase').value||'').trim();
+    const r2=await chamar([{type:'text',text:promptConfronto(parecer,calc,modelo)}],32000);
+    const j=extrairJson(r2.txt);
+    if(!j) throw new Error('O confronto não veio em JSON válido. Tente novamente.');
+    // travas determinísticas entram sempre — não dependem da IA ter visto
+    j.impugnacoes=mesclar(travas(parecer,calc),j.impugnacoes);
+    confronto=j; dbg({parecer,calcAdv,confronto});
+
+    $('ldCalc').style.display='none';
+    renderCalc(calc);
+    renderDivergencias(j);
+    $('c3').classList.remove('off');
+    $('s2').classList.add('done'); $('s2').textContent='Etapa 2 ✓';
+    $('c3').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    $('ldCalc').style.display='none'; $('goCalc').disabled=false;
+    $('outCalc').innerHTML='<div class="err">'+esc(e.message)+'</div>';
+  }
+}
+
+function fundirCalc(ps){
+  const out={autorDoCalculo:'',dataAtualizacao:null,indiceCorrecao:{},verbas:[],deducoes:[],fgts:{},honorarios:{},contribuicoes:{},diasEspeciais:{},totalGeral:null,observacoes:[]};
+  const primeiro=(k,sub)=>{ for(const p of ps){ const v=sub?((p[k]||{})[sub]):p[k]; if(v!=null&&v!=='') return v; } return sub?'':null; };
+  out.autorDoCalculo=primeiro('autorDoCalculo')||'';
+  out.dataAtualizacao=primeiro('dataAtualizacao');
+  ['preJudicial','judicial','juros','observacao'].forEach(k=>out.indiceCorrecao[k]=primeiro('indiceCorrecao',k));
+  ['incidiuSobre','observacao'].forEach(k=>out.fgts[k]=primeiro('fgts',k));
+  ['percentual','base','aCargoDe'].forEach(k=>out.honorarios[k]=primeiro('honorarios',k));
+  ['previdenciaria','sat','fiscal'].forEach(k=>out.contribuicoes[k]=primeiro('contribuicoes',k));
+  ['feriados','sabados','domingos'].forEach(k=>out.diasEspeciais[k]=primeiro('diasEspeciais',k));
+  out.totalGeral=primeiro('totalGeral');
+  const vistas=new Set();
+  ps.forEach(p=>{
+    arr(p.verbas).forEach(v=>{ const k=(v.descricao||'')+'|'+(v.periodo||'')+'|'+(v.valorPrincipal||''); if(!vistas.has(k)){ vistas.add(k); out.verbas.push(v); } });
+    arr(p.deducoes).forEach(d=>{ if(d&&(d.descricao||d.valor!=null)) out.deducoes.push(d); });
+    arr(p.observacoes).forEach(o=>{ if(o&&out.observacoes.indexOf(o)<0) out.observacoes.push(o); });
+  });
+  return out;
+}
+
+function renderCalc(c){
+  let h='<div class="sec-title">O que o cálculo adverso fez</div>';
+  const ic=c.indiceCorrecao||{};
+  h+='<table><tr><th>Autor do cálculo</th><td>'+esc(c.autorDoCalculo||'—')+'</td></tr>'
+   +'<tr><th>Data de atualização</th><td>'+esc(c.dataAtualizacao||'—')+'</td></tr>'
+   +'<tr><th>Correção / juros</th><td>'+esc([ic.preJudicial,ic.judicial,ic.juros].filter(Boolean).join(' · ')||'—')+'</td></tr>'
+   +'<tr><th>Total geral</th><td><b>'+esc(c.totalGeral||'—')+'</b></td></tr>'
+   +'<tr><th>Deduções</th><td>'+esc(arr(c.deducoes).map(d=>(d.descricao||'')+(d.valor!=null?' — '+d.valor:'')).join(' · ')||'nenhuma localizada')+'</td></tr></table>';
+  if(arr(c.verbas).length){
+    h+='<table><tr><th>Verba apurada</th><th>Período</th><th>Base / %</th><th>Qtd</th><th>Valor</th></tr>';
+    arr(c.verbas).forEach(v=>{
+      h+='<tr><td>'+esc(v.descricao||'—')+'</td><td>'+esc(v.periodo||'—')+'</td><td>'+esc([v.baseCalculo,v.percentual,v.divisor?'div. '+v.divisor:''].filter(Boolean).join(' · ')||'—')+'</td><td>'+esc(v.quantidade||'—')+'</td><td>'+esc(v.valorPrincipal!=null?v.valorPrincipal:'—')+'</td></tr>';
+    });
+    h+='</table>';
+  }
+  $('outCalc').innerHTML=h;
+}
+
+/* ============================================================
+   ETAPA 3 — painel híbrido
+   ============================================================ */
+function renderDivergencias(j){
+  const imps=arr(j.impugnacoes);
+  const ordem={certo:0,provavel:1,conferir:2};
+  imps.sort((a,b)=>(ordem[a.confianca]==null?3:ordem[a.confianca])-(ordem[b.confianca]==null?3:ordem[b.confianca]));
+  let h='';
+  if(j.sintese) h+='<div class="conf"><b>Síntese:</b> '+esc(j.sintese)+'</div>';
+  imps.forEach((d,i)=>{
+    const cf=(d.confianca||'conferir').toLowerCase();
+    const marcado = cf!=='conferir';
+    h+='<div class="dcard '+cf+(marcado?'':' off')+'" id="dc'+i+'">'
+     +'<div class="dhead">'
+     +'<input type="checkbox" id="ck'+i+'" '+(marcado?'checked':'')+' onchange="tgl('+i+')">'
+     +'<div class="dtitle">'+esc(d.titulo||'Ponto '+(i+1))+(d.impacto?'<div class="hint" style="font-weight:400;margin-top:3px">'+esc(d.impacto)+'</div>':'')+'</div>'
+     +'<span class="badge b-'+cf+'">'+esc(cf)+'</span>'
+     +'</div>'
+     +'<span class="toggle" onclick="abrir('+i+')">editar texto ▾</span>'
+     +'<div class="dbody" id="db'+i+'">'
+     +fld('1. O que foi deferido','t_def'+i,d.deferido)
+     +fld('2. O que a parte contrária fez','t_fez'+i,d.oQueFez)
+     +fld('3. A prova (Vejamos…)','t_pro'+i,d.prova)
+     +fld('4. Conclusão','t_con'+i,d.conclusao)
+     +'<div class="fld"><div class="flab">Fundamento</div><input type="text" id="t_fun'+i+'" value="'+esc(d.fundamento||'')+'"></div>'
+     +'</div></div>';
+  });
+  $('listaDiv').innerHTML=h||'<div class="conf">Nenhuma divergência foi detectada com os dados disponíveis. Confira o cálculo manualmente antes de concluir que está correto.</div>';
+
+  const sugs=arr(j.sugestoes);
+  let hs='';
+  if(sugs.length){
+    hs+='<div class="sec-title">Teses que podem caber — verifique</div>';
+    hs+='<div class="hint" style="margin-bottom:10px">O sistema não confirmou estes pontos com os dados extraídos. Se você confirmar nos autos, marque para incluir (o texto sai como ponto a desenvolver).</div>';
+    sugs.forEach((s,i)=>{
+      hs+='<div class="sugcard"><input type="checkbox" id="sg'+i+'" onchange="atualizarContador()">'
+       +'<div><b>'+esc(s.titulo||s.id||'')+'</b><br>'+esc(s.porque||'')+(s.oQueVerificar?'<br><i>Verificar: '+esc(s.oQueVerificar)+'</i>':'')+'</div></div>';
+    });
+  }
+  $('listaSug').innerHTML=hs;
+  atualizarContador();
+}
+function fld(lab,id,val){
+  return '<div class="fld"><div class="flab">'+lab+'</div><textarea id="'+id+'" rows="3">'+esc(val||'')+'</textarea></div>';
+}
+function abrir(i){ const b=$('db'+i); b.classList.toggle('on'); }
+function tgl(i){ $('dc'+i).classList.toggle('off',!$('ck'+i).checked); atualizarContador(); }
+function atualizarContador(){
+  const imps=arr(confronto&&confronto.impugnacoes);
+  let n=0; imps.forEach((d,i)=>{ if($('ck'+i)&&$('ck'+i).checked) n++; });
+  let ns=0; arr(confronto&&confronto.sugestoes).forEach((s,i)=>{ if($('sg'+i)&&$('sg'+i).checked) ns++; });
+  $('contador').innerHTML='<b>'+n+'</b> ponto(s) de impugnação selecionado(s) de '+imps.length+(ns?' · <b>'+ns+'</b> tese(s) a desenvolver':'');
+}
+
+/* modelo de estilo em localStorage */
+(function(){ try{ const m=localStorage.getItem('fazai_modelo_impugnacao'); if(m) $('modeloBase').value=m; }catch(e){} })();
+function salvarModelo(){
+  try{ localStorage.setItem('fazai_modelo_impugnacao',$('modeloBase').value||''); $('stModelo').innerHTML='<span class="okmsg">✓ salvo neste navegador</span>'; }
+  catch(e){ $('stModelo').textContent='não foi possível salvar'; }
+}
+
+/* ============================================================
+   Documento Word — PARECER TÉCNICO DE CÁLCULO + IMPUGNAÇÃO
+   ============================================================ */
+async function gerarDocumento(){
+  if(!window.docx){ alert('Biblioteca de Word não carregou. Recarregue a página.'); return; }
+  if(!confronto||!parecer){ alert('Faça as etapas 1 e 2 primeiro.'); return; }
+  const D=window.docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType}=D;
+  const NAVY='16213E';
+  const pr=parecer.processo||{}, g=parecer.parametrosGlobais||{};
+
+  const P=(txt,o={})=>new Paragraph({alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:undefined),spacing:{after:o.after==null?120:o.after},children:[new TextRun({text:String(txt==null?'':txt),bold:o.bold,italics:o.ital,color:o.color||'222222',size:o.size||20})]});
+  const H=(txt,lvl)=>new Paragraph({heading:lvl===2?HeadingLevel.HEADING_2:HeadingLevel.HEADING_1,spacing:{before:240,after:120},children:[new TextRun({text:txt,bold:true,color:NAVY,size:lvl===2?24:28})]});
+  const cell=(txt,o={})=>new TableCell({width:{size:o.w||2000,type:WidthType.DXA},shading:o.head?{type:ShadingType.CLEAR,fill:NAVY}:(o.fill?{type:ShadingType.CLEAR,fill:o.fill}:undefined),
+    children:[new Paragraph({children:[new TextRun({text:String(txt==null?'':txt),bold:!!o.head||!!o.bold,color:o.head?'FFFFFF':(o.color||'222222'),size:o.size||18})]})]});
+  const bullet=(txt)=>new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:String(txt),size:19})]});
+
+  const k=[];
+  k.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'PARECER TÉCNICO DE CÁLCULO',bold:true,color:NAVY,size:32})]}));
+  k.push(P('Impugnação ao cálculo de liquidação apresentado pela parte contrária',{center:true,ital:true,color:'5A6472',size:19,after:220}));
+
+  /* 1. Identificação */
+  k.push(H('1. Identificação',1));
+  const idRows=[
+    ['Processo nº',pr.numero||'—'],
+    ['Reclamante',pr.reclamante||'—'],
+    ['Reclamada(s)',arr(pr.reclamadas).join(', ')||'—'],
+    ['Vara / Tribunal',pr.vara||'—'],
+    ['Objeto','Impugnação ao cálculo apresentado'+(calcAdv&&calcAdv.autorDoCalculo?' por '+calcAdv.autorDoCalculo:'')],
+    ['Valor impugnado',(calcAdv&&calcAdv.totalGeral!=null)?String(calcAdv.totalGeral):'—'],
+    ['Data de atualização do cálculo',(calcAdv&&calcAdv.dataAtualizacao)||'—']
+  ];
+  k.push(new Table({columnWidths:[2900,6100],width:{size:9000,type:WidthType.DXA},
+    rows:idRows.map(r=>new TableRow({children:[cell(r[0],{w:2900,bold:true,fill:'F2F5FA'}),cell(r[1],{w:6100})]}))}));
+  k.push(P('',{after:120}));
+
+  /* 2. Parâmetros da condenação */
+  k.push(H('2. Parâmetros da condenação',1));
+  k.push(P('Os parâmetros a seguir decorrem do que foi expressamente deferido e transitado em julgado, sendo vedada, em sede de liquidação, qualquer alteração do julgado.',{just:true,size:19}));
+  const defs=(parecer.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  k.push(H('2.1 Verbas deferidas',2));
+  defs.forEach(v=>{
+    const det=[];
+    if(v.periodo&&(v.periodo.inicio||v.periodo.fim)) det.push('período '+(v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?'));
+    if(v.percentual) det.push('adicional '+v.percentual);
+    if(v.divisor) det.push('divisor '+v.divisor);
+    if(v.baseCalculo) det.push('base: '+v.baseCalculo);
+    if(arr(v.reflexos).length) det.push('reflexos: '+arr(v.reflexos).join(', '));
+    if(v.abatimento) det.push('abatimento: '+v.abatimento);
+    if(v.valorFixado) det.push('valor fixado R$ '+v.valorFixado);
+    let linha=(v.descricao||'')+(det.length?' — '+det.join('; '):'');
+    if(v.fonte) linha+=' ('+v.fonte+')';
+    k.push(bullet(linha));
+    if(v.citacao) k.push(new Paragraph({spacing:{after:100},indent:{left:720},children:[new TextRun({text:'"'+v.citacao+'"',italics:true,color:'5A6472',size:17})]}));
+  });
+  const naoDef=(parecer.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
+  if(naoDef.length){
+    k.push(H('2.2 Verbas não deferidas / excluídas',2));
+    naoDef.forEach(v=>k.push(bullet((v.descricao||'')+' — '+(v.statusFinal||'')+(v.fonte?' ('+v.fonte+')':''))));
+  }
+  k.push(H('2.3 Correção monetária, juros e demais parâmetros',2));
+  const cj=g.correcaoJuros||{};
+  if(cj.transcricaoLiteral||cj.indicePreJudicial||cj.indiceJudicial)
+    k.push(bullet('Correção e juros: '+[cj.transcricaoLiteral,cj.indicePreJudicial?'pré-judicial: '+cj.indicePreJudicial:'',cj.indiceJudicial?'judicial: '+cj.indiceJudicial:'',cj.juros?'juros: '+cj.juros:''].filter(Boolean).join(' — ')+(cj.fonte?' ('+cj.fonte+')':'')));
+  if(g.limitacaoAoPedido&&g.limitacaoAoPedido.houve)
+    k.push(bullet('Limitação aos valores da inicial: '+(g.limitacaoAoPedido.citacao||'deferida')+(g.limitacaoAoPedido.fonte?' ('+g.limitacaoAoPedido.fonte+')':'')));
+  if(g.deducoes&&g.deducoes.autorizada)
+    k.push(bullet('Dedução de valores pagos: '+(g.deducoes.criterio||g.deducoes.citacao||'autorizada')+(g.deducoes.fonte?' ('+g.deducoes.fonte+')':'')));
+  if(g.honorariosSucumbenciais&&g.honorariosSucumbenciais.percentual)
+    k.push(bullet('Honorários sucumbenciais: '+g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'o valor apurado')+(g.honorariosSucumbenciais.reciproca?' — sucumbência recíproca':'')+(g.honorariosSucumbenciais.fonte?' ('+g.honorariosSucumbenciais.fonte+')':'')));
+  if(g.contribuicoes&&g.contribuicoes.previdenciaria)
+    k.push(bullet('Contribuições previdenciárias: '+g.contribuicoes.previdenciaria));
+  const jor=(parecer.dadosContratuais||{}).jornada;
+  if(jor&&jor.descricao) k.push(bullet('Jornada fixada: '+jor.descricao+(jor.fonte?' ('+jor.fonte+')':'')));
+
+  /* 3. Impugnação */
+  k.push(H('3. Impugnação ao cálculo apresentado',1));
+  if(confronto.sintese) k.push(P(confronto.sintese,{just:true,size:19}));
+  const imps=arr(confronto.impugnacoes);
+  let n=0;
+  imps.forEach((d,i)=>{
+    if(!($('ck'+i)&&$('ck'+i).checked)) return;
+    n++;
+    const get=id=>{ const el=$(id); return el?el.value:''; };
+    k.push(H('3.'+n+'. '+(d.titulo||'Ponto '+n),2));
+    const dfd=get('t_def'+i)||d.deferido; if(dfd) k.push(P(dfd,{just:true,size:19}));
+    const fez=get('t_fez'+i)||d.oQueFez; if(fez) k.push(P(fez,{just:true,size:19}));
+    const pro=get('t_pro'+i)||d.prova; if(pro) k.push(P(pro,{just:true,size:19}));
+    const con=get('t_con'+i)||d.conclusao; if(con) k.push(P(con,{just:true,bold:true,size:19}));
+    const fun=get('t_fun'+i)||d.fundamento;
+    if(fun) k.push(P('Fundamento: '+fun,{ital:true,color:'5A6472',size:17,after:180}));
+  });
+  if(!n) k.push(P('Nenhum ponto de impugnação foi selecionado.',{ital:true,color:'8A5A00',size:19}));
+
+  /* teses a desenvolver */
+  const sugs=arr(confronto.sugestoes).filter((s,i)=>$('sg'+i)&&$('sg'+i).checked);
+  if(sugs.length){
+    k.push(H('3.'+(n+1)+'. Pontos a desenvolver (conferência em curso)',2));
+    sugs.forEach(s=>k.push(bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||''))));
+  }
+
+  /* 4. Conclusão */
+  k.push(H('4. Conclusão',1));
+  k.push(P(confronto.conclusaoGeral||'Pelos fundamentos acima, restam impugnados os cálculos apresentados pela parte contrária, requerendo-se sua retificação nos termos do julgado.',{just:true,size:19}));
+  k.push(P('',{after:200}));
+  k.push(P('Parecer elaborado a partir da leitura das decisões e do cálculo apresentado pela parte contrária. Os pontos assinalados como "conferir" dependem de confirmação nos autos.',{ital:true,color:'8A5A00',size:17}));
+  k.push(P('FazAI Tech · Cálculos Judiciais Trabalhistas · fazai.tech',{center:true,color:'5A6472',size:16}));
+
+  const doc=new Document({sections:[{properties:{page:{margin:{top:1000,bottom:1000,left:1000,right:1000}}},children:k}]});
+  const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download='Impugnacao_'+String(pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
+  a.click(); URL.revokeObjectURL(url);
+  $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s) de impugnação).</span>';
+}
+</script>
+</body>
+</html>
