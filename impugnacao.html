@@ -32,6 +32,8 @@
   .drop:hover{border-color:var(--orange);background:#fff}
   .drop .big{font-size:15px;font-weight:600;color:var(--navy)}
   .drop .small{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .picker{margin-top:14px;padding:14px 16px;border:1px solid var(--line);background:var(--panel);border-radius:10px;display:none}
+  .picker b{color:var(--navy)}
   input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-family:inherit}
   textarea{resize:vertical}
   .btn{border:none;border-radius:8px;padding:11px 20px;font-weight:600;cursor:pointer;font-size:14px}
@@ -102,10 +104,21 @@
     <h1>Parâmetros da condenação</h1>
     <p class="lead">Suba a decisão (ou a cadeia completa: sentença, acórdão, TST). O sistema extrai <b>o que foi deferido</b> — é a régua contra a qual o cálculo do adversário será confrontado. Se você já analisou o processo na outra tela, cole o JSON e pule esta leitura.</p>
 
-    <input type="file" id="fileDec" accept=".pdf" style="display:none">
+    <input type="file" id="fileDec" accept=".pdf" multiple style="display:none">
     <div class="drop" id="dropDec">
       <div class="big">Clique para selecionar o PDF da decisão</div>
-      <div class="small">sentença, acórdão, embargos, TST — uma peça ou todas</div>
+      <div class="small">sentença, acórdão, embargos, TST — pode selecionar vários PDFs de uma vez</div>
+    </div>
+
+    <div class="picker" id="pickerDec">
+      <div style="margin-bottom:4px"><b id="pinfoDec"></b></div>
+      <div class="hint" style="margin-bottom:10px">Recorte só as páginas que importam (sentença, acórdão, dispositivo) — menos páginas = mais rápido e mais barato. Ex.: <b>1-15, 340-352</b></div>
+      <input type="text" id="rangesDec" placeholder="ex: 1-15, 340-352">
+      <div class="row">
+        <button class="btn btn-primary btn-sm" onclick="recortar('Dec')">Usar essas páginas</button>
+        <button class="btn btn-ghost btn-sm" onclick="fecharPicker('Dec')">Usar o PDF inteiro</button>
+      </div>
+      <div class="status" id="pstatusDec"></div>
     </div>
 
     <div class="status" id="stDec"></div>
@@ -130,10 +143,21 @@
     <h1>Cálculo da parte contrária</h1>
     <p class="lead">Suba o cálculo apresentado pela outra parte (ou o laudo pericial). O PDF <b>inteiro</b> é lido — se for grande, o sistema quebra em lotes automaticamente para não estourar o limite de resposta.</p>
 
-    <input type="file" id="fileCalc" accept=".pdf" style="display:none">
+    <input type="file" id="fileCalc" accept=".pdf" multiple style="display:none">
     <div class="drop" id="dropCalc">
       <div class="big">Clique para selecionar o PDF do cálculo adverso</div>
-      <div class="small">cálculo da autora, laudo pericial, PJe-Calc — qualquer tamanho</div>
+      <div class="small">cálculo da autora, laudo pericial, PJe-Calc — vários PDFs, qualquer tamanho</div>
+    </div>
+
+    <div class="picker" id="pickerCalc">
+      <div style="margin-bottom:4px"><b id="pinfoCalc"></b></div>
+      <div class="hint" style="margin-bottom:10px">Recorte a parametrização, o resumo e os totais — é onde estão os parâmetros que serão confrontados. A memória mês a mês raramente acrescenta. Ex.: <b>1-6, 88-95</b></div>
+      <input type="text" id="rangesCalc" placeholder="ex: 1-6, 88-95">
+      <div class="row">
+        <button class="btn btn-primary btn-sm" onclick="recortar('Calc')">Usar essas páginas</button>
+        <button class="btn btn-ghost btn-sm" onclick="fecharPicker('Calc')">Usar o PDF inteiro</button>
+      </div>
+      <div class="status" id="pstatusCalc"></div>
     </div>
 
     <div class="status" id="stCalc"></div>
@@ -477,36 +501,127 @@ function mesclar(tv,ia){
    Estado
    ============================================================ */
 let parecer=null, calcAdv=null, confronto=null;
-let arqDec=null, txtDec='', b64Dec=null;
-let arqCalc=null, pagsCalc=[], b64Calc=null;
+let arqsDec=[], pagsDec=[], txtDec='';
+let arqsCalc=[], pagsCalc=[];
 
 /* ============================================================
    PDF helpers
    ============================================================ */
-async function lerPaginas(file){
-  const ab=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+// cada página vira {n: índice global, p: nº no arquivo, src: arquivo, t: texto}
+async function lerPaginas(ab, src, offset){
+  const pdf=await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
   const out=[];
   for(let i=1;i<=pdf.numPages;i++){
     const pg=await pdf.getPage(i);
     const c=await pg.getTextContent();
-    out.push(c.items.map(x=>x.str).join(' '));
+    out.push({n:(offset||0)+i, p:i, src:src||'', t:c.items.map(x=>x.str).join(' ')});
   }
   return out;
 }
+// lê vários PDFs de uma vez (cálculo costuma vir partido em várias peças)
+async function lerArquivos(files, onProgresso){
+  const out=[];
+  for(let i=0;i<files.length;i++){
+    if(onProgresso) onProgresso('Lendo '+(i+1)+' de '+files.length+' arquivo(s)…');
+    try{ const ab=await files[i].arrayBuffer(); out.push(...await lerPaginas(ab, files[i].name, out.length)); }catch(e){ console.warn('falhou',files[i].name,e); }
+  }
+  return out;
+}
+const texto=pags=>pags.map(x=>x.t).join('\n').trim();
+const chars =pags=>pags.reduce((a,x)=>a+(x.t||'').length,0);
 function b64de(file){
   return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.readAsDataURL(file); });
 }
 // quebra as páginas em lotes de no máximo LIMITE caracteres
+const LOTE_CHARS=250000;   // ~70k tokens por chamada — folga grande dentro do contexto
+const CONCORRENCIA=3;      // lotes simultâneos
 function lotes(pags, LIMITE){
   const out=[]; let cur=[], n=0;
-  pags.forEach((p,i)=>{
-    const bloco='\n--- pág. '+(i+1)+' ---\n'+p;
-    if(n+bloco.length>LIMITE && cur.length){ out.push(cur.join('')); cur=[]; n=0; }
+  pags.forEach(p=>{
+    const cab='\n--- '+(p.src?p.src+' ':'')+'pág. '+(p.p||p.n)+' ---\n';
+    const bloco=cab+(p.t||'');
+    if(n+bloco.length>(LIMITE||LOTE_CHARS) && cur.length){ out.push(cur.join('')); cur=[]; n=0; }
     cur.push(bloco); n+=bloco.length;
   });
   if(cur.length) out.push(cur.join(''));
   return out;
+}
+// executa com limite de simultaneidade (corta o tempo de espera em cálculo grande)
+async function emParalelo(itens, limite, fn){
+  const out=new Array(itens.length); let i=0;
+  async function worker(){ while(i<itens.length){ const k=i++; out[k]=await fn(itens[k],k); } }
+  await Promise.all(Array.from({length:Math.min(limite,itens.length)||1},worker));
+  return out;
+}
+// tenta de novo em falha de rede — num cálculo de 20 lotes, uma queda não pode perder tudo
+async function comRetry(fn, tentativas){
+  let err;
+  for(let t=0;t<(tentativas||3);t++){
+    try{ return await fn(); }catch(e){ err=e; await new Promise(r=>setTimeout(r,1500*(t+1))); }
+  }
+  throw err;
+}
+// triagem: sugere as páginas que carregam parâmetro, não a memória mês a mês
+const RELEVANTE=/parametriza|par[âa]metro|[íi]ndice|corre[çc][ãa]o monet|selic|ipca|\btrd?\b|juros|total geral|totais|resumo|honor[áa]ri|divisor|dedu[çc]|abatimento|\binss\b|\bfgts\b|per[íi]ci|atualiza[çc][ãa]o|adicional|reflexo/gi;
+function triagem(pags){
+  if(pags.length<=12) return pags.map(p=>p.n);
+  const notas=pags.map(p=>{
+    const m=String(p.t||'').match(RELEVANTE)||[];
+    return {n:p.n, s:new Set(m.map(x=>x.toLowerCase())).size};
+  });
+  const corte=3;
+  const sel=new Set();
+  notas.forEach(x=>{ if(x.s>=corte) sel.add(x.n); });
+  // sempre inclui começo e fim (capa, parametrização, totais)
+  pags.slice(0,4).forEach(p=>sel.add(p.n));
+  pags.slice(-4).forEach(p=>sel.add(p.n));
+  const arr=[...sel].sort((a,b)=>a-b);
+  return arr.length>60?arr.slice(0,60):arr;
+}
+function comprimirRanges(ns){
+  if(!ns.length) return '';
+  const out=[]; let ini=ns[0], ant=ns[0];
+  for(let i=1;i<=ns.length;i++){
+    const v=ns[i];
+    if(v!==ant+1){ out.push(ini===ant?String(ini):ini+'-'+ant); ini=v; }
+    ant=v;
+  }
+  return out.join(', ');
+}
+
+/* ---- recorte de páginas: menos página = menos tempo e menos custo ---- */
+function parseRanges(txt,max){
+  const st=new Set();
+  (txt||'').split(',').forEach(p=>{p=p.trim();if(!p)return;
+    if(p.includes('-')){const[a,b]=p.split('-').map(x=>parseInt(x.trim(),10));if(!isNaN(a)&&!isNaN(b))for(let i=Math.min(a,b);i<=Math.max(a,b);i++)if(i>=1&&i<=max)st.add(i);}
+    else{const n=parseInt(p,10);if(!isNaN(n)&&n>=1&&n<=max)st.add(n);}});
+  return[...st].sort((x,y)=>x-y);
+}
+function fecharPicker(k){ $('picker'+k).style.display='none'; }
+async function recortar(k){
+  const st=$('pstatus'+k);
+  const pags = k==='Dec'?pagsDec:pagsCalc;
+  try{
+    const max=pags.length?pags[pags.length-1].n:0;
+    const pgs=parseRanges($('ranges'+k).value, max);
+    if(!pgs.length){ st.textContent='Informe ao menos uma página válida.'; return; }
+    const alvo=new Set(pgs);
+    const novas=pags.filter(x=>alvo.has(x.n));
+    if(!novas.length){ st.textContent='Nenhuma dessas páginas existe no documento.'; return; }
+    if(k==='Dec'){ pagsDec=novas; txtDec=texto(novas); } else { pagsCalc=novas; }
+    fecharPicker(k);
+    statusArquivo(k, true);
+  }catch(e){ console.error(e); st.textContent='Não consegui recortar. Use o PDF inteiro.'; }
+}
+function nomeArqs(a){ return a.length===1?a[0].name:a.length+' arquivos'; }
+function statusArquivo(k, recortado){
+  const arqs = k==='Dec'?arqsDec:arqsCalc;
+  const pags = k==='Dec'?pagsDec:pagsCalc;
+  const c=chars(pags);
+  const n=c<300?1:lotes(pags,LOTE_CHARS).length;
+  $('st'+k).innerHTML='<span class="okmsg">✓ '+esc(nomeArqs(arqs))+' · '+pags.length+' pág.'
+    +(c<300?' · escaneado, leitura por imagem':' · '+n+' chamada'+(n>1?'s':'')+' de leitura')
+    +(recortado?' · <b>recortado</b>':'')+'</span>';
 }
 
 async function chamar(content, maxTokens){
@@ -560,23 +675,32 @@ function dbg(o){ $('dbg').textContent=JSON.stringify(o,null,2); }
    ============================================================ */
 $('dropDec').onclick=()=>$('fileDec').click();
 $('fileDec').onchange=async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  arqDec=f; txtDec=''; b64Dec=null;
-  $('stDec').innerHTML='Lendo o arquivo…';
-  try{ txtDec=(await lerPaginas(f)).join('\n').trim(); }catch(err){ txtDec=''; }
-  b64Dec=await b64de(f);
-  $('stDec').innerHTML='<span class="okmsg">✓ '+esc(f.name)+' ('+(f.size/1048576).toFixed(2)+' MB'+(txtDec.length>200?', texto extraído':', PDF escaneado — será lido por imagem')+')</span>';
+  const fs=[...e.target.files]; if(!fs.length) return;
+  arqsDec=fs; pagsDec=[]; txtDec='';
+  fecharPicker('Dec'); $('rangesDec').value=''; $('pstatusDec').textContent='';
+  $('stDec').innerHTML='Lendo…';
+  pagsDec=await lerArquivos(fs, m=>{ $('stDec').textContent=m; });
+  txtDec=texto(pagsDec);
+  statusArquivo('Dec',false);
   $('goDec').disabled=false;
+  if(pagsDec.length>1){
+    $('pinfoDec').textContent=pagsDec.length+' páginas em '+fs.length+' arquivo(s) — quer recortar antes de ler?';
+    $('pickerDec').style.display='block';
+  }
 };
 
 async function lerDecisao(){
   $('goDec').disabled=true; $('ldDec').style.display='block'; $('outDec').innerHTML='';
   try{
     let content;
-    if(txtDec.length>200) content=[{type:'text',text:'DECISÕES DO PROCESSO (texto extraído do PDF):\n\n'+txtDec+'\n\n---\n'+PROMPT_DECISAO}];
-    else if(b64Dec) content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Dec}},{type:'text',text:PROMPT_DECISAO}];
-    else throw new Error('Não consegui ler o arquivo.');
-    const r=await chamar(content,32000);
+    if(txtDec.length>200){
+      content=[{type:'text',text:'DECISÕES DO PROCESSO (texto extraído do PDF):\n\n'+txtDec+'\n\n---\n'+PROMPT_DECISAO}];
+    } else if(arqsDec.length){
+      content=[];
+      for(const f of arqsDec) content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:await b64de(f)}});
+      content.push({type:'text',text:PROMPT_DECISAO});
+    } else throw new Error('Não consegui ler o arquivo.');
+    const r=await comRetry(()=>chamar(content,32000),2);
     const j=extrairJson(r.txt);
     if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
     parecer=j; dbg({parecer});
@@ -639,40 +763,59 @@ function liberarEtapa2(){
    ============================================================ */
 $('dropCalc').onclick=()=>$('fileCalc').click();
 $('fileCalc').onchange=async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  arqCalc=f; pagsCalc=[]; b64Calc=null;
-  $('stCalc').innerHTML='Lendo o arquivo…';
-  try{ pagsCalc=await lerPaginas(f); }catch(err){ pagsCalc=[]; }
-  const chars=pagsCalc.join('').length;
-  if(chars<300){ b64Calc=await b64de(f); }
-  const n=chars<300?1:lotes(pagsCalc,120000).length;
-  $('stCalc').innerHTML='<span class="okmsg">✓ '+esc(f.name)+' · '+(pagsCalc.length||'?')+' páginas'
-    +(chars<300?' · PDF escaneado — será lido por imagem':' · '+n+' lote'+(n>1?'s':'')+' de leitura')+'</span>';
+  const fs=[...e.target.files]; if(!fs.length) return;
+  arqsCalc=fs; pagsCalc=[];
+  fecharPicker('Calc'); $('rangesCalc').value=''; $('pstatusCalc').textContent='';
+  $('stCalc').innerHTML='Lendo…';
+  pagsCalc=await lerArquivos(fs, m=>{ $('stCalc').textContent=m; });
+  statusArquivo('Calc',false);
   $('goCalc').disabled=false;
+  if(pagsCalc.length>1){
+    const sug=triagem(pagsCalc);
+    const temTexto=chars(pagsCalc)>=300;
+    $('pinfoCalc').textContent=pagsCalc.length+' páginas em '+fs.length+' arquivo(s) — quer recortar antes de confrontar?';
+    if(temTexto && sug.length && sug.length<pagsCalc.length){
+      $('rangesCalc').value=comprimirRanges(sug);
+      $('pstatusCalc').innerHTML='Sugeri <b>'+sug.length+'</b> das '+pagsCalc.length+' páginas (as que trazem parâmetro, índice, totais e deduções). Confira e ajuste — a sugestão é heurística, não leitura.';
+    }
+    $('pickerCalc').style.display='block';
+  }
 };
 
 async function confrontar(){
   if(!parecer){ alert('Faça a Etapa 1 primeiro.'); return; }
   $('goCalc').disabled=true; $('ldCalc').style.display='block'; $('outCalc').innerHTML='';
   try{
-    // --- fase A: extrair o cálculo adverso (em lotes) ---
-    let calc;
-    const chars=pagsCalc.join('').length;
-    if(chars<300){
-      $('msgCalc').textContent='Lendo o cálculo (PDF escaneado, por imagem)…';
-      const r=await chamar([{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Calc}},{type:'text',text:PROMPT_CALC}],32000);
-      calc=extrairJson(r.txt)||{};
-    } else {
-      const ls=lotes(pagsCalc,120000);
+    // --- fase A: extrair o cálculo adverso (lotes em paralelo, com retry) ---
+    let calc, falhas=[];
+    const c=chars(pagsCalc);
+    if(c<300){
       const parciais=[];
-      for(let i=0;i<ls.length;i++){
-        $('msgCalc').textContent='Lendo o cálculo — lote '+(i+1)+' de '+ls.length+'…';
-        const r=await chamar([{type:'text',text:'CÁLCULO DA PARTE CONTRÁRIA (trecho '+(i+1)+' de '+ls.length+', texto extraído do PDF):\n\n'+ls[i]+'\n\n---\n'+PROMPT_CALC}],32000);
-        const p=extrairJson(r.txt); if(p) parciais.push(p);
+      for(let i=0;i<arqsCalc.length;i++){
+        $('msgCalc').textContent='Lendo o cálculo escaneado — arquivo '+(i+1)+' de '+arqsCalc.length+'…';
+        try{
+          const b64=await b64de(arqsCalc[i]);
+          const r=await comRetry(()=>chamar([{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT_CALC}],32000),2);
+          const pj=extrairJson(r.txt); if(pj) parciais.push(pj);
+        }catch(err){ falhas.push('arquivo '+(i+1)); }
       }
       calc=fundirCalc(parciais);
+    } else {
+      const ls=lotes(pagsCalc,LOTE_CHARS);
+      let prontos=0;
+      const marcar=()=>{ prontos++; $('msgCalc').textContent='Lendo o cálculo — '+prontos+' de '+ls.length+' chamada(s) concluída(s)…'; };
+      $('msgCalc').textContent='Lendo o cálculo — 0 de '+ls.length+' chamada(s)…';
+      const res=await emParalelo(ls, CONCORRENCIA, async (lote,i)=>{
+        try{
+          const r=await comRetry(()=>chamar([{type:'text',text:'CÁLCULO DA PARTE CONTRÁRIA (trecho '+(i+1)+' de '+ls.length+', texto extraído do PDF):\n\n'+lote+'\n\n---\n'+PROMPT_CALC}],32000),3);
+          marcar(); return extrairJson(r.txt);
+        }catch(err){ marcar(); falhas.push('trecho '+(i+1)); return null; }
+      });
+      const parciais=res.filter(Boolean);
+      if(!parciais.length) throw new Error('Nenhum trecho do cálculo pôde ser lido. Verifique o PDF ou recorte as páginas.');
+      calc=fundirCalc(parciais);
     }
-    calcAdv=calc; dbg({parecer,calcAdv});
+    calcAdv=calc; dbg({parecer,calcAdv,falhas});
 
     // --- fase B: confronto ---
     $('msgCalc').textContent='Confrontando com o que foi deferido…';
@@ -686,6 +829,7 @@ async function confrontar(){
 
     $('ldCalc').style.display='none';
     renderCalc(calc);
+    if(falhas.length) $('outCalc').innerHTML='<div class="conf"><b>Atenção:</b> '+falhas.length+' trecho(s) do cálculo não puderam ser lidos ('+esc(falhas.join(', '))+'). O confronto foi feito sem eles — confira essas páginas manualmente.</div>'+$('outCalc').innerHTML;
     renderDivergencias(j);
     $('c3').classList.remove('off');
     $('s2').classList.add('done'); $('s2').textContent='Etapa 2 ✓';
