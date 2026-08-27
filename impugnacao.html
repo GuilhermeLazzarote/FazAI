@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
 <script src="fazai_leis.js"></script>
+<script src="fazai_pjc.js"></script>
 <style>
   :root{
     --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
@@ -33,6 +34,16 @@
   .drop:hover{border-color:var(--orange);background:#fff}
   .drop .big{font-size:15px;font-weight:600;color:var(--navy)}
   .drop .small{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .modos{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .modo{flex:1;min-width:240px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:#fff;display:block}
+  .modo.on{border-color:var(--orange);background:#fff8f4;box-shadow:0 0 0 1px var(--orange) inset}
+  .modo b{display:block;color:var(--navy);font-size:14px}
+  .modo span{display:block;font-size:12.5px;color:var(--muted)}
+  .modo input{margin-right:6px}
+  .dropPjc{border-color:var(--orange);background:#fff8f4}
+  .ou{text-align:center;font-size:12.5px;color:var(--muted);margin:14px 0 10px;position:relative}
+  .ou:before,.ou:after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--line)}
+  .ou:before{left:0} .ou:after{right:0}
   .picker{margin-top:14px;padding:14px 16px;border:1px solid var(--line);background:var(--panel);border-radius:10px;display:none}
   .picker b{color:var(--navy)}
   input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-family:inherit}
@@ -142,13 +153,30 @@
   <!-- ETAPA 2 -->
   <div class="card off" id="c2">
     <div class="step" id="s2">Etapa 2</div>
-    <h1>Cálculo da parte contrária</h1>
-    <p class="lead">Suba o cálculo apresentado pela outra parte (ou o laudo pericial). O PDF <b>inteiro</b> é lido — se for grande, o sistema quebra em lotes automaticamente para não estourar o limite de resposta.</p>
+    <h1 id="tit2">Cálculo a conferir</h1>
+    <p class="lead">Escolha de quem é o cálculo e como vai entregá-lo. O <b>.PJC do PJe-Calc</b> é o caminho preferível: leitura exata, instantânea e sem custo de IA.</p>
+
+    <div class="modos">
+      <label class="modo on" id="m-imp"><input type="radio" name="modo" value="impugnacao" checked onchange="setModo('impugnacao')">
+        <b>Cálculo da parte contrária</b><span>gera parecer + impugnação</span></label>
+      <label class="modo" id="m-conf"><input type="radio" name="modo" value="conferencia" onchange="setModo('conferencia')">
+        <b>Meu próprio cálculo</b><span>conferência interna, antes de protocolar</span></label>
+    </div>
+
+    <input type="file" id="filePjc" accept=".pjc,.PJC,.zip" style="display:none">
+    <div class="drop dropPjc" id="dropPjc">
+      <div class="big">⚡ Anexar o arquivo .PJC do PJe-Calc</div>
+      <div class="small">leitura exata do cálculo inteiro · sem IA · sem custo · segundos</div>
+    </div>
+    <div class="status" id="stPjc"></div>
+    <div id="outPjc"></div>
+
+    <div class="ou">ou, se só tiver o PDF</div>
 
     <input type="file" id="fileCalc" accept=".pdf" multiple style="display:none">
     <div class="drop" id="dropCalc">
-      <div class="big">Clique para selecionar o PDF do cálculo adverso</div>
-      <div class="small">cálculo da autora, laudo pericial, PJe-Calc — vários PDFs, qualquer tamanho</div>
+      <div class="big">Clique para selecionar o PDF do cálculo</div>
+      <div class="small">cálculo da autora, laudo pericial — vários PDFs, qualquer tamanho</div>
     </div>
 
     <div class="picker" id="pickerCalc">
@@ -190,9 +218,11 @@
     </details>
 
     <div class="row" style="margin-top:18px">
-      <button class="btn btn-primary" onclick="gerarDocumento()">Gerar parecer + impugnação (Word)</button>
+      <button class="btn btn-ghost" id="btnRedigir" onclick="redigirSelecionados(true)">✍ Redigir os textos dos selecionados</button>
+      <button class="btn btn-primary" onclick="gerarDocumento()">Gerar documento (Word)</button>
       <button class="btn btn-ghost" onclick="location.reload()">Recomeçar</button>
     </div>
+    <div class="status" id="stRedigir"></div>
     <div class="status" id="stDoc"></div>
   </div>
 
@@ -340,6 +370,8 @@ Preencha "trecho" com um recorte LITERAL e curto do documento (máx. ~15 palavra
 
 Se um dado não estiver no trecho, use null — NÃO invente. Transcreva números exatamente como impressos.
 
+ECONOMIA DE RESPOSTA (importante — resposta longa é cortada): devolva UMA linha por rubrica, com o TOTAL da rubrica. NÃO devolva a memória mês a mês, NÃO repita competências, NÃO liste ocorrências individuais. "trecho" no máximo 15 palavras. Nenhum campo de texto passa de 1 frase.
+
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
 {"autorDoCalculo":"","dataAtualizacao":null,"indiceCorrecao":{"preJudicial":"","judicial":"","juros":"","observacao":""},
 "verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"trecho":"","periodo":"","baseCalculo":"","percentual":"","divisor":null,"quantidade":"","valorPrincipal":null,"reflexos":[],"observacao":""}],
@@ -354,69 +386,92 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
 /* ============================================================
    PROMPT 3 — confronto (parecer x cálculo adverso x catálogo)
    ============================================================ */
-function promptConfronto(parecer,calc,modelo){
-  const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g+' | FUNDAMENTO: '+x.f
-    +(arr(x.d).length?' | DISPOSITIVOS: '+arr(x.d).join(', '):'')).join('\n');
-  return `Você é um assistente técnico de calculista trabalhista. Sua função tem DUAS partes: (A) CONFERIR TODAS as verbas, uma a uma, e (B) REDIGIR os pontos de impugnação ao cálculo apresentado pela parte contrária.
+function ctxCurto(parecer,calc){
+  const g=(parecer&&parecer.parametrosGlobais)||{};
+  return {
+    verbas:((parecer&&parecer.verbas)||[]).map(v=>({d:v.descricao,st:v.statusFinal,mid:v.motorId,sub:v.subtipo,
+      per:v.periodo,base:v.baseCalculo,pct:v.percentual,div:v.divisor,ref:v.reflexos,cit:v.citacao,fonte:v.fonte})),
+    globais:{prescricao:g.prescricao,limitacao:g.limitacaoAoPedido,correcao:g.correcaoJuros,
+      deducoes:g.deducoes,honorarios:g.honorariosSucumbenciais,jornada:(parecer&&parecer.dadosContratuais||{}).jornada},
+    calculo:{autor:calc&&calc.autorDoCalculo,atualizacao:calc&&calc.dataAtualizacao,
+      indice:calc&&calc.indiceCorrecao, total:calc&&calc.totalGeral, deducoes:calc&&calc.deducoes,
+      fgts:calc&&calc.fgts, honorarios:calc&&calc.honorarios, contribuicoes:calc&&calc.contribuicoes,
+      verbas:arr(calc&&calc.verbas).map(v=>({d:v.descricao,mid:v.motorId,sub:v.subtipo,refl:v.ehReflexo,
+        per:v.periodo,base:v.baseCalculo,pct:v.percentual,div:v.divisor,qtd:v.quantidade,val:v.valorPrincipal,tr:v.trecho}))}
+  };
+}
 
-============ REGRA ANTI-RUÍDO (a mais importante) ============
-NÃO EXISTE IMPUGNAÇÃO SEM EVIDÊNCIA. Para entrar em "impugnacoes", o ponto precisa OBRIGATORIAMENTE de:
- (a) um comando EXPRESSO da decisão (campo "deferidoCitacao", copiado do JSON dos parâmetros deferidos), E
- (b) um DADO CONCRETO extraído do cálculo adverso (campo "evidencia", copiado LITERALMENTE do JSON do cálculo: o índice, o divisor, o percentual, o valor, o período).
-Se você não tem os DOIS, o ponto NÃO é impugnação — vai para "sugestoes" como lembrete de conferência.
-É PROIBIDO impugnar por suposição, por praxe, por "costuma acontecer" ou por tese que você não conseguiu amarrar a um dado do cálculo. Ponto impugnado sem lastro derruba a peça inteira: prefira deixar de fora.
+/* ============================================================
+   FASE B1 — TRIAGEM (rápida): confere todas as verbas e LISTA
+   os pontos, SEM redigir. Saída pequena, volta em segundos.
+   ============================================================ */
+function promptTriagem(parecer,calc,md){
+  const conf = md==='conferencia';
+  const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g).join('\n');
+  return `Você é um assistente técnico de calculista trabalhista. NESTA ETAPA VOCÊ NÃO REDIGE TEXTO — apenas confere e lista. A redação é feita depois, em outra chamada.
 
-============ ART. 71 × ART. 66 — NÃO CONFUNDA ============
-- INTRAJORNADA (art. 71 §4º CLT, Súmula 437 TST): é o intervalo PARA REFEIÇÃO E DESCANSO DENTRO da jornada (1h de almoço). Suprimido ou reduzido.
-- INTERJORNADA (art. 66 CLT, OJ 355 SDI-1): é o descanso MÍNIMO DE 11 HORAS ENTRE o fim de uma jornada e o início da seguinte.
-- DSR / repouso semanal (art. 67 CLT, Súmula 146 TST): é o descanso semanal remunerado.
-São TRÊS coisas distintas, com artigos distintos. Use o nome e o artigo corretos conforme o "subtipo" indicado na verba. Se a decisão deferiu intrajornada, JAMAIS escreva interjornada (e vice-versa). Na dúvida sobre qual foi deferida, use "conferir" e diga qual precisa ser confirmada.
+${conf?'CONTEXTO: o cálculo é DO PRÓPRIO CALCULISTA, em conferência interna antes do protocolo.':'CONTEXTO: o cálculo é DA PARTE CONTRÁRIA e poderá ser impugnado.'}
 
 ============ (A) CONFERÊNCIA DE TODAS AS VERBAS ============
-Monte "conferencia" com UMA LINHA PARA CADA verba do processo — todas as DEFERIDAS e todas as rubricas que aparecem no cálculo adverso, sem exceção e sem resumir. Para cada uma:
-- "verba": nome da verba
-- "deferido": o que a decisão fixou (período, base, %, divisor, reflexos) ou "não deferida"
-- "apurado": o que o cálculo adverso fez, ou "não apurada"
-- "status": "OK" (bate com o deferido) | "DIVERGENTE" (apurada de forma diversa) | "NAO_APURADA" (deferida e o cálculo não apurou) | "SEM_DEFERIMENTO" (apurada sem ter sido deferida) | "CONFERIR" (dados insuficientes)
-- "observacao": 1 frase objetiva
-Nenhuma verba pode faltar nessa lista. Se houver 30 verbas, devolva 30 linhas.
+Uma linha para CADA verba da decisão e CADA rubrica do cálculo. Nenhuma pode faltar.
+status: "OK" | "DIVERGENTE" | "NAO_APURADA" (deferida e não apurada) | "SEM_DEFERIMENTO" (apurada sem deferimento) | "CONFERIR".
+Campos curtos: no máximo 12 palavras cada.
 
-============ (B) TEXTO DA IMPUGNAÇÃO — início, meio e fim ============
-Cada ponto é um TEXTO CORRIDO E COMPLETO, em três blocos, no padrão forense brasileiro. Nada de frase solta.
-1) "abertura" (INÍCIO — onde está o erro): 1 parágrafo identificando com precisão a rubrica, o item e o critério impugnado do cálculo adverso. Ex.: "Equivocou-se o Autor ao apurar as horas extras deferidas utilizando divisor 180, quando a r. sentença adotou expressamente o divisor 220."
-2) "desenvolvimento" (MEIO — o erro + o fundamento): 2 a 4 parágrafos que (i) transcrevem o que a decisão determinou, com a folha; (ii) demonstram o que o Autor fez de diferente, apontando o dado concreto; (iii) FUNDAMENTAM obrigatoriamente em ao menos um dispositivo — artigo de lei (CLT/CF/Lei), Súmula, OJ ou tese vinculante do STF/TST — explicando POR QUE aquilo está errado; e (iv) invocam a coisa julgada quando o desvio contraria o que transitou em julgado (art. 879 §1º CLT: a liquidação não pode alterar ou inovar a coisa julgada). Abra a demonstração do dado concreto com "Vejamos".
-3) "conclusao" (FIM): 1 parágrafo fechando o ponto e dizendo o que deve ser feito (retificar o critério, excluir a rubrica, proceder à dedução), terminando com o fecho de impugnação.
-Escreva em português jurídico corrente, terceira pessoa, sem bullet, sem markdown. Cada bloco deve ser texto pronto para colar na peça.
-============ TRANSCRIÇÃO DE LEI — NÃO ESCREVA O TEXTO DA NORMA ============
-Você NUNCA transcreve o texto de artigo, súmula, OJ ou tese. O texto literal é inserido pelo sistema, a partir de uma base própria. Sua função é apenas ESCOLHER quais dispositivos se aplicam, preenchendo "dispositivos" com as CHAVES da lista abaixo (uma ou mais, as que realmente fundamentam o ponto). No texto do "desenvolvimento" você pode CITAR a referência (ex.: "nos termos do art. 71, §4º, da CLT") e deve anunciar a transcrição com uma frase como "Transcreve-se o dispositivo:", mas NÃO reproduza a redação da norma — o sistema a insere logo em seguida.
-Se o ponto exigir um dispositivo que NÃO esteja na lista, deixe-o fora de "dispositivos" e escreva a referência em "dispositivosNaoCatalogados" (array de strings), para transcrição manual pelo calculista.
-Cada tese do catálogo abaixo já indica, em DISPOSITIVOS, as chaves que a fundamentam — use-as como ponto de partida e acrescente outras se o caso exigir.
+============ (B) PONTOS DE DIVERGÊNCIA ============
+Liste os pontos, SEM texto corrido. Cada ponto exige OBRIGATORIAMENTE:
+ (a) "deferidoCitacao": trecho do comando expresso da decisão (copiado do JSON dos parâmetros);
+ (b) "evidencia": dado concreto do cálculo (índice, divisor, percentual, valor, período), copiado do JSON do cálculo.
+Sem os DOIS, o ponto não é divergência — mande para "sugestoes".
+É PROIBIDO listar ponto por suposição ou praxe. Ponto sem lastro derruba a peça: prefira deixar de fora.
 
-CHAVES DISPONÍVEIS:
-${(window.FazAILeisIndice||[]).join('\n')}
+ART. 71 × ART. 66: intrajornada (art. 71 §4º) é o intervalo de refeição DENTRO da jornada; interjornada (art. 66) é o descanso de 11h ENTRE jornadas. Nunca troque um pelo outro.
 
-Preencha também "evidencia" com o dado literal do cálculo que sustenta o ponto.
-
-============ VARREDURA DO CATÁLOGO ============
-Varra o cálculo contra o catálogo abaixo. Tese cujo gatilho você conseguiu amarrar a um dado concreto → "impugnacoes". Tese que pode caber mas você NÃO conseguiu confirmar → "sugestoes" (lembrete, sem acusação). O catálogo é memória de teses, não licença para inventar.
-
-CATÁLOGO DE TESES:
+Varra também o catálogo de teses abaixo e inclua as que tiverem gatilho amarrado a um dado concreto:
 ${cat}
 
-ESTILO: ${modelo? 'siga o MODELO-BASE do calculista abaixo — reproduza o tom, os jargões e os fechamentos dele, mantendo a estrutura de três blocos.\n\nMODELO-BASE:\n"""'+modelo.slice(0,6000)+'"""' : 'texto técnico, impessoal, terceira pessoa, padrão forense brasileiro.'}
+ECONOMIA: nenhum campo passa de 20 palavras. Não escreva parágrafos. Não explique.
 
-=== PARÂMETROS DEFERIDOS (decisão) ===
-${JSON.stringify(parecer)}
+=== PARÂMETROS DEFERIDOS E CÁLCULO ===
+${JSON.stringify(ctxCurto(parecer,calc))}
 
-=== CÁLCULO DA PARTE CONTRÁRIA (extraído) ===
-${JSON.stringify(calc)}
-
-RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
-{"sintese":"1 a 2 frases sobre o cálculo adverso como um todo",
+RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }.
+{"sintese":"1 frase",
 "conferencia":[{"verba":"","deferido":"","apurado":"","status":"OK|DIVERGENTE|NAO_APURADA|SEM_DEFERIMENTO|CONFERIR","observacao":""}],
-"impugnacoes":[{"id":"","tese":"id da tese do catálogo ou 'direta'","titulo":"","abertura":"","desenvolvimento":"","conclusao":"","dispositivos":[],"dispositivosNaoCatalogados":[],"deferidoCitacao":"","evidencia":"","confianca":"certo|provavel|conferir","impacto":"em uma frase, o efeito no valor"}],
+"pontos":[{"id":"","tese":"id do catálogo ou 'direta'","titulo":"","deferidoCitacao":"","evidencia":"","confianca":"certo|provavel|conferir","impacto":"1 frase","dispositivos":[]}],
 "sugestoes":[{"id":"","titulo":"","porque":"","oQueVerificar":""}],
-"conclusaoGeral":"parágrafo de conclusão enumerando (i), (ii), (iii) os pontos impugnados e requerendo a retificação"}`;
+"conclusaoGeral":"parágrafo curto enumerando (i),(ii),(iii)"}`;
+}
+
+/* ============================================================
+   FASE B2 — REDAÇÃO (sob demanda): só dos pontos selecionados,
+   um por chamada, em paralelo. Cada resposta é pequena.
+   ============================================================ */
+function promptRedacao(ponto,parecer,calc,modelo,md){
+  const conf = md==='conferencia';
+  const chaves=(window.FazAILeisIndice||[]).join('\n');
+  return `Você redige UM ponto ${conf?'de conferência técnica':'de impugnação'} em processo trabalhista. Devolva SOMENTE este ponto.
+
+${conf?'CONTEXTO: o cálculo é DO PRÓPRIO CALCULISTA, em conferência interna. Linguagem técnica e neutra ("O cálculo apurou X, quando a decisão fixou Y"), apontando o que deve ser CORRIGIDO. NÃO use "Equivocou-se o Autor" nem "Resta impugnado".':'CONTEXTO: o cálculo é DA PARTE CONTRÁRIA. Linguagem forense de impugnação.'}
+
+ESTRUTURA OBRIGATÓRIA, em três blocos de texto corrido (sem bullet, sem markdown):
+1) "abertura" — 1 parágrafo identificando com precisão a rubrica e o critério divergente.
+2) "desenvolvimento" — 2 a 4 parágrafos que (i) dizem o que a decisão determinou, com a folha; (ii) mostram o que o cálculo fez de diferente, apontando o dado concreto, abrindo com "Vejamos"; (iii) fundamentam em artigo, súmula ou OJ, explicando POR QUE está errado; (iv) invocam a coisa julgada quando o desvio contrarie o julgado (art. 879, §1º, da CLT).
+3) "conclusao" — 1 parágrafo dizendo o que deve ser feito${conf?'.':' e fechando com o fecho de impugnação.'}
+
+TRANSCRIÇÃO DE LEI: você NÃO escreve o texto da norma — o sistema insere. Apenas escolha as CHAVES em "dispositivos":
+${chaves}
+Se precisar de dispositivo fora da lista, cite a referência em "dispositivosNaoCatalogados".
+
+${modelo?'ESTILO — siga o modelo do calculista, reproduzindo tom e fechos:\n"""'+modelo.slice(0,4000)+'"""':''}
+
+=== PONTO A REDIGIR ===
+${JSON.stringify(ponto)}
+
+=== PARÂMETROS E CÁLCULO (contexto) ===
+${JSON.stringify(ctxCurto(parecer,calc))}
+
+RESPONDA EXCLUSIVAMENTE COM O JSON:
+{"abertura":"","desenvolvimento":"","conclusao":"","dispositivos":[],"dispositivosNaoCatalogados":[]}`;
 }
 
 /* ============================================================
@@ -632,6 +687,83 @@ function normalizarDispositivos(d){
   return d;
 }
 
+/* ============================================================
+   TRAVAS EXCLUSIVAS DO .PJC
+   Só possíveis porque o .PJC traz o parâmetro exato, não extraído.
+   ============================================================ */
+function travasPjc(p,c){
+  const out=[]; if(!p||!c||c.origem!=='pjc') return out;
+  const g=(p.parametrosGlobais)||{}, add=o=>out.push(bloco(o));
+  const fl=c.flags||{}, ic=c.indiceCorrecao||{}, ct=c.contrato||{};
+
+  /* 1) prescrição deferida e NÃO marcada no PJe-Calc */
+  if((g.prescricao||{}).marco && !fl.prescricaoQuinquenal)
+    add({tese:'prescricao_marco',confianca:'certo',disp:['cf7xxix','art11'],
+      titulo:'Prescrição quinquenal não aplicada no cálculo',
+      citacao:(g.prescricao||{}).citacao||'', evidencia:'campo "prescrição quinquenal" desmarcado no PJe-Calc',
+      impacto:'Apuração de período fulminado pela prescrição.',
+      abertura:'O cálculo foi elaborado sem a marcação da prescrição quinquenal, embora a decisão a tenha pronunciado.',
+      desenvolvimento:'A decisão declarou prescritos os créditos anteriores a '+((g.prescricao||{}).marco||'')+FOLHA((g.prescricao||{}).fonte)+'.\n\nVejamos: no arquivo do PJe-Calc o parâmetro "prescrição quinquenal" consta desmarcado, de modo que a apuração abrange todo o período contratual, a partir de '+(ct.inicioCalculo||'?')+'. A prescrição pronunciada extingue a pretensão quanto às parcelas anteriores ao marco.',
+      conclusao:'Deve o cálculo ser refeito com a limitação temporal do marco prescricional.'});
+
+  /* 2) juros de mora na fase pré-judicial cumulados com a correção */
+  if(ic.aplicarJurosFasePreJudicial)
+    add({tese:'trd_prejudicial',confianca:'provavel',disp:['adc58','lei8177a39'],
+      titulo:'Juros aplicados também na fase pré-judicial',
+      citacao:((g.correcaoJuros||{}).transcricaoLiteral)||'', evidencia:'"aplicar juros na fase pré-judicial" marcado · '+(ic.linhaDoTempoJuros||''),
+      impacto:'Possível acréscimo indevido de juros antes do ajuizamento.',
+      abertura:'O cálculo aplica juros de mora também no período anterior ao ajuizamento da ação.',
+      desenvolvimento:'Vejamos: o parâmetro "aplicar juros na fase pré-judicial" consta marcado, com '+(ic.linhaDoTempoJuros||'os juros configurados')+'.\n\nSegundo a tese firmada nas ADCs 58 e 59, a fase pré-judicial é corrigida pelo IPCA-E acrescido dos juros do art. 39, caput, da Lei 8.177/91, e a partir do ajuizamento incide exclusivamente a SELIC. Confira-se se o critério adotado corresponde ao deferido, sob pena de duplicidade.',
+      conclusao:'Ponto a confirmar contra o comando da decisão antes da conclusão do cálculo.'});
+
+  /* 3) divisor divergente — o PJC traz a carga horária exata */
+  (p.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA'&&v.divisor).forEach(vd=>{
+    if(ct.cargaHoraria==null || num(ct.cargaHoraria)===num(vd.divisor)) return;
+    add({tese:'divisor_divergente',confianca:'certo',disp:['art879p1','sum431'],
+      titulo:'Carga horária padrão divergente do divisor deferido',
+      citacao:vd.citacao||'', evidencia:'carga horária padrão '+ct.cargaHoraria+' no PJe-Calc',
+      impacto:'Alteração do valor do salário-hora em todas as verbas dele decorrentes.',
+      abertura:'O cálculo foi parametrizado com carga horária padrão '+ct.cargaHoraria+', enquanto a decisão adotou o divisor '+vd.divisor+'.',
+      desenvolvimento:'A decisão fixou o divisor '+vd.divisor+FOLHA(vd.fonte)+(vd.citacao?': "'+vd.citacao+'".':'.')+'\n\nVejamos: o parâmetro "carga horária padrão" do arquivo do PJe-Calc está em '+ct.cargaHoraria+', o que altera o salário-hora de todas as verbas apuradas por hora.',
+      conclusao:'Impõe-se a correção do divisor para '+vd.divisor+'.'});
+  });
+
+  /* 4) quantidade lançada × apurado no cartão de ponto (só o .PJC traz os dois) */
+  const r=(c.jornada||{}).resumo;
+  if(r){
+    const pares=[
+      {re:/interjornada/i, apurado:r.horasInterJornadas, rot:'interjornada', disp:['art66','oj355']},
+      {re:/intrajornada/i, apurado:r.horasIntraJornada, rot:'intrajornada', disp:['art71p4','sum437']},
+      {re:/noturn/i,       apurado:r.horasNoturnas,     rot:'adicional noturno', disp:['art73','sum60']}
+    ];
+    pares.forEach(par=>{
+      const v=arr(c.verbas).find(x=>!x.ehReflexo&&par.re.test(x.descricao));
+      if(!v||v.quantidade==null||par.apurado==null) return;
+      const dif=Math.abs(v.quantidade-par.apurado);
+      if(dif<=1) return; // bate com o cartão
+      add({tese:'he_quantidade',confianca:'provavel',disp:par.disp,
+        titulo:'Quantidade lançada diverge do apurado no cartão de ponto — '+par.rot,
+        citacao:'', evidencia:'lançado '+v.quantidade+'h × apurado no cartão '+par.apurado+'h',
+        impacto:'Diferença de '+Math.round(dif*100)/100+' horas na apuração.',
+        abertura:'A rubrica "'+v.descricao+'" foi lançada com '+v.quantidade+' horas, enquanto a apuração do cartão de ponto do próprio arquivo indica '+par.apurado+' horas.',
+        desenvolvimento:'Vejamos: o arquivo do PJe-Calc contém a apuração diária do cartão de ponto ('+c.jornada.dias+' dias), que totaliza '+par.apurado+' horas para essa rubrica, ao passo que a verba foi lançada com '+v.quantidade+' horas — diferença de '+Math.round(dif*100)/100+' horas.\n\nA divergência pode decorrer de lançamento manual, de filtro de período ou de exclusão de dias; exige conferência antes da conclusão.',
+        conclusao:'Ponto a conferir e, se confirmado, retificar a quantidade lançada.'});
+    });
+  }
+
+  /* 5) valores pagos não deduzidos, com dedução autorizada */
+  if((g.deducoes||{}).autorizada && !(c.totalPago>0))
+    add({tese:'abatimento_pagos',confianca:'certo',disp:['oj415','cc884'],
+      titulo:'Nenhum valor pago lançado para dedução',
+      citacao:(g.deducoes||{}).citacao||'', evidencia:'total pago no arquivo: R$ 0,00',
+      impacto:'Ausência integral de abatimento.',
+      abertura:'O cálculo não registra qualquer valor pago para dedução, embora a decisão a tenha autorizado.',
+      desenvolvimento:'A decisão autorizou expressamente a dedução dos valores pagos'+FOLHA((g.deducoes||{}).fonte)+'.\n\nVejamos: no arquivo do PJe-Calc a soma dos valores lançados como pagos é zero, em todas as verbas.',
+      conclusao:'Devem ser lançados os valores comprovadamente quitados sob o mesmo título.'});
+
+  return out;
+}
+
 /* filtro anti-ruído: sem citação do deferido E sem evidência do cálculo, vira sugestão */
 function filtrarRuido(imps){
   const boas=[], viraram=[];
@@ -641,7 +773,7 @@ function filtrarRuido(imps){
     if(d.origem==='trava'){ boas.push(d); return; }
     const temEvid=String(d.evidencia||'').trim().length>=2;
     const temCit =String(d.deferidoCitacao||'').trim().length>=3;
-    const temTexto=String(d.desenvolvimento||'').trim().length>80;
+    const temTexto=d.semTexto || String(d.desenvolvimento||'').trim().length>80;
     if(temEvid && temCit && temTexto) boas.push(d);
     else viraram.push({id:d.id||d.tese||'',titulo:d.titulo||'',porque:'o sistema não conseguiu amarrar este ponto a um dado concreto do cálculo e a um comando expresso da decisão',oQueVerificar:d.desenvolvimento||d.abertura||''});
   });
@@ -712,6 +844,23 @@ function mesclar(tv,ia){
 let parecer=null, calcAdv=null, confronto=null;
 let arqsDec=[], pagsDec=[], txtDec='';
 let arqsCalc=[], pagsCalc=[];
+let pjc=null, modo='impugnacao';
+
+const ROTULOS={
+  impugnacao:{tit:'Cálculo da parte contrária', autor:'o Autor', doc:'PARECER TÉCNICO DE CÁLCULO',
+    sub:'Impugnação ao cálculo de liquidação apresentado pela parte contrária',
+    sec:'3. Impugnação ao cálculo apresentado', arq:'Impugnacao_'},
+  conferencia:{tit:'Meu cálculo — conferência interna', autor:'o cálculo', doc:'CONFERÊNCIA TÉCNICA DE CÁLCULO',
+    sub:'Conferência interna do cálculo em face dos parâmetros da condenação',
+    sec:'3. Divergências apuradas na conferência', arq:'Conferencia_'}
+};
+function setModo(m){
+  modo=m;
+  $('m-imp').classList.toggle('on',m==='impugnacao');
+  $('m-conf').classList.toggle('on',m==='conferencia');
+  $('tit2').textContent=ROTULOS[m].tit;
+  const b=$('goCalc'); if(b) b.textContent = m==='conferencia'?'Conferir com o deferido':'Confrontar com o deferido';
+}
 
 /* ============================================================
    PDF helpers
@@ -742,8 +891,78 @@ function b64de(file){
   return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.readAsDataURL(file); });
 }
 // quebra as páginas em lotes de no máximo LIMITE caracteres
-const LOTE_CHARS=250000;   // ~70k tokens por chamada — folga grande dentro do contexto
-const CONCORRENCIA=6;      // lotes simultâneos — corta o tempo de espera pela metade
+const LOTE_CHARS=120000;   // ~34k tokens por chamada — resposta não estoura
+const CONCORRENCIA=6;      // lotes simultâneos
+const TETO_DIRETO=150000;  // acima disso NÃO se lê o PDF inteiro: faz-se leitura dirigida
+const CHARS_POR_TOKEN=3.5;
+
+/* ------------------------------------------------------------
+   LIMPEZA: cabeçalho/rodapé repetidos em toda página são puro
+   custo. Remove linhas que aparecem em mais de 30% das páginas.
+   ------------------------------------------------------------ */
+function limparBoilerplate(pags){
+  if(pags.length<4) return {pags, cortado:0};
+  const cont={};
+  pags.forEach(p=>{
+    const vistas=new Set();
+    String(p.t||'').split(/\n|\r/).forEach(l=>{
+      const k=l.trim().replace(/\s+/g,' ');
+      if(k.length>=12 && k.length<=160 && !vistas.has(k)){ vistas.add(k); cont[k]=(cont[k]||0)+1; }
+    });
+  });
+  const limite=Math.max(3, Math.ceil(pags.length*0.3));
+  const lixo=new Set(Object.keys(cont).filter(k=>cont[k]>=limite));
+  if(!lixo.size) return {pags, cortado:0};
+  let antes=0, depois=0;
+  const novo=pags.map(p=>{
+    const orig=String(p.t||''); antes+=orig.length;
+    const t=orig.split(/\n|\r/).filter(l=>!lixo.has(l.trim().replace(/\s+/g,' '))).join('\n').replace(/[ \t]{2,}/g,' ').trim();
+    depois+=t.length;
+    return Object.assign({},p,{t});
+  });
+  return {pags:novo, cortado:antes-depois};
+}
+
+/* ------------------------------------------------------------
+   MAPA: manda só o COMEÇO de cada página (índice barato) e
+   pergunta quais páginas carregam parâmetro/total. Custa ~5%
+   do que custaria mandar o documento inteiro.
+   ------------------------------------------------------------ */
+const PROMPT_MAPA=`Abaixo está o ÍNDICE de um cálculo de liquidação trabalhista: para cada página, o número e o início do texto.
+
+Sua tarefa é dizer QUAIS PÁGINAS precisam ser lidas por inteiro para extrair os PARÂMETROS do cálculo. Interessam as páginas que contenham:
+- capa, identificação do processo e das partes, datas do contrato;
+- parametrização: índice de correção, juros, data de atualização, divisor, carga horária, prescrição;
+- resumo/totais por verba e total geral;
+- deduções, abatimentos e valores pagos;
+- honorários, contribuições previdenciárias, FGTS, alíquotas;
+- a PRIMEIRA página de cada verba (onde ficam base, percentual, divisor e período).
+
+NÃO interessam, e devem ficar de fora, as páginas de MEMÓRIA DE APURAÇÃO mês a mês (grades repetitivas de competência e valor) — elas não trazem parâmetro novo e só encarecem a leitura.
+
+Seja econômico: escolha o MENOR conjunto de páginas suficiente. Em documento de centenas de páginas, isso costuma ser menos de 25.
+
+RESPONDA EXCLUSIVAMENTE COM O JSON:
+{"paginas":[1,2,3],"motivo":"1 frase sobre o que essas páginas contêm","descartadas":"o que ficou de fora, em 1 frase"}`;
+
+function indiceDePaginas(pags, tam){
+  // o índice também tem que caber: quanto mais páginas, menor o recorte por página
+  let n = tam || (pags.length>600?70 : pags.length>250?110 : 180);
+  let idx;
+  for(let tent=0; tent<5; tent++){
+    idx=pags.map(p=>{
+      const t=String(p.t||'').replace(/\s+/g,' ').trim();
+      return 'p.'+p.n+' | '+(t?t.slice(0,n):'(sem texto)');
+    }).join('\n');
+    if(idx.length<=110000) break;
+    n=Math.max(30, Math.floor(n*0.6));
+  }
+  return idx;
+}
+function estimativa(pags){
+  const c=chars(pags);
+  return {chars:c, tokens:Math.round(c/CHARS_POR_TOKEN), chamadas:c<300?1:lotes(pags,LOTE_CHARS).length};
+}
 function lotes(pags, LIMITE){
   const out=[]; let cur=[], n=0;
   pags.forEach(p=>{
@@ -827,19 +1046,47 @@ function statusArquivo(k, recortado){
   const arqs = k==='Dec'?arqsDec:arqsCalc;
   const pags = k==='Dec'?pagsDec:pagsCalc;
   const c=chars(pags);
-  const n=c<300?1:lotes(pags,LOTE_CHARS).length;
+  const dirigida = k==='Calc' && c>TETO_DIRETO && pags.length>8;
+  const est=estimativa(pags);
   $('st'+k).innerHTML='<span class="okmsg">✓ '+esc(nomeArqs(arqs))+' · '+pags.length+' pág.'
-    +(c<300?' · escaneado, leitura por imagem':' · '+n+' chamada'+(n>1?'s':'')+' de leitura')
-    +(recortado?' · <b>recortado</b>':'')+'</span>';
+    +(c<300?' · escaneado, leitura por imagem'
+      :(dirigida?' · <b>leitura dirigida</b> (mapeia primeiro e lê só as páginas de parâmetro)'
+               :' · '+est.chamadas+' chamada'+(est.chamadas>1?'s':'')+' · ~'+Math.round(est.tokens/1000)+'k tokens'))
+    +(recortado?' · <b>recortado</b>':'')+'</span>'
+    +(dirigida?'<div class="hint">Sem a leitura dirigida seriam ~'+Math.round(est.tokens/1000)+'k tokens em '+est.chamadas+' chamadas. O mapa costuma derrubar isso para menos de 10%.</div>':'');
 }
 
-async function chamar(content, maxTokens){
-  const res=await fetch('/api/claude',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:MODEL,max_tokens:maxTokens||32000,messages:[{role:'user',content}]})
-  });
-  const data=await res.json();
-  if(!res.ok) throw new Error(data.error||'Erro na API');
+// A função serverless da Vercel corta em 300s. Resposta grande demais nunca volta:
+// por isso todo pedido tem teto de saída pequeno E um tempo-limite no cliente.
+const TIMEOUT_MS=170000;
+async function chamar(content, maxTokens, ms){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(), ms||TIMEOUT_MS);
+  let res;
+  try{
+    res=await fetch('/api/claude',{
+      method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
+      body:JSON.stringify({model:MODEL,max_tokens:maxTokens||8000,messages:[{role:'user',content}]})
+    });
+  }catch(e){
+    clearTimeout(t);
+    if(e.name==='AbortError') throw new Error('a chamada passou de '+Math.round((ms||TIMEOUT_MS)/1000)+'s e foi cancelada — o servidor corta em 300s. Reduza as páginas ou tente de novo.');
+    throw e;
+  }
+  clearTimeout(t);
+  // O servidor pode devolver TEXTO em vez de JSON (timeout 504 da Vercel, 502, crash).
+  // res.json() estouraria com "Unexpected token 'A'..." e esconderia a causa real.
+  const cru=await res.text();
+  let data=null;
+  try{ data=JSON.parse(cru); }catch(e){
+    const amostra=String(cru||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,140);
+    if(res.status===504 || /timed? ?out|FUNCTION_INVOCATION_TIMEOUT/i.test(cru))
+      throw new Error('o servidor cortou a chamada por tempo (504). Documento grande demais para uma leitura so - recorte as paginas ou use o .PJC.');
+    if(res.status===502 || res.status===500)
+      throw new Error('erro no servidor ('+res.status+'): '+(amostra||'sem detalhe')+'. Tente de novo em alguns segundos.');
+    throw new Error('a resposta nao veio em JSON (HTTP '+res.status+'): '+(amostra||'resposta vazia'));
+  }
+  if(!res.ok) throw new Error(data.error||('Erro na API (HTTP '+res.status+')'));
   const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
   return {txt, cortou:data.stop_reason==='max_tokens'};
 }
@@ -909,7 +1156,7 @@ async function lerDecisao(){
       for(const f of arqsDec) content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:await b64de(f)}});
       content.push({type:'text',text:PROMPT_DECISAO});
     } else throw new Error('Não consegui ler o arquivo.');
-    const r=await comRetry(()=>chamar(content,32000),2);
+    const r=await comRetry(()=>chamar(content,16000),2);
     const j=extrairJson(r.txt);
     if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
     parecer=j; dbg({parecer});
@@ -970,10 +1217,53 @@ function liberarEtapa2(){
 /* ============================================================
    ETAPA 2 — cálculo adverso + confronto
    ============================================================ */
+$('dropPjc').onclick=()=>$('filePjc').click();
+$('filePjc').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  $('stPjc').innerHTML='Lendo o .PJC…'; $('outPjc').innerHTML='';
+  try{
+    if(!window.FazAIPJC) throw new Error('fazai_pjc.js não carregou — confira se o arquivo está no servidor.');
+    pjc=await window.FazAIPJC.ler(await f.arrayBuffer());
+    arqsCalc=[f]; pagsCalc=[];
+    $('stPjc').innerHTML='<span class="okmsg">✓ '+esc(f.name)+' · '+pjc.verbas.length+' verba(s) ativa(s) · '
+      +(pjc.jornada.dias?pjc.jornada.dias+' dias de cartão de ponto · ':'')+'leitura exata, sem IA</span>';
+    renderPjc(pjc);
+    $('goCalc').disabled=false;
+  }catch(err){
+    pjc=null; $('stPjc').innerHTML='<div class="err">'+esc(err.message)+'</div>';
+  }
+};
+function renderPjc(c){
+  const ct=c.contrato||{}, ic=c.indiceCorrecao||{};
+  let h='<div class="sec-title">Lido do PJe-Calc</div>';
+  h+='<table><tr><th>Processo</th><td>'+esc(c.processo.numero||'—')+'</td></tr>'
+   +'<tr><th>Partes</th><td>'+esc(c.processo.reclamante||'—')+' × '+esc(c.processo.reclamada||'—')+'</td></tr>'
+   +'<tr><th>Contrato</th><td>admissão '+esc(ct.admissao||'—')+' · demissão '+esc(ct.demissao||'—')+' · ajuizamento '+esc(ct.ajuizamento||'—')+'</td></tr>'
+   +'<tr><th>Carga horária / divisor</th><td>'+esc(ct.cargaHoraria||'—')+'</td></tr>'
+   +'<tr><th>Correção</th><td>'+esc(ic.linhaDoTempo||'—')+'</td></tr>'
+   +'<tr><th>Juros</th><td>'+esc(ic.linhaDoTempoJuros||'—')+(ic.aplicarJurosFasePreJudicial?' <span class="tag tag-und">também na fase pré-judicial</span>':'')+'</td></tr>'
+   +'<tr><th>Prescrição quinquenal</th><td>'+(c.flags.prescricaoQuinquenal?'aplicada':'<b>NÃO aplicada</b>')+'</td></tr>'
+   +'<tr><th>Honorários</th><td>'+esc((c.honorarios.percentual!=null?c.honorarios.percentual+'% sobre '+(c.honorarios.base||'—')+' = R$ '+c.honorarios.valor:'—'))+'</td></tr>'
+   +'<tr><th>INSS / SAT</th><td>'+esc((c.contribuicoes.previdenciaria||'—')+' / '+(c.contribuicoes.sat||'—'))+'</td></tr>'
+   +'<tr><th>Soma dos principais</th><td><b>R$ '+esc(c.totalGeral)+'</b>'+(c.baseBrutaPJC?' · base bruta no PJe-Calc: R$ '+esc(c.baseBrutaPJC):'')+'</td></tr>'
+   +'<tr><th>Valores pagos deduzidos</th><td>'+(c.totalPago?'R$ '+esc(c.totalPago):'<b>nenhum</b>')+'</td></tr></table>';
+  h+='<table><tr><th>Verba</th><th>Qtd</th><th>Divisor</th><th>Período</th><th>Valor</th></tr>';
+  c.verbas.forEach(v=>{ h+='<tr><td>'+(v.ehReflexo?'<span style="color:#5A6472">↳ </span>':'')+esc(v.descricao)
+    +' <span class="tag '+(v.ehReflexo?'tag-und':'tag-def')+'">'+esc(v.ehReflexo?'reflexo':(v.motorId+(v.subtipo?'/'+v.subtipo:'')))+'</span></td>'
+    +'<td>'+esc(v.quantidade||'—')+'</td><td>'+esc(v.divisor||'—')+'</td><td>'+esc(v.periodo)+'</td><td>R$ '+esc(v.valorPrincipal)+'</td></tr>'; });
+  h+='</table>';
+  if(c.verbasInativas.length) h+='<div class="hint"><b>Verbas desativadas no cálculo ('+c.verbasInativas.length+'):</b> '+c.verbasInativas.map(v=>esc(v.descricao)).join(' · ')+'</div>';
+  if(c.jornada.resumo){
+    const r=c.jornada.resumo;
+    h+='<div class="conf"><b>Cartão de ponto ('+c.jornada.dias+' dias apurados):</b> trabalhadas '+r.horasTrabalhadas+'h · extras diárias '+r.horasExtrasDiaria+'h · noturnas '+r.horasNoturnas+'h · intrajornada '+r.horasIntraJornada+'h · interjornada '+r.horasInterJornadas+'h · domingos '+r.horasDomingo+'h · feriados '+r.horasFeriado+'h</div>';
+  }
+  $('outPjc').innerHTML=h;
+}
+
 $('dropCalc').onclick=()=>$('fileCalc').click();
 $('fileCalc').onchange=async e=>{
   const fs=[...e.target.files]; if(!fs.length) return;
-  arqsCalc=fs; pagsCalc=[];
+  arqsCalc=fs; pagsCalc=[]; pjc=null; $('stPjc').innerHTML=''; $('outPjc').innerHTML='';
   fecharPicker('Calc'); $('rangesCalc').value=''; $('pstatusCalc').textContent='';
   $('stCalc').innerHTML='Lendo…';
   pagsCalc=await lerArquivos(fs, m=>{ $('stCalc').textContent=m; });
@@ -995,28 +1285,60 @@ async function confrontar(){
   if(!parecer){ alert('Faça a Etapa 1 primeiro.'); return; }
   $('goCalc').disabled=true; $('ldCalc').style.display='block'; $('outCalc').innerHTML='';
   try{
-    // --- fase A: extrair o cálculo adverso (lotes em paralelo, com retry) ---
-    let calc, falhas=[];
+    // --- fase A: extrair o cálculo (o .PJC dispensa a IA por completo) ---
+    let calc, falhas=[], mapaInfo=null, pagsLidas=pagsCalc;
     const c=chars(pagsCalc);
-    if(c<300){
+    if(pjc){
+      $('msgCalc').textContent='Cálculo já lido do .PJC — confrontando…';
+      calc=pjc;
+    } else if(c<300){
       const parciais=[];
       for(let i=0;i<arqsCalc.length;i++){
         $('msgCalc').textContent='Lendo o cálculo escaneado — arquivo '+(i+1)+' de '+arqsCalc.length+'…';
         try{
           const b64=await b64de(arqsCalc[i]);
-          const r=await comRetry(()=>chamar([{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT_CALC}],32000),2);
+          const r=await comRetry(()=>chamar([{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT_CALC}],16000),2);
           const pj=extrairJson(r.txt); if(pj) parciais.push(pj);
         }catch(err){ falhas.push('arquivo '+(i+1)); }
       }
       calc=fundirCalc(parciais);
     } else {
-      const ls=lotes(pagsCalc,LOTE_CHARS);
+      // 1) tira cabeçalho/rodapé repetido — puro custo
+      const lim=limparBoilerplate(pagsCalc);
+      let alvo=lim.pags;
+      if(lim.cortado>2000) $('msgCalc').textContent='Removi '+Math.round(lim.cortado/1000)+' mil caracteres repetidos (cabeçalho/rodapé)…';
+
+      // 2) documento grande: NÃO se lê inteiro. Mapa barato decide o que ler.
+      if(chars(alvo)>TETO_DIRETO && alvo.length>8){
+        $('msgCalc').textContent='Documento grande ('+alvo.length+' páginas) — mapeando o que precisa ser lido…';
+        try{
+          const idx=indiceDePaginas(alvo,180);
+          const rm=await comRetry(()=>chamar([{type:'text',text:'ÍNDICE DO CÁLCULO:\n\n'+idx+'\n\n---\n'+PROMPT_MAPA}],4000),2);
+          const jm=extrairJson(rm.txt);
+          const sel=new Set(arr(jm&&jm.paginas).map(x=>parseInt(x,10)).filter(x=>!isNaN(x)));
+          if(sel.size){
+            const filtrado=alvo.filter(x=>sel.has(x.n));
+            if(filtrado.length){
+              mapaInfo={total:alvo.length, lidas:filtrado.length, motivo:(jm&&jm.motivo)||'', descartadas:(jm&&jm.descartadas)||''};
+              alvo=filtrado;
+            }
+          }
+        }catch(e){ console.warn('mapa falhou, caindo na triagem por palavra-chave',e); }
+        // rede de segurança: se o mapa falhou, usa a heurística
+        if(!mapaInfo && chars(alvo)>TETO_DIRETO){
+          const sug=new Set(triagem(alvo));
+          const f2=alvo.filter(x=>sug.has(x.n));
+          if(f2.length){ mapaInfo={total:alvo.length, lidas:f2.length, motivo:'seleção por palavra-chave (o mapa não respondeu)', descartadas:''}; alvo=f2; }
+        }
+      }
+      pagsLidas=alvo;
+      const ls=lotes(alvo,LOTE_CHARS);
       let prontos=0;
       const marcar=()=>{ prontos++; $('msgCalc').textContent='Lendo o cálculo — '+prontos+' de '+ls.length+' chamada(s) concluída(s)…'; };
       $('msgCalc').textContent='Lendo o cálculo — 0 de '+ls.length+' chamada(s)…';
       const res=await emParalelo(ls, CONCORRENCIA, async (lote,i)=>{
         try{
-          const r=await comRetry(()=>chamar([{type:'text',text:'CÁLCULO DA PARTE CONTRÁRIA (trecho '+(i+1)+' de '+ls.length+', texto extraído do PDF):\n\n'+lote+'\n\n---\n'+PROMPT_CALC}],32000),3);
+          const r=await comRetry(()=>chamar([{type:'text',text:'CÁLCULO (trecho '+(i+1)+' de '+ls.length+', texto extraído do PDF):\n\n'+lote+'\n\n---\n'+PROMPT_CALC}],16000),3);
           marcar(); return extrairJson(r.txt);
         }catch(err){ marcar(); falhas.push('trecho '+(i+1)); return null; }
       });
@@ -1027,16 +1349,19 @@ async function confrontar(){
     calcAdv=calc; dbg({parecer,calcAdv,falhas});
 
     // --- fase B: confronto ---
-    $('msgCalc').textContent='Confrontando com o que foi deferido…';
-    const modelo=($('modeloBase').value||'').trim();
-    const r2=await chamar([{type:'text',text:promptConfronto(parecer,calc,modelo)}],32000);
+    $('msgCalc').textContent='Conferindo verba a verba…';
+    const r2=await comRetry(()=>chamar([{type:'text',text:promptTriagem(parecer,calc,modo)}],8000),2);
     const j=extrairJson(r2.txt);
-    if(!j) throw new Error('O confronto não veio em JSON válido. Tente novamente.');
+    if(!j) throw new Error('A conferência não veio em JSON válido. Tente novamente.');
+    // a triagem devolve "pontos" (sem texto); a redação vem depois, só dos escolhidos
+    j.impugnacoes=arr(j.pontos).map(x=>Object.assign({},x,{semTexto:true}));
     // travas determinísticas entram sempre — não dependem da IA ter visto
+    // 0) travas que só o .PJC permite (dados exatos, não extraídos)
+    const extras = pjc ? travasPjc(parecer, pjc) : [];
     // 1) filtro anti-ruído: o que a IA não amarrou a evidência+citação vira sugestão
     const fil=filtrarRuido(j.impugnacoes);
     // 2) travas determinísticas entram sempre e prevalecem na confiança
-    j.impugnacoes=mesclar(travas(parecer,calc), fil.boas);
+    j.impugnacoes=mesclar(travas(parecer,calc).concat(extras), fil.boas);
     j.sugestoes=arr(j.sugestoes).concat(fil.viraram);
     j.descartadas=fil.viraram.length;
     // 3) conferência de TODAS as verbas — a local garante que nenhuma some
@@ -1045,6 +1370,10 @@ async function confrontar(){
 
     $('ldCalc').style.display='none';
     renderCalc(calc);
+    if(mapaInfo) $('outCalc').innerHTML='<div class="conf"><b>Leitura dirigida:</b> de '+mapaInfo.total+' páginas, li '+mapaInfo.lidas+'.'
+      +(mapaInfo.motivo?' '+esc(mapaInfo.motivo):'')
+      +(mapaInfo.descartadas?' Fora: '+esc(mapaInfo.descartadas):'')
+      +'<br>A memória mês a mês não traz parâmetro novo — se algum dado seu estiver só lá, recorte as páginas na mão antes de rodar.</div>'+$('outCalc').innerHTML;
     if(falhas.length) $('outCalc').innerHTML='<div class="conf"><b>Atenção:</b> '+falhas.length+' trecho(s) do cálculo não puderam ser lidos ('+esc(falhas.join(', '))+'). O confronto foi feito sem eles — confira essas páginas manualmente.</div>'+$('outCalc').innerHTML;
     renderDivergencias(j);
     $('c3').classList.remove('off');
@@ -1112,7 +1441,7 @@ function renderDivergencias(j){
      +'<div class="dtitle">'+esc(d.titulo||'Ponto '+(i+1))+(d.impacto?'<div class="hint" style="font-weight:400;margin-top:3px">'+esc(d.impacto)+'</div>':'')+'</div>'
      +'<span class="badge b-'+cf+'">'+esc(cf)+'</span>'
      +'</div>'
-     +'<span class="toggle" onclick="abrir('+i+')">editar texto ▾</span>'
+     +'<span class="toggle" onclick="abrir('+i+')">'+(d.semTexto?'texto ainda não redigido':'editar texto')+' ▾</span>'
      +(d.evidencia?'<div class="hint" style="margin-top:4px">Evidência no cálculo: <b>'+esc(d.evidencia)+'</b></div>':'')
      +'<div class="dbody" id="db'+i+'">'
      +fld('Início — onde está o erro','t_abe'+i,d.abertura,3)
@@ -1195,6 +1524,48 @@ function atualizarContador(){
     +(dz?' · <span style="color:#8a5a00">'+dz+' ponto(s) sem lastro foram rebaixados a sugestão</span>':'');
 }
 
+/* ============================================================
+   FASE 2 — redação sob demanda
+   Uma chamada por ponto, pequena e rápida, em paralelo. Assim
+   nenhuma resposta chega perto do limite de 300s do servidor.
+   ============================================================ */
+async function redigirSelecionados(avisar){
+  if(!confronto) return 0;
+  const imps=arr(confronto.impugnacoes);
+  const pendentes=[];
+  imps.forEach((d,i)=>{ if($('ck'+i)&&$('ck'+i).checked && d.semTexto) pendentes.push({d,i}); });
+  if(!pendentes.length){ if(avisar) $('stRedigir').innerHTML='<span class="okmsg">✓ Todos os pontos selecionados já estão redigidos.</span>'; return 0; }
+  const btn=$('btnRedigir'); if(btn) btn.disabled=true;
+  const modelo=($('modeloBase').value||'').trim();
+  let prontos=0, erros=0;
+  const marca=()=>{ prontos++; $('stRedigir').textContent='Redigindo… '+prontos+' de '+pendentes.length; };
+  $('stRedigir').textContent='Redigindo… 0 de '+pendentes.length;
+  await emParalelo(pendentes, 4, async(item)=>{
+    try{
+      const r=await comRetry(()=>chamar([{type:'text',text:promptRedacao(item.d,parecer,calcAdv,modelo,modo)}],4000),2);
+      const j=extrairJson(r.txt);
+      if(!j) throw new Error('resposta inválida');
+      item.d.abertura=j.abertura||''; item.d.desenvolvimento=j.desenvolvimento||''; item.d.conclusao=j.conclusao||'';
+      item.d.dispositivos=j.dispositivos; item.d.dispositivosNaoCatalogados=j.dispositivosNaoCatalogados;
+      normalizarDispositivos(item.d);
+      item.d.semTexto=false;
+      marca();
+    }catch(e){ erros++; marca(); console.warn('falha ao redigir',item.d.titulo,e); }
+  });
+  // preserva o que estiver marcado e re-renderiza com os textos
+  const marcados=imps.map((d,i)=>$('ck'+i)?$('ck'+i).checked:false);
+  const marcadosSug=arr(confronto.sugestoes).map((sg,i)=>$('sg'+i)?$('sg'+i).checked:false);
+  renderDivergencias(confronto);
+  marcados.forEach((v,i)=>{ if($('ck'+i)){ $('ck'+i).checked=v; if($('dc'+i)) $('dc'+i).classList.toggle('off',!v); } });
+  marcadosSug.forEach((v,i)=>{ if($('sg'+i)) $('sg'+i).checked=v; });
+  atualizarContador();
+  if(btn) btn.disabled=false;
+  $('stRedigir').innerHTML = erros
+    ? '<div class="err">'+erros+' ponto(s) não puderam ser redigidos. Tente de novo ou escreva à mão.</div>'
+    : '<span class="okmsg">✓ '+pendentes.length+' ponto(s) redigido(s).</span>';
+  return pendentes.length-erros;
+}
+
 /* modelo de estilo em localStorage */
 (function(){ try{ const m=localStorage.getItem('fazai_modelo_impugnacao'); if(m) $('modeloBase').value=m; }catch(e){} })();
 function salvarModelo(){
@@ -1242,6 +1613,9 @@ function baixarTexto(){
 async function _gerarDocumento(){
   if(!window.docx) throw new Error('a biblioteca de Word (docx) não carregou — recarregue a página com internet ativa.');
   if(!confronto||!parecer) throw new Error('faça as etapas 1 e 2 antes de gerar o documento.');
+  // se algum ponto marcado ainda não tem texto, redige antes de montar o Word
+  const faltam=arr(confronto.impugnacoes).some((d,i)=>$('ck'+i)&&$('ck'+i).checked&&d.semTexto);
+  if(faltam){ $('stDoc').innerHTML='Redigindo os pontos selecionados antes de gerar…'; await redigirSelecionados(false); }
   const D=window.docx;
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType}=D;
   const NAVY='16213E';
@@ -1254,8 +1628,9 @@ async function _gerarDocumento(){
   const bullet=(txt)=>new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:String(txt),size:19})]});
 
   const k=[];
-  k.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'PARECER TÉCNICO DE CÁLCULO',bold:true,color:NAVY,size:32})]}));
-  k.push(P('Impugnação ao cálculo de liquidação apresentado pela parte contrária',{center:true,ital:true,color:'5A6472',size:19,after:220}));
+  const R=ROTULOS[modo]||ROTULOS.impugnacao;
+  k.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:R.doc,bold:true,color:NAVY,size:32})]}));
+  k.push(P(R.sub,{center:true,ital:true,color:'5A6472',size:19,after:220}));
 
   /* 1. Identificação */
   k.push(H('1. Identificação',1));
@@ -1312,7 +1687,7 @@ async function _gerarDocumento(){
   if(jor&&jor.descricao) k.push(bullet('Jornada fixada: '+jor.descricao+(jor.fonte?' ('+jor.fonte+')':'')));
 
   /* 3. Impugnação */
-  k.push(H('3. Impugnação ao cálculo apresentado',1));
+  k.push(H(R.sec,1));
   if(confronto.sintese) k.push(P(confronto.sintese,{just:true,size:19}));
   const imps=arr(confronto.impugnacoes);
   const paragrafos=(txt,o)=>String(txt||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>k.push(P(x,o)));
@@ -1374,7 +1749,7 @@ async function _gerarDocumento(){
   const blob=await Packer.toBlob(doc);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url;
-  a.download='Impugnacao_'+String(pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
+  a.download=R.arq+String(pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
   a.click(); URL.revokeObjectURL(url);
   $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s) de impugnação).</span>';
 }
