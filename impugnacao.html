@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+<script src="fazai_leis.js"></script>
 <style>
   :root{
     --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
@@ -79,6 +80,7 @@
   .flab{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
   .fld textarea{font-size:13px;padding:7px}
   .toggle{font-size:12px;color:var(--orange);cursor:pointer;font-weight:600;margin-top:8px;display:inline-block}
+  .lei{background:var(--panel);border-left:3px solid var(--navy2);border-radius:6px;padding:9px 12px;margin:6px 0;font-size:12.5px;line-height:1.45}
   .sugcard{background:var(--panel);border:1px dashed var(--warn-line);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
   .sugcard input{margin-top:3px;width:16px;height:16px;flex:none}
   details summary{cursor:pointer;font-weight:600;color:var(--navy);font-size:14px;margin-bottom:8px}
@@ -174,9 +176,11 @@
     <div class="step" id="s3">Etapa 3</div>
     <h1>Pontos de impugnação</h1>
     <p class="lead">O sistema <b>sugere</b>; você decide. Marque o que entra, edite o texto, descarte o que não cabe. Impugnar ponto errado enfraquece a peça inteira.</p>
+    <div id="avisoLeis"></div>
     <div class="counter" id="contador"></div>
     <div id="listaDiv"></div>
     <div id="listaSug"></div>
+    <div id="listaConf"></div>
 
     <details style="margin-top:18px">
       <summary>Seu modelo de estilo (opcional — fica salvo neste navegador)</summary>
@@ -210,55 +214,59 @@ const MODEL='claude-sonnet-5';
    não só os erros óbvios. c = confiança padrão da detecção.
    ============================================================ */
 const CATALOGO=[
- {id:'correcao_indice',t:'Índice de correção monetária divergente (ADC 58/59)',g:'índice usado ≠ IPCA-E (pré-judicial) / SELIC (judicial) deferido',f:'ADC 58/59 STF; coisa julgada',c:'certo'},
- {id:'selic_correcao',t:'SELIC lançada como correção E como juros (bis in idem)',g:'SELIC no campo da correção monetária somada a juros de mora',f:'ADC 58 — a SELIC já engloba juros e correção na fase judicial',c:'certo'},
- {id:'trd_prejudicial',t:'TRD/TR na fase pré-judicial',g:'juros/TRD incluídos antes do ajuizamento',f:'fase pré-judicial é IPCA-E + juros do art. 39 da Lei 8.177/91, não TRD',c:'certo'},
- {id:'data_atualizacao',t:'Data de atualização do laudo posterior à devida',g:'atualização em data posterior à correta, inflando juros',f:'juros interrompidos na data correta',c:'conferir'},
+ {id:'correcao_indice',d:["adc58","art879p1"],t:'Índice de correção monetária divergente (ADC 58/59)',g:'índice usado ≠ IPCA-E (pré-judicial) / SELIC (judicial) deferido',f:'ADC 58/59 STF; coisa julgada',c:'certo'},
+ {id:'selic_correcao',d:["adc58","cc406"],t:'SELIC lançada como correção E como juros (bis in idem)',g:'SELIC no campo da correção monetária somada a juros de mora',f:'ADC 58 — a SELIC já engloba juros e correção na fase judicial',c:'certo'},
+ {id:'trd_prejudicial',d:["adc58","lei8177a39"],t:'TRD/TR na fase pré-judicial',g:'juros/TRD incluídos antes do ajuizamento',f:'fase pré-judicial é IPCA-E + juros do art. 39 da Lei 8.177/91, não TRD',c:'certo'},
+ {id:'data_atualizacao',d:["adc58","lei8177a39"],t:'Data de atualização do laudo posterior à devida',g:'atualização em data posterior à correta, inflando juros',f:'juros interrompidos na data correta',c:'conferir'},
 
- {id:'he_adicional',t:'Adicional de horas extras incorreto',g:'adicional aplicado ≠ o deferido (ex.: 50% onde norma coletiva fixa outro)',f:'coisa julgada / CCT',c:'provavel'},
- {id:'he_base',t:'Base de cálculo das horas extras divergente',g:'base usada ≠ salário/rubricas do contrato ou do deferido',f:'Súmula 264 TST',c:'provavel'},
- {id:'he_cumulacao',t:'Cumulação de adicionais na base da HE',g:'adicional noturno (ou outro) incidindo na base da HE em cascata sobre o próprio adicional',f:'vedada a cumulação em cascata',c:'certo'},
- {id:'he_noturno_base',t:'Adicional noturno compondo indevidamente a base da HE',g:'adic. noturno somado à base horária da HE sem deferimento',f:'Súmula 264 TST',c:'provavel'},
- {id:'he_verba_indenizatoria',t:'Verba indenizatória na base da HE (auxílio-condutor e afins)',g:'verba de natureza indenizatória incluída na base de cálculo da HE',f:'natureza indenizatória não integra a base',c:'provavel'},
- {id:'sumula340',t:'Súmula 340 TST / OJ 397 — comissionista misto',g:'HE sobre parte variável com divisor fixo (180/220) em vez de divisor variável, ou hora+adicional onde só cabe o adicional',f:'Súmula 340 TST e OJ 397 SDI-1',c:'certo'},
- {id:'he_quantidade',t:'Quantidade de horas extras sem lastro probatório',g:'quantidade de HE sem cartão de ponto juntado / valores arbitrados aleatoriamente',f:'ônus da prova; Súmula 338 TST',c:'provavel'},
- {id:'he_feriados',t:'Feriados/sábados/domingos computados fora da jornada fixada',g:'HE apurada em feriado, sábado ou domingo quando a jornada deferida é seg-sex',f:'coisa julgada — jornada fixada na decisão',c:'certo'},
- {id:'he_art71',t:'Intervalo intrajornada (art. 71 §4º) apurado em divergência',g:'apuração do intervalo diferente do deferido (hora cheia x adicional; período)',f:'art. 71 §4º CLT; Súmula 437 TST',c:'provavel'},
- {id:'he_art66_67',t:'Interjornada (art. 66) / DSR (art. 67) não deferidos',g:'apuração de verba de descanso que não foi deferida na decisão',f:'coisa julgada — apuração além do deferido',c:'provavel'},
- {id:'dobras_compensacao',t:'Horas em dobro ignorando a compensação declarada',g:'dobras apuradas sem considerar a compensação reconhecida',f:'coisa julgada',c:'provavel'},
+ {id:'he_adicional',d:["art59p1","art879p1"],t:'Adicional de horas extras incorreto',g:'adicional aplicado ≠ o deferido (ex.: 50% onde norma coletiva fixa outro)',f:'coisa julgada / CCT',c:'provavel'},
+ {id:'he_base',d:["sum264"],t:'Base de cálculo das horas extras divergente',g:'base usada ≠ salário/rubricas do contrato ou do deferido',f:'Súmula 264 TST',c:'provavel'},
+ {id:'he_cumulacao',d:["sum264"],t:'Cumulação de adicionais na base da HE',g:'adicional noturno (ou outro) incidindo na base da HE em cascata sobre o próprio adicional',f:'vedada a cumulação em cascata',c:'certo'},
+ {id:'he_noturno_base',d:["sum264","sum60"],t:'Adicional noturno compondo indevidamente a base da HE',g:'adic. noturno somado à base horária da HE sem deferimento',f:'Súmula 264 TST',c:'provavel'},
+ {id:'he_verba_indenizatoria',d:["sum264"],t:'Verba indenizatória na base da HE (auxílio-condutor e afins)',g:'verba de natureza indenizatória incluída na base de cálculo da HE',f:'natureza indenizatória não integra a base',c:'provavel'},
+ {id:'sumula340',d:["sum340","oj397"],t:'Súmula 340 TST / OJ 397 — comissionista misto',g:'HE sobre parte variável com divisor fixo (180/220) em vez de divisor variável, ou hora+adicional onde só cabe o adicional',f:'Súmula 340 TST e OJ 397 SDI-1',c:'certo'},
+ {id:'he_quantidade',d:["sum338","art818"],t:'Quantidade de horas extras sem lastro probatório',g:'quantidade de HE sem cartão de ponto juntado / valores arbitrados aleatoriamente',f:'ônus da prova; Súmula 338 TST',c:'provavel'},
+ {id:'he_feriados',d:["sum146","art879p1"],t:'Feriados/sábados/domingos computados fora da jornada fixada',g:'HE apurada em feriado, sábado ou domingo quando a jornada deferida é seg-sex',f:'coisa julgada — jornada fixada na decisão',c:'certo'},
+ {id:'he_art71',d:["art71p4","sum437"],t:'Intervalo INTRAJORNADA (art. 71 §4º) apurado em divergência',g:'intervalo de refeição e descanso DENTRO da jornada apurado de forma diversa do deferido (hora cheia x só adicional; período)',f:'art. 71 §4º CLT; Súmula 437, I e III, TST',c:'provavel'},
+ {id:'he_art66',d:["art66","oj355"],t:'INTERJORNADA (art. 66) — descanso de 11h entre jornadas',g:'apuração do intervalo ENTRE jornadas divergente do deferido, ou apurada sem deferimento',f:'art. 66 CLT; OJ 355 SDI-1 TST',c:'provavel'},
+ {id:'he_art67',d:["art67","sum146","sum172"],t:'DSR / repouso semanal (art. 67) não deferido',g:'apuração de repouso semanal remunerado que a decisão não deferiu',f:'art. 67 CLT; Súmula 146 TST; coisa julgada',c:'provavel'},
+ {id:'troca_intra_inter',d:["art71p4","art66","oj355"],t:'Rubrica de intervalo nomeada trocada (intra × interjornada)',g:'a decisão deferiu intrajornada (art.71) e o cálculo apurou interjornada (art.66), ou o inverso',f:'art. 71 §4º x art. 66 CLT; coisa julgada',c:'certo'},
+ {id:'dobras_compensacao',d:["sum85","sum146"],t:'Horas em dobro ignorando a compensação declarada',g:'dobras apuradas sem considerar a compensação reconhecida',f:'coisa julgada',c:'provavel'},
 
- {id:'insalubridade_valores',t:'Adicional de insalubridade — base/grau divergente',g:'base ou grau diferente do fixado no laudo/decisão',f:'art. 192 CLT; laudo pericial',c:'provavel'},
- {id:'periculosidade_valores',t:'Adicional de periculosidade — base ou percentual divergente',g:'base sobre remuneração em vez do salário-base, ou percentual ≠ 30%',f:'art. 193 §1º CLT; Súmula 191 TST',c:'provavel'},
- {id:'deducao_insalubridade',t:'Periculosidade sem dedução da insalubridade já quitada',g:'periculosidade apurada sem deduzir insalubridade paga no período',f:'adicionais não são cumuláveis — art. 193 §2º CLT',c:'certo'},
+ {id:'insalubridade_valores',d:["art192"],t:'Adicional de insalubridade — base/grau divergente',g:'base ou grau diferente do fixado no laudo/decisão',f:'art. 192 CLT; laudo pericial',c:'provavel'},
+ {id:'periculosidade_valores',d:["art193p1","sum191"],t:'Adicional de periculosidade — base ou percentual divergente',g:'base sobre remuneração em vez do salário-base, ou percentual ≠ 30%',f:'art. 193 §1º CLT; Súmula 191 TST',c:'provavel'},
+ {id:'deducao_insalubridade',d:["art193p2"],t:'Periculosidade sem dedução da insalubridade já quitada',g:'periculosidade apurada sem deduzir insalubridade paga no período',f:'adicionais não são cumuláveis — art. 193 §2º CLT',c:'certo'},
 
- {id:'fgts_reflexos',t:'FGTS incidindo sobre reflexos (bis in idem)',g:'FGTS calculado sobre os reflexos, e não apenas sobre a parcela principal',f:'bis in idem — FGTS incide sobre a parcela principal, salvo deferimento expresso',c:'certo'},
- {id:'reflexo_sobre_reflexo',t:'Reflexo sobre reflexo',g:'reflexo de uma verba entrando na base de cálculo de outro reflexo',f:'bis in idem',c:'certo'},
- {id:'reflexo_integralidade',t:'Reflexo sobre a integralidade, sem abater o já pago',g:'reflexo de HE/adic. noturno sobre o valor cheio, sem dedução do quitado',f:'OJ 415 SDI-1; vedação do enriquecimento sem causa',c:'provavel'},
- {id:'reflexo_aviso',t:'Reflexos em aviso prévio indenizado — indevidos ou dias errados',g:'reflexo indevido no aviso, ou quantidade de dias divergente (Lei 12.506/2011)',f:'Súmula 305 TST; Lei 12.506/2011',c:'provavel'},
+ {id:'fgts_reflexos',d:["lei8036a15","sum63"],t:'FGTS incidindo sobre reflexos (bis in idem)',g:'FGTS calculado sobre os reflexos, e não apenas sobre a parcela principal',f:'bis in idem — FGTS incide sobre a parcela principal, salvo deferimento expresso',c:'certo'},
+ {id:'reflexo_sobre_reflexo',d:["oj394","sum172"],t:'Reflexo sobre reflexo',g:'reflexo de uma verba entrando na base de cálculo de outro reflexo',f:'bis in idem',c:'certo'},
+ {id:'reflexo_integralidade',d:["oj415","sum347"],t:'Reflexo sobre a integralidade, sem abater o já pago',g:'reflexo de HE/adic. noturno sobre o valor cheio, sem dedução do quitado',f:'OJ 415 SDI-1; vedação do enriquecimento sem causa',c:'provavel'},
+ {id:'reflexo_aviso',d:["sum305","lei12506"],t:'Reflexos em aviso prévio indenizado — indevidos ou dias errados',g:'reflexo indevido no aviso, ou quantidade de dias divergente (Lei 12.506/2011)',f:'Súmula 305 TST; Lei 12.506/2011',c:'provavel'},
 
- {id:'abatimento_pagos',t:'Verba apurada sem abatimento dos valores pagos (OJ 415)',g:'verba calculada "cheia", sem deduzir pagamentos comprovados nos autos',f:'OJ 415 SDI-1 TST — dedução global por título',c:'certo'},
- {id:'deducao_aviso',t:'Aviso prévio não deduzido em pedido de demissão',g:'aviso não deduzido apesar de a rescisão ser por pedido de demissão',f:'art. 487 §2º CLT',c:'certo'},
- {id:'deducao_he100',t:'HE a 100% / folgas quitadas não deduzidas',g:'HE apurada sem deduzir as horas/folgas já pagas no mesmo período',f:'OJ 415 SDI-1',c:'provavel'},
- {id:'deducao_incentivo',t:'Incentivo variável / comissões pagas não deduzidos',g:'reflexos de incentivo ou comissão apurados sem dedução do pago',f:'OJ 415 SDI-1',c:'provavel'},
- {id:'abatimento_rescisorias',t:'Verbas rescisórias sem abatimento das médias já pagas',g:'rescisórias apuradas sem deduzir o que consta do TRCT',f:'vedação do enriquecimento sem causa',c:'provavel'},
+ {id:'abatimento_pagos',d:["oj415","cc884"],t:'Verba apurada sem abatimento dos valores pagos (OJ 415)',g:'verba calculada "cheia", sem deduzir pagamentos comprovados nos autos',f:'OJ 415 SDI-1 TST — dedução global por título',c:'certo'},
+ {id:'deducao_aviso',d:["art487p2"],t:'Aviso prévio não deduzido em pedido de demissão',g:'aviso não deduzido apesar de a rescisão ser por pedido de demissão',f:'art. 487 §2º CLT',c:'certo'},
+ {id:'deducao_he100',d:["oj415"],t:'HE a 100% / folgas quitadas não deduzidas',g:'HE apurada sem deduzir as horas/folgas já pagas no mesmo período',f:'OJ 415 SDI-1',c:'provavel'},
+ {id:'deducao_incentivo',d:["oj415"],t:'Incentivo variável / comissões pagas não deduzidos',g:'reflexos de incentivo ou comissão apurados sem dedução do pago',f:'OJ 415 SDI-1',c:'provavel'},
+ {id:'abatimento_rescisorias',d:["cc884"],t:'Verbas rescisórias sem abatimento das médias já pagas',g:'rescisórias apuradas sem deduzir o que consta do TRCT',f:'vedação do enriquecimento sem causa',c:'provavel'},
 
- {id:'modalidade_rescisao',t:'Modalidade de rescisão divergente da reconhecida',g:'apuração de verbas de dispensa sem justa causa onde foi reconhecido pedido de demissão (ou vice-versa)',f:'coisa julgada',c:'certo'},
- {id:'multa_477',t:'Base de cálculo da multa do art. 477 divergente',g:'multa apurada sobre base diversa da remuneração do empregado',f:'art. 477 §8º CLT',c:'provavel'},
- {id:'multa_fazer',t:'Multa por descumprimento de obrigação de fazer sem lastro',g:'multa apurada sem previsão na decisão ou sem comprovação do descumprimento',f:'coisa julgada; necessidade de lastro',c:'conferir'},
- {id:'base_estabilidade',t:'Base de cálculo da estabilidade e reflexos divergente',g:'base ou período da estabilidade diferente do deferido',f:'coisa julgada; Súmula 396 TST',c:'provavel'},
+ {id:'modalidade_rescisao',d:["art879p1"],t:'Modalidade de rescisão divergente da reconhecida',g:'apuração de verbas de dispensa sem justa causa onde foi reconhecido pedido de demissão (ou vice-versa)',f:'coisa julgada',c:'certo'},
+ {id:'multa_477',d:["art477p6","art477p8"],t:'Base de cálculo da multa do art. 477 divergente',g:'multa apurada sobre base diversa da remuneração do empregado',f:'art. 477 §8º CLT',c:'provavel'},
+ {id:'multa_fazer',d:["art879p1"],t:'Multa por descumprimento de obrigação de fazer sem lastro',g:'multa apurada sem previsão na decisão ou sem comprovação do descumprimento',f:'coisa julgada; necessidade de lastro',c:'conferir'},
+ {id:'base_estabilidade',d:["sum396"],t:'Base de cálculo da estabilidade e reflexos divergente',g:'base ou período da estabilidade diferente do deferido',f:'coisa julgada; Súmula 396 TST',c:'provavel'},
 
- {id:'inss_sat',t:'INSS patronal / alíquota SAT (RAT) divergente',g:'alíquota SAT diferente da atividade da empresa; cota patronal incorreta',f:'Lei 8.212/91; FAP/RAT da empresa',c:'provavel'},
- {id:'honorarios_periodo',t:'Honorários sucumbenciais — período ou base divergente',g:'percentual, base ou período de apuração dos honorários diferente do deferido',f:'art. 791-A CLT; coisa julgada',c:'provavel'},
- {id:'honorarios_autor',t:'Sucumbência recíproca não apurada contra o autor',g:'pedidos improcedentes sem honorários apurados em favor da ré',f:'art. 791-A §3º CLT',c:'provavel'},
- {id:'honorarios_periciais',t:'Honorários periciais atribuídos à parte errada',g:'honorário pericial lançado contra quem não sucumbiu no objeto da perícia',f:'art. 790-B CLT; Súmula 341 TST',c:'conferir'},
+ {id:'inss_sat',d:["lei8212a22","sum368"],t:'INSS patronal / alíquota SAT (RAT) divergente',g:'alíquota SAT diferente da atividade da empresa; cota patronal incorreta',f:'Lei 8.212/91; FAP/RAT da empresa',c:'provavel'},
+ {id:'honorarios_periodo',d:["art791A","art879p1"],t:'Honorários sucumbenciais — período ou base divergente',g:'percentual, base ou período de apuração dos honorários diferente do deferido',f:'art. 791-A CLT; coisa julgada',c:'provavel'},
+ {id:'honorarios_autor',d:["art791Ap3"],t:'Sucumbência recíproca não apurada contra o autor',g:'pedidos improcedentes sem honorários apurados em favor da ré',f:'art. 791-A §3º CLT',c:'provavel'},
+ {id:'honorarios_periciais',d:["art790B","sum341"],t:'Honorários periciais atribuídos à parte errada',g:'honorário pericial lançado contra quem não sucumbiu no objeto da perícia',f:'art. 790-B CLT; Súmula 341 TST',c:'conferir'},
 
- {id:'verba_excluida',t:'Apuração de verba indeferida ou excluída na cadeia decisória',g:'o cálculo apura verba que a sentença indeferiu ou que o acórdão excluiu',f:'coisa julgada — vedada apuração além do deferido',c:'certo'},
- {id:'prescricao_marco',t:'Apuração de período anterior ao marco prescricional',g:'período apurado começa antes do marco da prescrição declarado',f:'art. 7º, XXIX, CF; coisa julgada',c:'certo'},
- {id:'periodo_divergente',t:'Período de apuração além do deferido',g:'início ou fim do período apurado diverge do fixado na decisão',f:'coisa julgada',c:'certo'},
- {id:'limitacao_inicial',t:'Apuração acima dos valores da inicial',g:'valores apurados superiores aos indicados na exordial quando há limitação deferida',f:'art. 840 §1º CLT; coisa julgada',c:'certo'},
- {id:'inovacao_recursal',t:'Inovação — verba não constante da fase de conhecimento',g:'cálculo traz pedido/verba que não foi objeto da condenação',f:'coisa julgada; vedada inovação em liquidação',c:'conferir'},
- {id:'nulidade_homologacao',t:'Nulidade da homologação das contas',g:'contas homologadas sem intimação/contraditório da parte',f:'art. 879 §2º CLT; contraditório',c:'conferir'},
- {id:'indenizacao_suplementar',t:'Indenização suplementar apurada sem critério',g:'verba "indenização suplementar" lançada sem lastro ou critério de apuração',f:'necessidade de lastro na decisão',c:'conferir'}
+ {id:'verba_nao_apurada',d:["art879p1"],t:'Verba deferida que o cálculo não apurou',g:'verba deferida na decisão sem rubrica correspondente no cálculo adverso',f:'coisa julgada — a liquidação deve compreender tudo o que foi deferido',c:'conferir'},
+ {id:'verba_excluida',d:["art879p1"],t:'Apuração de verba indeferida ou excluída na cadeia decisória',g:'o cálculo apura verba que a sentença indeferiu ou que o acórdão excluiu',f:'coisa julgada — vedada apuração além do deferido',c:'certo'},
+ {id:'prescricao_marco',d:["cf7xxix","art11"],t:'Apuração de período anterior ao marco prescricional',g:'período apurado começa antes do marco da prescrição declarado',f:'art. 7º, XXIX, CF; coisa julgada',c:'certo'},
+ {id:'divisor_divergente',d:["art879p1","sum431"],t:'Divisor divergente do fixado na decisão',g:'divisor utilizado no cálculo diferente do adotado no julgado',f:'art. 879 §1º CLT; Súmula 431 TST',c:'certo'},
+ {id:'periodo_divergente',d:["art879p1"],t:'Período de apuração além do deferido',g:'início ou fim do período apurado diverge do fixado na decisão',f:'coisa julgada',c:'certo'},
+ {id:'limitacao_inicial',d:["art840p1"],t:'Apuração acima dos valores da inicial',g:'valores apurados superiores aos indicados na exordial quando há limitação deferida',f:'art. 840 §1º CLT; coisa julgada',c:'certo'},
+ {id:'inovacao_recursal',d:["art879p1"],t:'Inovação — verba não constante da fase de conhecimento',g:'cálculo traz pedido/verba que não foi objeto da condenação',f:'coisa julgada; vedada inovação em liquidação',c:'conferir'},
+ {id:'nulidade_homologacao',d:["art879p2"],t:'Nulidade da homologação das contas',g:'contas homologadas sem intimação/contraditório da parte',f:'art. 879 §2º CLT; contraditório',c:'conferir'},
+ {id:'indenizacao_suplementar',d:["cc404"],t:'Indenização suplementar apurada sem critério',g:'verba "indenização suplementar" lançada sem lastro ou critério de apuração',f:'necessidade de lastro na decisão',c:'conferir'}
 ];
 
 /* ============================================================
@@ -276,7 +284,14 @@ REGRAS:
 4) Não presuma base, período, reflexo ou índice omissos. Registre "omisso na decisão" e requerConferencia=true.
 5) CONCISÃO: todo campo de texto é CURTO (máx. 1 frase). Resposta longa é cortada.
 
-CLASSIFICAÇÃO TÉCNICA ("motorId") — classifique CADA verba (deferida ou não) pela NATUREZA do que foi tratado, não pelas palavras: "heTotais" (horas extras comuns, sobrejornada), "he100" (labor em dia de descanso: feriados, domingos, DSR, folgas, em dobro), "heArt71" (intervalo intrajornada art.71, art.66 interjornada, art.384), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, dano moral, diferenças salariais, rescisórias, seguro-desemprego etc.). Use EXATAMENTE um desses valores.
+CLASSIFICAÇÃO TÉCNICA ("motorId") — classifique CADA verba (deferida ou não) pela NATUREZA do que foi tratado, não pelas palavras: "heTotais" (horas extras comuns, sobrejornada), "he100" (labor em dia de descanso: feriados, domingos, folgas, em dobro), "heArt71" (qualquer intervalo: intrajornada art.71, interjornada art.66, art.384), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, dano moral, diferenças salariais, rescisórias, seguro-desemprego etc.). Use EXATAMENTE um desses valores.
+
+INTERVALOS — DISTINÇÃO OBRIGATÓRIA (erro comum e grave): quando motorId="heArt71", preencha "subtipo" com EXATAMENTE um destes:
+ - "intrajornada": intervalo para refeição e descanso DENTRO da jornada (1h de almoço) — art. 71 §4º CLT, Súmula 437 TST;
+ - "interjornada": descanso mínimo de 11 HORAS ENTRE o fim de uma jornada e o início da seguinte — art. 66 CLT, OJ 355 SDI-1;
+ - "art384": intervalo de 15 min da mulher antes da sobrejornada;
+ - "indefinido": a decisão não permite distinguir (marque requerConferencia=true).
+NUNCA troque um pelo outro e nunca use "interjornada" como sinônimo de intervalo de almoço. Nas demais verbas, "subtipo" fica null.
 
 CAMPOS CRÍTICOS PARA A IMPUGNAÇÃO (capriche):
 - correcaoJuros: transcreva a remissão literal (ADC 58/59, Lei 14.905/2024, "na forma da lei") e o índice implicado por fase (pré-judicial e judicial).
@@ -300,7 +315,7 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
  "honorariosPericiais":{"valor":0,"aCargoDe":"","fonte":""},
  "contribuicoes":{"previdenciaria":"","fiscal":"","fonte":""},
  "responsaveis":[{"nome":"","tipo":"","limite":""}]},
-"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false,"observacao":""}],
+"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false,"observacao":""}],
 "pontosDeAtencao":[]}`;
 
 /* ============================================================
@@ -317,13 +332,17 @@ Extraia com precisão os PARÂMETROS que o cálculo utilizou, porque eles serão
 - dias computados como feriado/sábado/domingo, se identificáveis;
 - total geral e total por verba.
 
-Classifique CADA verba apurada em "motorId" pela NATUREZA, usando EXATAMENTE um destes valores: "heTotais" (horas extras comuns/sobrejornada), "he100" (feriados, domingos, DSR, folgas, em dobro), "heArt71" (intervalo intrajornada/interjornada), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, rescisórias etc.). É o que permite casar a rubrica do cálculo com a verba deferida.
+Classifique CADA verba apurada em "motorId" pela NATUREZA, usando EXATAMENTE um destes valores: "heTotais" (horas extras comuns/sobrejornada), "he100" (feriados, domingos, folgas, em dobro), "heArt71" (qualquer intervalo), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, rescisórias etc.). É o que permite casar a rubrica do cálculo com a verba deferida.
+
+Quando motorId="heArt71", preencha "subtipo" com "intrajornada" (intervalo de refeição DENTRO da jornada — art. 71 §4º), "interjornada" (descanso de 11h ENTRE jornadas — art. 66), "art384" ou "indefinido". São coisas distintas: use o nome exato que o cálculo empregou e não troque um pelo outro.
+
+Preencha "trecho" com um recorte LITERAL e curto do documento (máx. ~15 palavras) que comprove aquela rubrica e seus parâmetros. É o que sustentará a impugnação — sem ele o dado não pode ser afirmado.
 
 Se um dado não estiver no trecho, use null — NÃO invente. Transcreva números exatamente como impressos.
 
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
 {"autorDoCalculo":"","dataAtualizacao":null,"indiceCorrecao":{"preJudicial":"","judicial":"","juros":"","observacao":""},
-"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","periodo":"","baseCalculo":"","percentual":"","divisor":null,"quantidade":"","valorPrincipal":null,"reflexos":[],"observacao":""}],
+"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"trecho":"","periodo":"","baseCalculo":"","percentual":"","divisor":null,"quantidade":"","valorPrincipal":null,"reflexos":[],"observacao":""}],
 "deducoes":[{"descricao":"","valor":null}],
 "fgts":{"incidiuSobre":"","observacao":""},
 "honorarios":{"percentual":null,"base":"","aCargoDe":""},
@@ -336,27 +355,55 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
    PROMPT 3 — confronto (parecer x cálculo adverso x catálogo)
    ============================================================ */
 function promptConfronto(parecer,calc,modelo){
-  const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g+' | FUNDAMENTO: '+x.f+' | confiança padrão: '+x.c).join('\n');
-  return `Você é um assistente técnico de calculista trabalhista. Sua função é IDENTIFICAR E REDIGIR os pontos de IMPUGNAÇÃO ao cálculo apresentado pela parte contrária, confrontando cada desvio com os PARÂMETROS EXPRESSAMENTE DEFERIDOS na decisão.
+  const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g+' | FUNDAMENTO: '+x.f
+    +(arr(x.d).length?' | DISPOSITIVOS: '+arr(x.d).join(', '):'')).join('\n');
+  return `Você é um assistente técnico de calculista trabalhista. Sua função tem DUAS partes: (A) CONFERIR TODAS as verbas, uma a uma, e (B) REDIGIR os pontos de impugnação ao cálculo apresentado pela parte contrária.
 
-REGRAS ABSOLUTAS:
-- Você NÃO calcula e NÃO decide o mérito. Você CONFRONTA o deferido com o que a parte contrária fez.
-- Só impugne o que tiver base no que foi DEFERIDO. Se o parâmetro deferido for omisso ou exigir conferência humana (norma coletiva, interpretação), classifique confianca="conferir" e NÃO afirme o erro — sinalize.
-- NUNCA invente um dado do cálculo adverso. Se o dado não foi extraído, não afirme o desvio: use confianca="conferir" e diga o que precisa ser verificado.
-- Fundamente na COISA JULGADA sempre que o desvio contrarie o deferido (é vedada, em liquidação, alteração do que transitou em julgado).
+============ REGRA ANTI-RUÍDO (a mais importante) ============
+NÃO EXISTE IMPUGNAÇÃO SEM EVIDÊNCIA. Para entrar em "impugnacoes", o ponto precisa OBRIGATORIAMENTE de:
+ (a) um comando EXPRESSO da decisão (campo "deferidoCitacao", copiado do JSON dos parâmetros deferidos), E
+ (b) um DADO CONCRETO extraído do cálculo adverso (campo "evidencia", copiado LITERALMENTE do JSON do cálculo: o índice, o divisor, o percentual, o valor, o período).
+Se você não tem os DOIS, o ponto NÃO é impugnação — vai para "sugestoes" como lembrete de conferência.
+É PROIBIDO impugnar por suposição, por praxe, por "costuma acontecer" ou por tese que você não conseguiu amarrar a um dado do cálculo. Ponto impugnado sem lastro derruba a peça inteira: prefira deixar de fora.
 
-CADA ponto de impugnação segue OBRIGATORIAMENTE 4 movimentos:
-1) deferido — o comando expresso da decisão, com a citação e a folha. Use "A R. Sentença determinou, de forma EXPRESSA, ..." / "autorizou EXPRESSAMENTE ...".
-2) oQueFez — o desvio ("O cálculo da Autora não observou...", "computou...", "NÃO procedeu a qualquer dedução...").
-3) prova — abra com "Vejamos" e aponte o dado concreto (índice usado, valor, dia computado, divisor).
-4) conclusao — feche ("Resta impugnado o cálculo obreiro." / "imprestáveis os cálculos apresentados, devendo ser ignorados por Vossa Excelência.").
+============ ART. 71 × ART. 66 — NÃO CONFUNDA ============
+- INTRAJORNADA (art. 71 §4º CLT, Súmula 437 TST): é o intervalo PARA REFEIÇÃO E DESCANSO DENTRO da jornada (1h de almoço). Suprimido ou reduzido.
+- INTERJORNADA (art. 66 CLT, OJ 355 SDI-1): é o descanso MÍNIMO DE 11 HORAS ENTRE o fim de uma jornada e o início da seguinte.
+- DSR / repouso semanal (art. 67 CLT, Súmula 146 TST): é o descanso semanal remunerado.
+São TRÊS coisas distintas, com artigos distintos. Use o nome e o artigo corretos conforme o "subtipo" indicado na verba. Se a decisão deferiu intrajornada, JAMAIS escreva interjornada (e vice-versa). Na dúvida sobre qual foi deferida, use "conferir" e diga qual precisa ser confirmada.
 
-VARREDURA DO CATÁLOGO: além dos desvios que você detectar diretamente, varra o cálculo adverso contra TODO o catálogo abaixo. Para cada tese cujo gatilho esteja presente, gere um ponto em "impugnacoes". Para teses que você NÃO consegue confirmar com os dados disponíveis mas que PODEM caber neste caso, coloque em "sugestoes" (apenas o lembrete para o calculista verificar — sem redigir acusação). O objetivo é ser a MEMÓRIA DE TESES do calculista.
+============ (A) CONFERÊNCIA DE TODAS AS VERBAS ============
+Monte "conferencia" com UMA LINHA PARA CADA verba do processo — todas as DEFERIDAS e todas as rubricas que aparecem no cálculo adverso, sem exceção e sem resumir. Para cada uma:
+- "verba": nome da verba
+- "deferido": o que a decisão fixou (período, base, %, divisor, reflexos) ou "não deferida"
+- "apurado": o que o cálculo adverso fez, ou "não apurada"
+- "status": "OK" (bate com o deferido) | "DIVERGENTE" (apurada de forma diversa) | "NAO_APURADA" (deferida e o cálculo não apurou) | "SEM_DEFERIMENTO" (apurada sem ter sido deferida) | "CONFERIR" (dados insuficientes)
+- "observacao": 1 frase objetiva
+Nenhuma verba pode faltar nessa lista. Se houver 30 verbas, devolva 30 linhas.
+
+============ (B) TEXTO DA IMPUGNAÇÃO — início, meio e fim ============
+Cada ponto é um TEXTO CORRIDO E COMPLETO, em três blocos, no padrão forense brasileiro. Nada de frase solta.
+1) "abertura" (INÍCIO — onde está o erro): 1 parágrafo identificando com precisão a rubrica, o item e o critério impugnado do cálculo adverso. Ex.: "Equivocou-se o Autor ao apurar as horas extras deferidas utilizando divisor 180, quando a r. sentença adotou expressamente o divisor 220."
+2) "desenvolvimento" (MEIO — o erro + o fundamento): 2 a 4 parágrafos que (i) transcrevem o que a decisão determinou, com a folha; (ii) demonstram o que o Autor fez de diferente, apontando o dado concreto; (iii) FUNDAMENTAM obrigatoriamente em ao menos um dispositivo — artigo de lei (CLT/CF/Lei), Súmula, OJ ou tese vinculante do STF/TST — explicando POR QUE aquilo está errado; e (iv) invocam a coisa julgada quando o desvio contraria o que transitou em julgado (art. 879 §1º CLT: a liquidação não pode alterar ou inovar a coisa julgada). Abra a demonstração do dado concreto com "Vejamos".
+3) "conclusao" (FIM): 1 parágrafo fechando o ponto e dizendo o que deve ser feito (retificar o critério, excluir a rubrica, proceder à dedução), terminando com o fecho de impugnação.
+Escreva em português jurídico corrente, terceira pessoa, sem bullet, sem markdown. Cada bloco deve ser texto pronto para colar na peça.
+============ TRANSCRIÇÃO DE LEI — NÃO ESCREVA O TEXTO DA NORMA ============
+Você NUNCA transcreve o texto de artigo, súmula, OJ ou tese. O texto literal é inserido pelo sistema, a partir de uma base própria. Sua função é apenas ESCOLHER quais dispositivos se aplicam, preenchendo "dispositivos" com as CHAVES da lista abaixo (uma ou mais, as que realmente fundamentam o ponto). No texto do "desenvolvimento" você pode CITAR a referência (ex.: "nos termos do art. 71, §4º, da CLT") e deve anunciar a transcrição com uma frase como "Transcreve-se o dispositivo:", mas NÃO reproduza a redação da norma — o sistema a insere logo em seguida.
+Se o ponto exigir um dispositivo que NÃO esteja na lista, deixe-o fora de "dispositivos" e escreva a referência em "dispositivosNaoCatalogados" (array de strings), para transcrição manual pelo calculista.
+Cada tese do catálogo abaixo já indica, em DISPOSITIVOS, as chaves que a fundamentam — use-as como ponto de partida e acrescente outras se o caso exigir.
+
+CHAVES DISPONÍVEIS:
+${(window.FazAILeisIndice||[]).join('\n')}
+
+Preencha também "evidencia" com o dado literal do cálculo que sustenta o ponto.
+
+============ VARREDURA DO CATÁLOGO ============
+Varra o cálculo contra o catálogo abaixo. Tese cujo gatilho você conseguiu amarrar a um dado concreto → "impugnacoes". Tese que pode caber mas você NÃO conseguiu confirmar → "sugestoes" (lembrete, sem acusação). O catálogo é memória de teses, não licença para inventar.
 
 CATÁLOGO DE TESES:
 ${cat}
 
-ESTILO: ${modelo? 'siga o MODELO-BASE do calculista abaixo — reproduza o tom, os jargões e os fechamentos dele. NÃO invente estilo novo.\n\nMODELO-BASE:\n"""'+modelo.slice(0,6000)+'"""' : 'texto técnico, impessoal, na terceira pessoa, no padrão forense brasileiro.'}
+ESTILO: ${modelo? 'siga o MODELO-BASE do calculista abaixo — reproduza o tom, os jargões e os fechamentos dele, mantendo a estrutura de três blocos.\n\nMODELO-BASE:\n"""'+modelo.slice(0,6000)+'"""' : 'texto técnico, impessoal, terceira pessoa, padrão forense brasileiro.'}
 
 === PARÂMETROS DEFERIDOS (decisão) ===
 ${JSON.stringify(parecer)}
@@ -366,9 +413,10 @@ ${JSON.stringify(calc)}
 
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
 {"sintese":"1 a 2 frases sobre o cálculo adverso como um todo",
-"impugnacoes":[{"id":"","tese":"id da tese do catálogo ou 'direta'","titulo":"","deferido":"","oQueFez":"","prova":"","conclusao":"","confianca":"certo|provavel|conferir","fundamento":"","impacto":"em uma frase, o efeito no valor (majoração indevida, ausência de dedução etc.)"}],
-"sugestoes":[{"id":"","titulo":"","porque":"por que pode caber neste caso","oQueVerificar":"o que o calculista precisa checar"}],
-"conclusaoGeral":"síntese enumerada (i), (ii), (iii) dos pontos impugnados"}`;
+"conferencia":[{"verba":"","deferido":"","apurado":"","status":"OK|DIVERGENTE|NAO_APURADA|SEM_DEFERIMENTO|CONFERIR","observacao":""}],
+"impugnacoes":[{"id":"","tese":"id da tese do catálogo ou 'direta'","titulo":"","abertura":"","desenvolvimento":"","conclusao":"","dispositivos":[],"dispositivosNaoCatalogados":[],"deferidoCitacao":"","evidencia":"","confianca":"certo|provavel|conferir","impacto":"em uma frase, o efeito no valor"}],
+"sugestoes":[{"id":"","titulo":"","porque":"","oQueVerificar":""}],
+"conclusaoGeral":"parágrafo de conclusão enumerando (i), (ii), (iii) os pontos impugnados e requerendo a retificação"}`;
 }
 
 /* ============================================================
@@ -391,97 +439,257 @@ function mesmaVerba(vp,vc){
 function num(x){ if(x==null) return null; const m=String(x).replace(/\./g,'').replace(',','.').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):null; }
 function ano(s){ const m=String(s||'').match(/(19|20)\d{2}/); return m?parseInt(m[0],10):null; }
 
+
+/* --- base de dispositivos legais: o texto da lei vem de tabela, nunca da IA --- */
+const LEIS=(window.FazAILeis||{});
+function leisDe(chaves){
+  return arr(chaves).map(k=>LEIS[k]).filter(Boolean);
+}
+function refsDe(chaves){
+  const l=leisDe(chaves).map(x=>x.ref);
+  return l.length?l.join('; '):'';
+}
+function naoConferidos(chaves){
+  return leisDe(chaves).filter(x=>!x.conferido).length;
+}
+
+/* --- helpers de redação: as travas escrevem texto completo, não frase solta --- */
+const FOLHA=x=>x?' ('+x+')':'';
+function bloco(o){
+  return {
+    id:'trava_'+o.tese, tese:o.tese, titulo:o.titulo, origem:'trava',
+    abertura:o.abertura, desenvolvimento:o.desenvolvimento, conclusao:o.conclusao,
+    dispositivos:o.disp||[], dispositivo:o.dispositivo||refsDe(o.disp),
+    deferidoCitacao:o.citacao||'', evidencia:o.evidencia||'',
+    confianca:o.confianca, impacto:o.impacto||''
+  };
+}
+const NOME_INTERVALO={intrajornada:'intervalo intrajornada (art. 71, §4º, da CLT)',interjornada:'intervalo interjornada (art. 66 da CLT)',art384:'intervalo do art. 384 da CLT',indefinido:'intervalo'};
+
 function travas(p,c){
   const out=[]; if(!p||!c) return out;
-  const g=p.parametrosGlobais||{}, vDef=(p.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
+  const g=p.parametrosGlobais||{};
+  const vDef=(p.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
   const vNao=(p.verbas||[]).filter(v=>v.statusFinal==='EXCLUÍDA'||v.statusFinal==='INDEFERIDA');
   const vCalc=arr(c.verbas).filter(v=>v&&v.descricao);
-  const add=o=>out.push(Object.assign({id:'trava_'+o.tese,origem:'trava'},o));
+  const add=o=>out.push(bloco(o));
 
-  // 1) verba indeferida/excluída apurada
+  /* 1) verba indeferida/excluída que o cálculo apurou */
   vNao.forEach(vn=>{
     const hit=vCalc.find(vc=>mesmaVerba(vn,vc));
-    if(hit) add({tese:'verba_excluida',titulo:'Apuração de verba não deferida — '+vn.descricao,
-      deferido:'A verba "'+vn.descricao+'" foi '+(vn.statusFinal==='EXCLUÍDA'?'EXPRESSAMENTE EXCLUÍDA':'INDEFERIDA')+(vn.fonte?' ('+vn.fonte+')':'')+'.'+(vn.citacao?' "'+vn.citacao+'"':''),
-      oQueFez:'Ainda assim, o cálculo da parte contrária apurou a rubrica "'+hit.descricao+'".',
-      prova:'Vejamos: o demonstrativo traz a verba "'+hit.descricao+'"'+(hit.valorPrincipal!=null?', no valor de '+hit.valorPrincipal:'')+'.',
-      conclusao:'Resta impugnado o cálculo, por apurar verba não deferida — vedada, em liquidação, a alteração do julgado.',
-      confianca:'certo',fundamento:'coisa julgada',impacto:'Inclusão indevida de verba no total.'});
+    if(!hit) return;
+    add({tese:'verba_excluida',confianca:'certo',
+      titulo:'Apuração de verba não deferida — '+vn.descricao,
+      citacao:vn.citacao||'', evidencia:hit.trecho||hit.descricao,
+      impacto:'Inclusão indevida de rubrica no total apurado.',
+      disp:['art879p1'],
+      abertura:'Equivocou-se o Autor ao incluir em seu cálculo a rubrica "'+hit.descricao+'", verba que não integra o título executivo judicial.',
+      desenvolvimento:'Com efeito, a verba "'+vn.descricao+'" foi '+(vn.statusFinal==='EXCLUÍDA'?'EXPRESSAMENTE EXCLUÍDA':'INDEFERIDA')+FOLHA(vn.fonte)+(vn.citacao?', nos seguintes termos: "'+vn.citacao+'".':'.')+'\n\nAinda assim, o cálculo apresentado apurou a rubrica "'+hit.descricao+'"'+(hit.valorPrincipal!=null?', no valor de R$ '+hit.valorPrincipal:'')+'. Vejamos: o demonstrativo do Autor traz a referida verba'+(hit.periodo?' no período de '+hit.periodo:'')+', sem qualquer respaldo no comando exequendo.\n\nA liquidação de sentença, nos termos do art. 879, §1º, da CLT, não pode modificar ou inovar a coisa julgada, sendo defeso incluir na conta verba que a decisão transitada em julgado afastou. Trata-se, no caso, de excesso de execução.',
+      conclusao:'Impõe-se, portanto, a exclusão integral da rubrica "'+hit.descricao+'" da conta de liquidação. Resta impugnado o cálculo obreiro neste ponto.'});
   });
 
-  // 2) índice de correção
+  /* 2) verba deferida que o cálculo não apurou */
+  vDef.forEach(vd=>{
+    if(vCalc.some(vc=>mesmaVerba(vd,vc))) return;
+    add({tese:'verba_nao_apurada',confianca:'conferir',
+      titulo:'Verba deferida sem apuração no cálculo — '+vd.descricao,
+      citacao:vd.citacao||'', evidencia:'rubrica ausente no demonstrativo apresentado',
+      impacto:'Verba deferida que não consta da conta — conferir se houve omissão ou se está embutida em outra rubrica.',
+      disp:['art879p1'],
+      abertura:'A verba "'+vd.descricao+'", deferida na decisão'+FOLHA(vd.fonte)+', não foi localizada de forma autônoma no cálculo apresentado.',
+      desenvolvimento:'Vejamos: o demonstrativo não traz rubrica correspondente à verba deferida. Cabe verificar se a parcela foi omitida ou se está embutida em outra rubrica sob denominação diversa, o que exige conferência antes de qualquer afirmação.',
+      conclusao:'Ponto submetido a conferência, não impugnado desde logo.'});
+  });
+
+  /* 3) intrajornada × interjornada trocadas */
+  vDef.filter(v=>v.motorId==='heArt71'&&v.subtipo&&v.subtipo!=='indefinido').forEach(vd=>{
+    const hit=vCalc.find(vc=>mesmaVerba(vd,vc));
+    if(!hit||!hit.subtipo||hit.subtipo==='indefinido') return;
+    if(hit.subtipo===vd.subtipo) return;
+    add({tese:'troca_intra_inter',confianca:'certo',
+      titulo:'Intervalo apurado com natureza diversa da deferida ('+vd.subtipo+' × '+hit.subtipo+')',
+      citacao:vd.citacao||'', evidencia:hit.trecho||hit.descricao,
+      impacto:'Apuração de intervalo de natureza distinta da deferida.',
+      disp: vd.subtipo==='intrajornada' ? ['art71p4','sum437','art879p1'] : ['art66','oj355','art879p1'],
+      abertura:'Equivocou-se o Autor ao apurar, sob a rubrica "'+hit.descricao+'", o '+(NOME_INTERVALO[hit.subtipo]||'intervalo')+', quando o que se deferiu foi o '+(NOME_INTERVALO[vd.subtipo]||'intervalo')+'.',
+      desenvolvimento:'A decisão deferiu, de forma expressa, o '+(NOME_INTERVALO[vd.subtipo]||'intervalo')+FOLHA(vd.fonte)+(vd.citacao?': "'+vd.citacao+'".':'.')+'\n\nVejamos: são institutos distintos. O intervalo INTRAJORNADA, previsto no art. 71, §4º, da CLT e disciplinado pela Súmula 437 do TST, é o período destinado a repouso e alimentação DENTRO da jornada. Já o intervalo INTERJORNADA, do art. 66 da CLT, é o descanso mínimo de 11 (onze) horas ENTRE o término de uma jornada e o início da seguinte, cuja supressão é remunerada na forma da OJ 355 da SDI-1 do TST. Não se confundem, nem na natureza, nem na base, nem na forma de apuração.\n\nAo apurar instituto diverso do deferido, o cálculo altera o título executivo, em afronta ao art. 879, §1º, da CLT.',
+      conclusao:'Impõe-se a retificação da conta, para que a apuração observe estritamente o intervalo efetivamente deferido. Resta impugnado o cálculo obreiro.'});
+  });
+
+  /* 4) índice de correção — TR/TRD na fase pré-judicial */
   const cj=g.correcaoJuros||{}, ic=c.indiceCorrecao||{};
   const pPre=norm(cj.indicePreJudicial||cj.transcricaoLiteral), cPre=norm(ic.preJudicial);
-  if(pPre.indexOf('ipca')>=0 && /\btrd?\b/.test(cPre)) add({tese:'trd_prejudicial',titulo:'TR/TRD aplicada na fase pré-judicial',
-    deferido:'A decisão determinou EXPRESSAMENTE a aplicação do IPCA-E na fase pré-judicial'+(cj.fonte?' ('+cj.fonte+')':'')+'.',
-    oQueFez:'O cálculo aplicou TR/TRD no período anterior ao ajuizamento.',
-    prova:'Vejamos: o demonstrativo indica "'+(ic.preJudicial||'')+'" na fase pré-judicial.',
-    conclusao:'Resta impugnado o cálculo obreiro.',confianca:'certo',fundamento:'ADC 58/59 STF; coisa julgada',impacto:'Alteração indevida do principal atualizado.'});
+  if(pPre.indexOf('ipca')>=0 && /\btrd?\b/.test(cPre))
+    add({tese:'trd_prejudicial',confianca:'certo',
+      titulo:'Índice de correção monetária — TR/TRD aplicada na fase pré-judicial',
+      citacao:cj.transcricaoLiteral||'', evidencia:ic.preJudicial||'',
+      impacto:'Alteração indevida do principal atualizado.',
+      disp:['adc58','lei8177a39','art879p1'],
+      abertura:'Equivocou-se o Autor ao atualizar os créditos da fase pré-judicial pela TR/TRD, quando a decisão determinou expressamente a aplicação do IPCA-E nesse período.',
+      desenvolvimento:'A decisão fixou, de forma expressa, o critério de atualização'+FOLHA(cj.fonte)+(cj.transcricaoLiteral?': "'+cj.transcricaoLiteral+'".':'.')+'\n\nVejamos: o demonstrativo do Autor registra "'+(ic.preJudicial||'')+'" para o período anterior ao ajuizamento. O Supremo Tribunal Federal, no julgamento das ADCs 58 e 59, declarou a inconstitucionalidade da TR como índice de correção dos créditos trabalhistas, fixando o IPCA-E na fase pré-judicial, acrescido dos juros do art. 39 da Lei 8.177/91, e a taxa SELIC a partir do ajuizamento.\n\nA adoção de índice diverso do fixado na decisão, além de contrariar a tese vinculante do STF, altera a coisa julgada, o que é vedado pelo art. 879, §1º, da CLT.',
+      conclusao:'Deve a conta ser retificada para que a fase pré-judicial seja atualizada pelo IPCA-E, na forma do julgado. Resta impugnado o cálculo obreiro.'});
+
+  /* 5) SELIC cumulada com juros de 1% */
   const pJud=norm(cj.indiceJudicial), cJur=norm(ic.juros||'')+' '+norm(ic.judicial);
   if(pJud.indexOf('selic')>=0 && /1\s*%/.test(cJur) && cJur.indexOf('selic')>=0)
-    add({tese:'selic_correcao',titulo:'Cumulação de juros de 1% ao mês com a SELIC',
-      deferido:'A decisão determinou a incidência da SELIC a partir do ajuizamento'+(cj.fonte?' ('+cj.fonte+')':'')+', índice que já engloba juros e correção monetária.',
-      oQueFez:'O cálculo cumulou juros de mora de 1% ao mês com a própria SELIC.',
-      prova:'Vejamos: o demonstrativo registra "'+(ic.juros||ic.judicial||'')+'".',
-      conclusao:'Resta impugnado o cálculo, sob pena de bis in idem.',confianca:'certo',fundamento:'ADC 58 STF',impacto:'Duplicidade de juros sobre o mesmo período.'});
+    add({tese:'selic_correcao',confianca:'certo',
+      titulo:'Cumulação indevida de juros de mora de 1% ao mês com a taxa SELIC',
+      citacao:cj.transcricaoLiteral||'', evidencia:ic.juros||ic.judicial||'',
+      impacto:'Duplicidade de juros sobre o mesmo período.',
+      disp:['adc58','cc406'],
+      abertura:'Equivocou-se o Autor ao acrescer juros de mora de 1% ao mês sobre créditos já atualizados pela taxa SELIC.',
+      desenvolvimento:'A decisão determinou a incidência da SELIC a partir do ajuizamento'+FOLHA(cj.fonte)+'.\n\nVejamos: o demonstrativo registra "'+(ic.juros||ic.judicial||'')+'". Ocorre que a taxa SELIC, por definição, já engloba correção monetária E juros de mora, conforme expressamente assentado pelo STF no julgamento da ADC 58. A cumulação da SELIC com juros de 1% ao mês configura bis in idem e enriquecimento sem causa.',
+      conclusao:'Impõe-se a retificação da conta para excluir os juros de mora cumulados à SELIC no período judicial. Resta impugnado o cálculo obreiro.'});
 
-  // 3) dedução autorizada e não realizada
+  /* 6) dedução autorizada e não realizada */
   const ded=arr(c.deducoes).filter(d=>d&&(num(d.valor)||0)!==0);
   if(g.deducoes&&g.deducoes.autorizada&&!ded.length)
-    add({tese:'abatimento_pagos',titulo:'Ausência de dedução dos valores pagos',
-      deferido:'A decisão autorizou EXPRESSAMENTE a dedução dos valores pagos'+(g.deducoes.criterio?' ('+g.deducoes.criterio+')':'')+(g.deducoes.fonte?' — '+g.deducoes.fonte:'')+'.',
-      oQueFez:'O cálculo NÃO procedeu a qualquer dedução.',
-      prova:'Vejamos: não há linha de dedução ou abatimento no demonstrativo apresentado.',
-      conclusao:'imprestáveis os cálculos apresentados, devendo ser retificados.',confianca:'certo',fundamento:'OJ 415 SDI-1 TST',impacto:'Enriquecimento sem causa.'});
+    add({tese:'abatimento_pagos',confianca:'certo',
+      titulo:'Ausência de dedução dos valores comprovadamente pagos',
+      citacao:(g.deducoes||{}).citacao||'', evidencia:'nenhuma linha de dedução no demonstrativo',
+      impacto:'Enriquecimento sem causa por ausência de abatimento.',
+      disp:['oj415','cc884'],
+      abertura:'Equivocou-se o Autor ao apurar as verbas deferidas pelo valor integral, sem proceder a qualquer dedução dos valores já quitados sob o mesmo título.',
+      desenvolvimento:'A decisão autorizou expressamente a dedução dos valores pagos'+FOLHA((g.deducoes||{}).fonte)+((g.deducoes||{}).criterio?', nos seguintes termos: "'+g.deducoes.criterio+'".':'.')+'\n\nVejamos: o demonstrativo apresentado não contém uma única linha de dedução ou abatimento. A Orientação Jurisprudencial 415 da SDI-1 do TST estabelece que a dedução se opera de forma global por título, e não mês a mês, sendo devida sempre que comprovado o pagamento sob a mesma rubrica.\n\nApurar a verba pelo valor cheio, ignorando o que já foi pago, importa enriquecimento sem causa, vedado pelo art. 884 do Código Civil, e contraria comando expresso do título executivo.',
+      conclusao:'Requer-se a retificação da conta para que sejam deduzidos todos os valores comprovadamente quitados sob o mesmo título. Restam impugnados os cálculos apresentados.'});
 
-  // 4) divisor divergente
+  /* 7) divisor divergente */
   vDef.forEach(vd=>{
     if(!vd.divisor) return;
     const hit=vCalc.find(vc=>mesmaVerba(vd,vc)&&vc.divisor!=null);
-    if(hit && num(hit.divisor)!==num(vd.divisor))
-      add({tese:'periodo_divergente',titulo:'Divisor divergente do deferido — '+vd.descricao,
-        deferido:'A decisão adotou EXPRESSAMENTE o divisor '+vd.divisor+(vd.fonte?' ('+vd.fonte+')':'')+'.',
-        oQueFez:'O cálculo utilizou divisor '+hit.divisor+'.',
-        prova:'Vejamos: o demonstrativo indica divisor '+hit.divisor+' para a rubrica "'+hit.descricao+'".',
-        conclusao:'Resta impugnado o cálculo.',confianca:'certo',fundamento:'coisa julgada',impacto:'Alteração do valor da hora.'});
+    if(!hit || num(hit.divisor)===num(vd.divisor)) return;
+    add({tese:'divisor_divergente',confianca:'certo',
+      titulo:'Divisor divergente do deferido — '+vd.descricao,
+      citacao:vd.citacao||'', evidencia:'divisor '+hit.divisor+' na rubrica "'+hit.descricao+'"',
+      impacto:'Majoração indevida do valor da hora.',
+      disp:['art879p1','sum431'],
+      abertura:'Equivocou-se o Autor ao apurar a verba "'+hit.descricao+'" utilizando divisor '+hit.divisor+', quando a decisão adotou expressamente o divisor '+vd.divisor+'.',
+      desenvolvimento:'A decisão fixou o divisor '+vd.divisor+FOLHA(vd.fonte)+(vd.citacao?': "'+vd.citacao+'".':'.')+'\n\nVejamos: o demonstrativo do Autor indica divisor '+hit.divisor+' para a referida rubrica. O divisor é elemento determinante do valor do salário-hora, de modo que sua alteração majora artificialmente todas as parcelas dele decorrentes.\n\nA fixação do divisor integra o comando exequendo e não comporta revisão em liquidação, sob pena de ofensa à coisa julgada (art. 879, §1º, da CLT).',
+      conclusao:'Impõe-se a retificação da conta para adoção do divisor '+vd.divisor+', tal como deferido. Resta impugnado o cálculo obreiro.'});
   });
 
-  // 5) prescrição
+  /* 8) prescrição */
   const marco=ano((g.prescricao||{}).marco);
   if(marco){
     const antes=vCalc.filter(vc=>{ const a=ano(vc.periodo); return a&&a<marco; });
-    if(antes.length) add({tese:'prescricao_marco',titulo:'Apuração de período anterior ao marco prescricional',
-      deferido:'A decisão declarou prescritos os créditos anteriores a '+((g.prescricao||{}).marco)+(g.prescricao&&g.prescricao.fonte?' ('+g.prescricao.fonte+')':'')+'.',
-      oQueFez:'O cálculo apurou período anterior ao marco em '+antes.length+' rubrica(s).',
-      prova:'Vejamos: '+antes.map(v=>'"'+v.descricao+'" — período '+v.periodo).join('; ')+'.',
-      conclusao:'Resta impugnado o cálculo quanto ao período prescrito.',confianca:'provavel',fundamento:'art. 7º, XXIX, CF; coisa julgada',impacto:'Apuração de período fulminado pela prescrição.'});
+    if(antes.length) add({tese:'prescricao_marco',confianca:'provavel',
+      titulo:'Apuração de período anterior ao marco prescricional',
+      citacao:(g.prescricao||{}).citacao||'', evidencia:antes.map(v=>v.descricao+': '+v.periodo).join('; '),
+      impacto:'Apuração de período fulminado pela prescrição.',
+      disp:['cf7xxix','art11'],
+      abertura:'Equivocou-se o Autor ao apurar parcelas relativas a período anterior ao marco prescricional declarado na decisão.',
+      desenvolvimento:'A decisão declarou prescritos os créditos anteriores a '+((g.prescricao||{}).marco||'')+FOLHA((g.prescricao||{}).fonte)+'.\n\nVejamos: o demonstrativo apura '+antes.map(v=>'"'+v.descricao+'" no período de '+v.periodo).join('; ')+'. A prescrição quinquenal, prevista no art. 7º, XXIX, da Constituição Federal e no art. 11 da CLT, foi expressamente pronunciada, extinguindo o direito de ação quanto às parcelas anteriores ao marco.\n\nA inclusão de período prescrito na conta contraria comando expresso do título e configura excesso de execução.',
+      conclusao:'Requer-se a retificação da conta para que a apuração se limite ao período posterior ao marco prescricional. Resta impugnado o cálculo obreiro.'});
   }
 
-  // 6) honorários
+  /* 9) honorários */
   const ph=num((g.honorariosSucumbenciais||{}).percentual), ch=num((c.honorarios||{}).percentual);
-  if(ph&&ch&&ph!==ch) add({tese:'honorarios_periodo',titulo:'Percentual de honorários divergente',
-    deferido:'A decisão fixou honorários em '+ph+'%'+((g.honorariosSucumbenciais||{}).fonte?' ('+g.honorariosSucumbenciais.fonte+')':'')+'.',
-    oQueFez:'O cálculo aplicou '+ch+'%.',
-    prova:'Vejamos: o demonstrativo apura honorários de '+ch+'% sobre '+((c.honorarios||{}).base||'a condenação')+'.',
-    conclusao:'Resta impugnado o cálculo.',confianca:'certo',fundamento:'art. 791-A CLT; coisa julgada',impacto:'Majoração indevida da verba honorária.'});
+  if(ph&&ch&&ph!==ch)
+    add({tese:'honorarios_periodo',confianca:'certo',
+      titulo:'Percentual de honorários advocatícios divergente do fixado',
+      citacao:(g.honorariosSucumbenciais||{}).citacao||'', evidencia:'honorários de '+ch+'% no demonstrativo',
+      impacto:'Majoração indevida da verba honorária.',
+      disp:['art791A','art879p1'],
+      abertura:'Equivocou-se o Autor ao apurar honorários advocatícios sucumbenciais à razão de '+ch+'%, quando a decisão os fixou em '+ph+'%.',
+      desenvolvimento:'A decisão arbitrou os honorários sucumbenciais em '+ph+'% sobre '+((g.honorariosSucumbenciais||{}).base||'o valor da condenação')+FOLHA((g.honorariosSucumbenciais||{}).fonte)+'.\n\nVejamos: o demonstrativo apura a verba honorária em '+ch+'%. O percentual dos honorários é fixado por decisão judicial, nos limites do art. 791-A da CLT, e uma vez transitada em julgado não pode ser alterado na fase de liquidação.',
+      conclusao:'Impõe-se a retificação da conta para que os honorários observem o percentual de '+ph+'%, tal como fixado. Resta impugnado o cálculo obreiro.'});
 
-  // 7) FGTS sobre reflexos
+  /* 10) FGTS sobre reflexos */
   if(/reflex/.test(norm((c.fgts||{}).incidiuSobre)))
-    add({tese:'fgts_reflexos',titulo:'FGTS incidindo sobre reflexos',
-      deferido:'O FGTS é devido sobre a parcela principal, salvo deferimento expresso quanto aos reflexos.',
-      oQueFez:'O cálculo fez o FGTS incidir também sobre os reflexos.',
-      prova:'Vejamos: o demonstrativo registra incidência do FGTS sobre "'+((c.fgts||{}).incidiuSobre||'')+'".',
-      conclusao:'Resta impugnado o cálculo, sob pena de bis in idem.',confianca:'provavel',fundamento:'bis in idem',impacto:'Duplicidade na base do FGTS.'});
+    add({tese:'fgts_reflexos',confianca:'provavel',
+      titulo:'FGTS incidindo sobre reflexos — bis in idem',
+      citacao:'', evidencia:(c.fgts||{}).incidiuSobre||'',
+      impacto:'Duplicidade na base de incidência do FGTS.',
+      disp:['lei8036a15','sum63'],
+      abertura:'Equivocou-se o Autor ao fazer incidir o FGTS também sobre os reflexos apurados, e não apenas sobre a parcela principal.',
+      desenvolvimento:'Vejamos: o demonstrativo registra a incidência do FGTS sobre "'+((c.fgts||{}).incidiuSobre||'')+'". O FGTS, na forma do art. 15 da Lei 8.036/90 e da Súmula 63 do TST, incide sobre a remuneração paga ou devida — ou seja, sobre a parcela principal. Fazê-lo incidir também sobre os reflexos dessa mesma parcela importa dupla incidência sobre o mesmo fato gerador.\n\nRessalva-se que a incidência sobre reflexos só é devida quando houver deferimento expresso nesse sentido, o que deve ser conferido no título.',
+      conclusao:'Requer-se a retificação da conta para que o FGTS incida exclusivamente sobre as parcelas principais deferidas. Resta impugnado o cálculo obreiro.'});
 
-  // 8) limitação à inicial — lembrete
+  /* 11) limitação aos valores da inicial */
   if(g.limitacaoAoPedido&&g.limitacaoAoPedido.houve)
-    add({tese:'limitacao_inicial',titulo:'Limitação aos valores da inicial — conferir totais',
-      deferido:'A decisão limitou a condenação aos valores indicados na inicial'+(g.limitacaoAoPedido.fonte?' ('+g.limitacaoAoPedido.fonte+')':'')+'.',
-      oQueFez:'Confira, verba a verba, se o apurado excede o valor da exordial.',
-      prova:'Vejamos: total apurado '+(c.totalGeral!=null?c.totalGeral:'—')+'.',
-      conclusao:'Havendo excesso, resta impugnado o cálculo no que superar os valores da inicial.',
-      confianca:'conferir',fundamento:'art. 840 §1º CLT; coisa julgada',impacto:'Possível excesso de execução.'});
+    add({tese:'limitacao_inicial',confianca:'conferir',
+      titulo:'Limitação aos valores da inicial — conferir os totais apurados',
+      citacao:(g.limitacaoAoPedido||{}).citacao||'', evidencia:'total apurado: '+(c.totalGeral!=null?c.totalGeral:'não identificado'),
+      impacto:'Possível excesso de execução.',
+      disp:['art840p1'],
+      abertura:'A decisão limitou a condenação aos valores indicados na petição inicial'+FOLHA((g.limitacaoAoPedido||{}).fonte)+', o que impõe a conferência, verba a verba, dos montantes apurados.',
+      desenvolvimento:'Vejamos: o cálculo apresentado alcança o total de '+(c.totalGeral!=null?c.totalGeral:'valor não identificado')+'. Nos termos do art. 840, §1º, da CLT, e havendo limitação expressa no título, a apuração não pode superar os valores atribuídos a cada pedido na exordial.\n\nA conferência exige o cotejo entre cada rubrica apurada e o valor correspondente indicado na inicial.',
+      conclusao:'Constatado excesso, requer-se desde já a adequação da conta aos limites da petição inicial.'});
 
+  return out;
+}
+
+/* a IA manda chaves; o sistema resolve a referência e guarda o que não está na base */
+const CAT_POR_ID={}; CATALOGO.forEach(x=>{ CAT_POR_ID[x.id]=x; });
+function normalizarDispositivos(d){
+  d.dispositivos=arr(d.dispositivos).filter(k=>LEIS[k]);
+  // se a IA não indicou dispositivo, herda os do catálogo pela tese
+  if(!d.dispositivos.length && d.tese && CAT_POR_ID[d.tese])
+    d.dispositivos=arr(CAT_POR_ID[d.tese].d).filter(k=>LEIS[k]);
+  d.naoCatalogados=arr(d.dispositivosNaoCatalogados).filter(x=>String(x||'').trim());
+  const refs=[refsDe(d.dispositivos), d.naoCatalogados.join('; ')].filter(Boolean).join('; ');
+  d.dispositivo=refs||d.dispositivo||'';
+  return d;
+}
+
+/* filtro anti-ruído: sem citação do deferido E sem evidência do cálculo, vira sugestão */
+function filtrarRuido(imps){
+  const boas=[], viraram=[];
+  arr(imps).forEach(d=>{
+    if(!d||typeof d!=='object') return;
+    normalizarDispositivos(d);
+    if(d.origem==='trava'){ boas.push(d); return; }
+    const temEvid=String(d.evidencia||'').trim().length>=2;
+    const temCit =String(d.deferidoCitacao||'').trim().length>=3;
+    const temTexto=String(d.desenvolvimento||'').trim().length>80;
+    if(temEvid && temCit && temTexto) boas.push(d);
+    else viraram.push({id:d.id||d.tese||'',titulo:d.titulo||'',porque:'o sistema não conseguiu amarrar este ponto a um dado concreto do cálculo e a um comando expresso da decisão',oQueVerificar:d.desenvolvimento||d.abertura||''});
+  });
+  return {boas, viraram};
+}
+
+/* conferência determinística: nenhuma verba fica de fora */
+function conferenciaLocal(p,c){
+  const linhas=[];
+  const vCalc=arr((c||{}).verbas).filter(v=>v&&v.descricao);
+  const usadas=new Set();
+  (((p||{}).verbas)||[]).forEach(v=>{
+    const hit=vCalc.find(vc=>mesmaVerba(v,vc));
+    if(hit) usadas.add(hit.descricao);
+    const def=v.statusFinal==='DEFERIDA'
+      ? [v.periodo&&(v.periodo.inicio||v.periodo.fim)?((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'',v.percentual,v.divisor?'divisor '+v.divisor:'',v.baseCalculo].filter(Boolean).join(' · ')||'deferida'
+      : (v.statusFinal||'não deferida').toLowerCase();
+    const apu = hit ? [hit.periodo,hit.percentual,hit.divisor?'divisor '+hit.divisor:'',hit.valorPrincipal!=null?'R$ '+hit.valorPrincipal:''].filter(Boolean).join(' · ')||'apurada' : 'não apurada';
+    let st='CONFERIR';
+    if(v.statusFinal==='DEFERIDA'){
+      if(!hit) st='NAO_APURADA';
+      else{
+        const divDif = v.divisor && hit.divisor!=null && num(v.divisor)!==num(hit.divisor);
+        const pctDif = v.percentual && hit.percentual && norm(v.percentual)!==norm(hit.percentual);
+        const subDif = v.subtipo && hit.subtipo && v.subtipo!=='indefinido' && hit.subtipo!=='indefinido' && v.subtipo!==hit.subtipo;
+        st = (divDif||pctDif||subDif) ? 'DIVERGENTE' : 'CONFERIR';
+      }
+    } else st = hit ? 'SEM_DEFERIMENTO' : 'OK';
+    linhas.push({verba:v.descricao,deferido:def,apurado:apu,status:st,observacao:'',origem:'trava'});
+  });
+  vCalc.forEach(vc=>{
+    if(usadas.has(vc.descricao)) return;
+    if(((p||{}).verbas||[]).some(v=>mesmaVerba(v,vc))) return;
+    linhas.push({verba:vc.descricao,deferido:'não localizada na decisão',
+      apurado:[vc.periodo,vc.percentual,vc.valorPrincipal!=null?'R$ '+vc.valorPrincipal:''].filter(Boolean).join(' · ')||'apurada',
+      status:'SEM_DEFERIMENTO',observacao:'rubrica do cálculo sem correspondência nas verbas lidas da decisão',origem:'trava'});
+  });
+  return linhas;
+}
+// junta a conferência da IA com a local — a local garante que nenhuma verba suma
+function mesclarConferencia(local, ia){
+  const out=local.slice();
+  arr(ia).forEach(l=>{
+    if(!l||!l.verba) return;
+    const i=out.findIndex(x=>casa(x.verba,l.verba)||casa(l.verba,x.verba));
+    if(i>=0) out[i]=Object.assign({},out[i],{status:l.status||out[i].status,observacao:l.observacao||out[i].observacao,apurado:l.apurado||out[i].apurado,deferido:l.deferido||out[i].deferido});
+    else out.push(l);
+  });
   return out;
 }
 
@@ -491,11 +699,12 @@ function mesclar(tv,ia){
   arr(ia).forEach(d=>{
     if(!d||typeof d!=='object') return;
     const i=saida.findIndex(t=>t.tese && d.tese && t.tese===d.tese);
-    if(i>=0){ saida[i]=Object.assign({},d,{confianca:saida[i].confianca,fundamento:d.fundamento||saida[i].fundamento,origem:'trava+ia'}); }
+    if(i>=0){ saida[i]=Object.assign({},d,{confianca:saida[i].confianca,dispositivo:d.dispositivo||saida[i].dispositivo,origem:'trava+ia'}); }
     else saida.push(d);
   });
   return saida;
 }
+
 
 /* ============================================================
    Estado
@@ -534,7 +743,7 @@ function b64de(file){
 }
 // quebra as páginas em lotes de no máximo LIMITE caracteres
 const LOTE_CHARS=250000;   // ~70k tokens por chamada — folga grande dentro do contexto
-const CONCORRENCIA=3;      // lotes simultâneos
+const CONCORRENCIA=6;      // lotes simultâneos — corta o tempo de espera pela metade
 function lotes(pags, LIMITE){
   const out=[]; let cur=[], n=0;
   pags.forEach(p=>{
@@ -824,7 +1033,14 @@ async function confrontar(){
     const j=extrairJson(r2.txt);
     if(!j) throw new Error('O confronto não veio em JSON válido. Tente novamente.');
     // travas determinísticas entram sempre — não dependem da IA ter visto
-    j.impugnacoes=mesclar(travas(parecer,calc),j.impugnacoes);
+    // 1) filtro anti-ruído: o que a IA não amarrou a evidência+citação vira sugestão
+    const fil=filtrarRuido(j.impugnacoes);
+    // 2) travas determinísticas entram sempre e prevalecem na confiança
+    j.impugnacoes=mesclar(travas(parecer,calc), fil.boas);
+    j.sugestoes=arr(j.sugestoes).concat(fil.viraram);
+    j.descartadas=fil.viraram.length;
+    // 3) conferência de TODAS as verbas — a local garante que nenhuma some
+    j.conferencia=mesclarConferencia(conferenciaLocal(parecer,calc), j.conferencia);
     confronto=j; dbg({parecer,calcAdv,confronto});
 
     $('ldCalc').style.display='none';
@@ -897,12 +1113,13 @@ function renderDivergencias(j){
      +'<span class="badge b-'+cf+'">'+esc(cf)+'</span>'
      +'</div>'
      +'<span class="toggle" onclick="abrir('+i+')">editar texto ▾</span>'
+     +(d.evidencia?'<div class="hint" style="margin-top:4px">Evidência no cálculo: <b>'+esc(d.evidencia)+'</b></div>':'')
      +'<div class="dbody" id="db'+i+'">'
-     +fld('1. O que foi deferido','t_def'+i,d.deferido)
-     +fld('2. O que a parte contrária fez','t_fez'+i,d.oQueFez)
-     +fld('3. A prova (Vejamos…)','t_pro'+i,d.prova)
-     +fld('4. Conclusão','t_con'+i,d.conclusao)
-     +'<div class="fld"><div class="flab">Fundamento</div><input type="text" id="t_fun'+i+'" value="'+esc(d.fundamento||'')+'"></div>'
+     +fld('Início — onde está o erro','t_abe'+i,d.abertura,3)
+     +fld('Meio — erro do autor + fundamento (decisão, lei, artigo, súmula)','t_des'+i,d.desenvolvimento,10)
+     +fld('Fim — conclusão','t_con'+i,d.conclusao,3)
+     +'<div class="fld"><div class="flab">Dispositivo citado (a transcrição entra automática na peça)</div><input type="text" id="t_dis'+i+'" value="'+esc(d.dispositivo||'')+'"></div>'
+     +transcricoesHTML(d)
      +'</div></div>';
   });
   $('listaDiv').innerHTML=h||'<div class="conf">Nenhuma divergência foi detectada com os dados disponíveis. Confira o cálculo manualmente antes de concluir que está correto.</div>';
@@ -918,10 +1135,53 @@ function renderDivergencias(j){
     });
   }
   $('listaSug').innerHTML=hs;
+  renderConferencia(j);
+  const usadas=new Set(); arr(j.impugnacoes).forEach(d=>arr(d.dispositivos).forEach(k=>usadas.add(k)));
+  const naoConf=[...usadas].filter(k=>LEIS[k]&&!LEIS[k].conferido);
+  $('avisoLeis').innerHTML = naoConf.length
+    ? '<div class="conf"><b>Transcrições ainda não conferidas ('+naoConf.length+'):</b> '
+      +naoConf.map(k=>esc(LEIS[k].ref)).join(' · ')
+      +'<br>A redação sai na peça, mas confira contra a fonte oficial e marque <code>conferido: true</code> em fazai_leis.js. Depois disso o aviso some.</div>'
+    : '';
   atualizarContador();
 }
-function fld(lab,id,val){
-  return '<div class="fld"><div class="flab">'+lab+'</div><textarea id="'+id+'" rows="3">'+esc(val||'')+'</textarea></div>';
+function transcricaoTxt(x){ return x.ref+' — "'+x.txt+'"'+(x.nota?' ['+x.nota+']':''); }
+function transcricoesHTML(d){
+  const ls=leisDe(d.dispositivos);
+  const nc=arr(d.naoCatalogados);
+  if(!ls.length && !nc.length) return '';
+  let h='<div class="fld"><div class="flab">Transcrição que sairá na peça</div>';
+  ls.forEach(x=>{
+    h+='<div class="lei"><b>'+esc(x.ref)+'</b><br>“'+esc(x.txt)+'”'
+      +(x.nota?'<div class="hint">'+esc(x.nota)+'</div>':'')
+      +(x.conferido?'':'<div class="hint" style="color:#8a5a00">redação ainda não conferida por você — valide em fazai_leis.js</div>')
+      +'</div>';
+  });
+  nc.forEach(r=>{ h+='<div class="lei" style="border-left-color:#c9a227"><b>'+esc(r)+'</b><br><i>fora da base — transcreva manualmente ou acrescente em fazai_leis.js</i></div>'; });
+  return h+'</div>';
+}
+function fld(lab,id,val,rows){
+  return '<div class="fld"><div class="flab">'+lab+'</div><textarea id="'+id+'" rows="'+(rows||3)+'">'+esc(val||'')+'</textarea></div>';
+}
+/* tabela de conferência — TODAS as verbas */
+const ROT_ST={OK:'confere',DIVERGENTE:'divergente',NAO_APURADA:'não apurada',SEM_DEFERIMENTO:'sem deferimento',CONFERIR:'conferir'};
+function classeSt(st){ return st==='OK'?'tag-def':(st==='DIVERGENTE'||st==='SEM_DEFERIMENTO'?'tag-ind':'tag-und'); }
+function renderConferencia(j){
+  const linhas=arr(j.conferencia);
+  if(!linhas.length){ $('listaConf').innerHTML=''; return; }
+  const cont={};
+  linhas.forEach(l=>{ cont[l.status]=(cont[l.status]||0)+1; });
+  let h='<div class="sec-title">Conferência verba a verba ('+linhas.length+')</div>';
+  h+='<div class="hint" style="margin-bottom:10px">Todas as verbas do processo e todas as rubricas do cálculo, sem exceção. '
+    +Object.keys(cont).map(k=>(ROT_ST[k]||k)+': '+cont[k]).join(' · ')+'</div>';
+  h+='<table><tr><th>Verba</th><th>Deferido</th><th>Apurado no cálculo</th><th>Status</th></tr>';
+  linhas.forEach(l=>{
+    h+='<tr><td><b>'+esc(l.verba)+'</b>'+(l.observacao?'<div class="hint">'+esc(l.observacao)+'</div>':'')+'</td>'
+     +'<td>'+esc(l.deferido)+'</td><td>'+esc(l.apurado)+'</td>'
+     +'<td><span class="tag '+classeSt(l.status)+'">'+esc(ROT_ST[l.status]||l.status||'—')+'</span></td></tr>';
+  });
+  h+='</table>';
+  $('listaConf').innerHTML=h;
 }
 function abrir(i){ const b=$('db'+i); b.classList.toggle('on'); }
 function tgl(i){ $('dc'+i).classList.toggle('off',!$('ck'+i).checked); atualizarContador(); }
@@ -929,7 +1189,10 @@ function atualizarContador(){
   const imps=arr(confronto&&confronto.impugnacoes);
   let n=0; imps.forEach((d,i)=>{ if($('ck'+i)&&$('ck'+i).checked) n++; });
   let ns=0; arr(confronto&&confronto.sugestoes).forEach((s,i)=>{ if($('sg'+i)&&$('sg'+i).checked) ns++; });
-  $('contador').innerHTML='<b>'+n+'</b> ponto(s) de impugnação selecionado(s) de '+imps.length+(ns?' · <b>'+ns+'</b> tese(s) a desenvolver':'');
+  const dz=(confronto&&confronto.descartadas)||0;
+  $('contador').innerHTML='<b>'+n+'</b> ponto(s) de impugnação selecionado(s) de '+imps.length
+    +(ns?' · <b>'+ns+'</b> tese(s) a desenvolver':'')
+    +(dz?' · <span style="color:#8a5a00">'+dz+' ponto(s) sem lastro foram rebaixados a sugestão</span>':'');
 }
 
 /* modelo de estilo em localStorage */
@@ -943,8 +1206,42 @@ function salvarModelo(){
    Documento Word — PARECER TÉCNICO DE CÁLCULO + IMPUGNAÇÃO
    ============================================================ */
 async function gerarDocumento(){
-  if(!window.docx){ alert('Biblioteca de Word não carregou. Recarregue a página.'); return; }
-  if(!confronto||!parecer){ alert('Faça as etapas 1 e 2 primeiro.'); return; }
+  $('stDoc').innerHTML='Gerando o documento…';
+  try{ await _gerarDocumento(); }
+  catch(e){
+    console.error('gerarDocumento falhou:',e);
+    $('stDoc').innerHTML='<div class="err"><b>Não consegui gerar o Word:</b> '+esc(e&&e.message?e.message:String(e))
+      +'<br><br>Baixei o conteúdo em texto para você não perder o trabalho.</div>';
+    try{ baixarTexto(); }catch(e2){ console.error(e2); }
+  }
+}
+// plano B: se o Word falhar, o texto não se perde
+function baixarTexto(){
+  const pr=(parecer&&parecer.processo)||{};
+  const L=[];
+  L.push('PARECER TÉCNICO DE CÁLCULO — IMPUGNAÇÃO');
+  L.push('Processo: '+(pr.numero||'—')+'  |  Reclamante: '+(pr.reclamante||'—'));
+  L.push('');
+  arr(confronto&&confronto.impugnacoes).forEach((d,i)=>{
+    if(!($('ck'+i)&&$('ck'+i).checked)) return;
+    const g=id=>{ const el=$(id); return el&&el.value?el.value:''; };
+    L.push('--- '+(d.titulo||'')+' ---');
+    L.push(g('t_abe'+i)||d.abertura||'');
+    L.push(g('t_des'+i)||d.desenvolvimento||'');
+    leisDe(d.dispositivos).forEach(x=>{ L.push('Transcreve-se: '+transcricaoTxt(x)); });
+    arr(d.naoCatalogados).forEach(r=>L.push('['+r+' — transcrever]'));
+    L.push(g('t_con'+i)||d.conclusao||'');
+    L.push('Dispositivo: '+(g('t_dis'+i)||d.dispositivo||''));
+    L.push('');
+  });
+  const blob=new Blob([L.join('\n')],{type:'text/plain;charset=utf-8'});
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=u; a.download='Impugnacao_texto.txt'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+async function _gerarDocumento(){
+  if(!window.docx) throw new Error('a biblioteca de Word (docx) não carregou — recarregue a página com internet ativa.');
+  if(!confronto||!parecer) throw new Error('faça as etapas 1 e 2 antes de gerar o documento.');
   const D=window.docx;
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType}=D;
   const NAVY='16213E';
@@ -1018,18 +1315,29 @@ async function gerarDocumento(){
   k.push(H('3. Impugnação ao cálculo apresentado',1));
   if(confronto.sintese) k.push(P(confronto.sintese,{just:true,size:19}));
   const imps=arr(confronto.impugnacoes);
+  const paragrafos=(txt,o)=>String(txt||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>k.push(P(x,o)));
   let n=0;
   imps.forEach((d,i)=>{
     if(!($('ck'+i)&&$('ck'+i).checked)) return;
     n++;
-    const get=id=>{ const el=$(id); return el?el.value:''; };
+    const get=id=>{ const el=$(id); return (el&&el.value)?el.value:''; };
     k.push(H('3.'+n+'. '+(d.titulo||'Ponto '+n),2));
-    const dfd=get('t_def'+i)||d.deferido; if(dfd) k.push(P(dfd,{just:true,size:19}));
-    const fez=get('t_fez'+i)||d.oQueFez; if(fez) k.push(P(fez,{just:true,size:19}));
-    const pro=get('t_pro'+i)||d.prova; if(pro) k.push(P(pro,{just:true,size:19}));
-    const con=get('t_con'+i)||d.conclusao; if(con) k.push(P(con,{just:true,bold:true,size:19}));
-    const fun=get('t_fun'+i)||d.fundamento;
-    if(fun) k.push(P('Fundamento: '+fun,{ital:true,color:'5A6472',size:17,after:180}));
+    paragrafos(get('t_abe'+i)||d.abertura, {just:true,size:19});
+    paragrafos(get('t_des'+i)||d.desenvolvimento, {just:true,size:19});
+    // transcrição literal do dispositivo — texto vem da base, não da IA
+    const ls=leisDe(d.dispositivos), nc=arr(d.naoCatalogados);
+    if(ls.length){
+      k.push(P('Transcreve-se o dispositivo invocado:',{just:true,size:19,after:60}));
+      ls.forEach(x=>{
+        k.push(new Paragraph({spacing:{after:40},indent:{left:720},children:[new TextRun({text:x.ref+':',bold:true,color:NAVY,size:18})]}));
+        k.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,spacing:{after:x.nota?40:140},indent:{left:720},children:[new TextRun({text:'“'+x.txt+'”',italics:true,size:18})]}));
+        if(x.nota) k.push(new Paragraph({spacing:{after:140},indent:{left:720},children:[new TextRun({text:'('+x.nota+')',italics:true,color:'8A5A00',size:16})]}));
+      });
+    }
+    nc.forEach(r=>k.push(P('['+r+' — transcrever]',{ital:true,color:'8A5A00',size:17,after:120})));
+    paragrafos(get('t_con'+i)||d.conclusao, {just:true,bold:true,size:19});
+    const disp=get('t_dis'+i)||d.dispositivo;
+    if(disp) k.push(P('Fundamento legal: '+disp,{ital:true,color:'5A6472',size:17,after:200}));
   });
   if(!n) k.push(P('Nenhum ponto de impugnação foi selecionado.',{ital:true,color:'8A5A00',size:19}));
 
@@ -1040,9 +1348,24 @@ async function gerarDocumento(){
     sugs.forEach(s=>k.push(bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||''))));
   }
 
-  /* 4. Conclusão */
-  k.push(H('4. Conclusão',1));
-  k.push(P(confronto.conclusaoGeral||'Pelos fundamentos acima, restam impugnados os cálculos apresentados pela parte contrária, requerendo-se sua retificação nos termos do julgado.',{just:true,size:19}));
+  /* 3.x conferência de todas as verbas */
+  const conf=arr(confronto.conferencia);
+  if(conf.length){
+    k.push(H('4. Conferência verba a verba',1));
+    k.push(P('Quadro de conferência de todas as verbas do processo e de todas as rubricas do cálculo apresentado.',{just:true,size:19}));
+    const rotulo={OK:'Confere',DIVERGENTE:'Divergente',NAO_APURADA:'Não apurada',SEM_DEFERIMENTO:'Sem deferimento',CONFERIR:'Conferir'};
+    const cor={OK:'EAF5EC',DIVERGENTE:'FBECEC',SEM_DEFERIMENTO:'FBECEC',NAO_APURADA:'FFF0D8',CONFERIR:'FFF0D8'};
+    const rows=[new TableRow({children:[cell('Verba',{head:true,w:2800}),cell('Deferido',{head:true,w:2400}),cell('Apurado',{head:true,w:2400}),cell('Status',{head:true,w:1400})]})];
+    conf.forEach(l=>rows.push(new TableRow({children:[
+      cell(l.verba,{w:2800,bold:true}), cell(l.deferido,{w:2400}), cell(l.apurado,{w:2400}),
+      cell(rotulo[l.status]||l.status||'—',{w:1400,bold:true,fill:cor[l.status]||'FFFFFF'})]})));
+    k.push(new Table({columnWidths:[2800,2400,2400,1400],width:{size:9000,type:WidthType.DXA},rows}));
+    k.push(P('',{after:120}));
+  }
+
+  /* 5. Conclusão */
+  k.push(H(conf.length?'5. Conclusão':'4. Conclusão',1));
+  String(confronto.conclusaoGeral||'Pelos fundamentos acima, restam impugnados os cálculos apresentados pela parte contrária, requerendo-se sua retificação nos exatos termos do julgado.').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>k.push(P(x,{just:true,size:19})));
   k.push(P('',{after:200}));
   k.push(P('Parecer elaborado a partir da leitura das decisões e do cálculo apresentado pela parte contrária. Os pontos assinalados como "conferir" dependem de confirmação nos autos.',{ital:true,color:'8A5A00',size:17}));
   k.push(P('FazAI Tech · Cálculos Judiciais Trabalhistas · fazai.tech',{center:true,color:'5A6472',size:16}));
