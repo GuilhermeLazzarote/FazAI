@@ -412,14 +412,9 @@ function promptTriagem(parecer,calc,md,parte){
 
 ${conf?'CONTEXTO: o cálculo é DO PRÓPRIO CALCULISTA, em conferência interna antes do protocolo.':'CONTEXTO: o cálculo é DA PARTE CONTRÁRIA e poderá ser impugnado.'}
 
-${parte==='pontos'?'NESTA CHAMADA você devolve APENAS os PONTOS e as SUGESTÕES. NÃO devolva a conferência das verbas — ela é pedida em outra chamada. Deixe "conferencia" como lista vazia.':''}${parte==='conferencia'?'NESTA CHAMADA você devolve APENAS a CONFERÊNCIA das verbas. NÃO liste pontos nem sugestões — eles são pedidos em outra chamada. Deixe "pontos" e "sugestoes" como listas vazias.':''}
+${parte==='pontos'?'A conferência verba a verba NÃO é sua tarefa — ela é montada pelo sistema. Devolva SOMENTE os pontos e as sugestões.':''}
 
-============ (A) CONFERÊNCIA DE TODAS AS VERBAS ============
-Uma linha para CADA verba da decisão e CADA rubrica do cálculo. Nenhuma pode faltar.
-status: "OK" | "DIVERGENTE" | "NAO_APURADA" (deferida e não apurada) | "SEM_DEFERIMENTO" (apurada sem deferimento) | "CONFERIR".
-Campos curtos: no máximo 12 palavras cada.
-
-============ (B) PONTOS DE DIVERGÊNCIA ============
+============ PONTOS DE DIVERGÊNCIA ============
 Liste os pontos, SEM texto corrido. Cada ponto exige OBRIGATORIAMENTE:
  (a) "deferidoCitacao": trecho do comando expresso da decisão (copiado do JSON dos parâmetros);
  (b) "evidencia": dado concreto do cálculo (índice, divisor, percentual, valor, período), copiado do JSON do cálculo.
@@ -436,12 +431,36 @@ ECONOMIA: nenhum campo passa de 20 palavras. Não escreva parágrafos. Não expl
 === PARÂMETROS DEFERIDOS E CÁLCULO ===
 ${JSON.stringify(ctxCurto(parecer,calc))}
 
+LIMITE: no máximo 12 pontos e 8 sugestões. Se houver mais, escolha os de maior impacto — o calculista acrescenta o resto à mão.
+
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }.
 {"sintese":"1 frase",
-"conferencia":[{"verba":"","deferido":"","apurado":"","status":"OK|DIVERGENTE|NAO_APURADA|SEM_DEFERIMENTO|CONFERIR","observacao":""}],
 "pontos":[{"id":"","tese":"id do catálogo ou 'direta'","titulo":"","deferidoCitacao":"","evidencia":"","confianca":"certo|provavel|conferir","impacto":"1 frase","dispositivos":[]}],
 "sugestoes":[{"id":"","titulo":"","porque":"","oQueVerificar":""}],
 "conclusaoGeral":"parágrafo curto enumerando (i),(ii),(iii)"}`;
+}
+
+/* ============================================================
+   PAREAMENTO — a única coisa da conferência que a IA faz melhor
+   que o código: dizer qual rubrica do cálculo corresponde a qual
+   verba deferida. A tabela em si é montada aqui, não por ela.
+   Saída minúscula: pares de nomes.
+   ============================================================ */
+function promptPareamento(parecer,calc){
+  const D=((parecer&&parecer.verbas)||[]).map((v,i)=>i+') '+v.descricao+' ['+(v.statusFinal||'')+']').join('\n');
+  const C=arr(calc&&calc.verbas).map((v,i)=>i+') '+v.descricao+(v.ehReflexo?' (reflexo)':'')).join('\n');
+  return `Você recebe duas listas de verbas de um processo trabalhista. Diga qual item da lista B corresponde a qual item da lista A. Nada mais.
+
+Case pela NATUREZA da verba, não pelo nome literal ("Horas extras excedentes da 8ª diária" e "HORAS EXTRAS 50%" são a mesma coisa). Um item de A pode não ter par em B, e vice-versa. Reflexo NUNCA pareia com verba principal.
+
+LISTA A — verbas da decisão:
+${D||'(nenhuma)'}
+
+LISTA B — rubricas do cálculo:
+${C||'(nenhuma)'}
+
+RESPONDA EXCLUSIVAMENTE COM O JSON, só com os índices:
+{"pares":[[0,3],[1,5]],"soEmA":[2],"soEmB":[7]}`;
 }
 
 /* ============================================================
@@ -485,7 +504,12 @@ RESPONDA EXCLUSIVAMENTE COM O JSON:
 const STOP=new Set(['adicional','horas','extras','hora','extra','verba','verbas','valores','valor','reflexos','reflexo','diferencas','diferenças','indenizacao','indenização','sobre','pagamento','pagamentos','trabalho','de','da','do','das','dos','e','em','a','o','por']);
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function tokens(s){ return norm(s).split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)); }
-function casa(a,b){ const ta=tokens(a), tb=norm(b); return ta.some(w=>tb.indexOf(w)>=0); }
+// compara por PALAVRA INTEIRA, não por pedaço de palavra:
+// "diária" (da jornada) casava com "diárias" (de viagem) por substring.
+function casa(a,b){
+  const ta=tokens(a), tb=new Set(tokens(b));
+  return ta.some(w=>tb.has(w));
+}
 // casa a verba deferida com a rubrica do cálculo: motorId primeiro (robusto),
 // texto como reserva. "outro" é genérico demais para casar sozinho.
 function mesmaVerba(vp,vc){
@@ -783,12 +807,17 @@ function filtrarRuido(imps){
 }
 
 /* conferência determinística: nenhuma verba fica de fora */
-function conferenciaLocal(p,c){
+function conferenciaLocal(p,c,pares){
   const linhas=[];
+  const vDec=((p||{}).verbas)||[];
   const vCalc=arr((c||{}).verbas).filter(v=>v&&v.descricao);
+  // índice de pares vindos da IA: posição em A -> posição em B
+  const mapa={};
+  arr(pares).forEach(par=>{ if(Array.isArray(par)&&par.length===2) mapa[par[0]]=par[1]; });
   const usadas=new Set();
-  (((p||{}).verbas)||[]).forEach(v=>{
-    const hit=vCalc.find(vc=>mesmaVerba(v,vc));
+  vDec.forEach((v,idx)=>{
+    const porPar = (mapa[idx]!=null && vCalc[mapa[idx]]) ? vCalc[mapa[idx]] : null;
+    const hit = porPar || vCalc.find(vc=>mesmaVerba(v,vc));
     if(hit) usadas.add(hit.descricao);
     const def=v.statusFinal==='DEFERIDA'
       ? [v.periodo&&(v.periodo.inicio||v.periodo.fim)?((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'',v.percentual,v.divisor?'divisor '+v.divisor:'',v.baseCalculo].filter(Boolean).join(' · ')||'deferida'
@@ -1426,32 +1455,35 @@ async function confrontar(){
     const fimB=cron('conferência');
     // duas chamadas independentes e em paralelo: cada resposta fica pequena,
     // e se uma falhar a outra ainda entrega
-    const partes=await emParalelo(['conferencia','pontos'], 2, async(parte)=>{
+    // duas chamadas pequenas em paralelo. A TABELA de conferência não é pedida
+    // à IA — o código monta. Dela só vem o pareamento (lista de índices) e os pontos.
+    const partes=await emParalelo(['pareamento','pontos'], 2, async(parte)=>{
       try{
-        const r=await comRetry(()=>chamar([{type:'text',text:promptTriagem(parecer,calc,modo,parte)}],8000),2);
+        const texto = parte==='pareamento' ? promptPareamento(parecer,calc)
+                                           : promptTriagem(parecer,calc,modo,'pontos');
+        const teto  = parte==='pareamento' ? 2000 : 12000;
+        const r=await comRetry(()=>chamar([{type:'text',text:texto}],teto),2);
         const o=extrairJson(r.txt);
         if(!o) return {erro:parte, cortou:r.cortou, cru:String(r.txt||'').slice(0,400)};
-        return o;
+        o.__parte=parte; return o;
       }catch(e){ return {erro:parte, msg:e.message}; }
     });
     fimB();
     const bons=partes.filter(x=>x&&!x.erro);
     const ruins=partes.filter(x=>x&&x.erro);
-    if(!bons.length){
-      const d=ruins[0]||{};
+    const oPontos=bons.find(x=>x.__parte==='pontos');
+    const oPares =bons.find(x=>x.__parte==='pareamento');
+    if(!oPontos){
+      const d=ruins.find(x=>x.erro==='pontos')||ruins[0]||{};
       throw new Error('A conferência não veio em JSON válido.'
-        +(d.cortou?' A resposta foi CORTADA por limite de tamanho.':'')
+        +(d.cortou?' A resposta foi CORTADA por limite de tamanho — mesmo com o teto ampliado. Reduza o número de verbas (recorte a decisão) e tente de novo.':'')
         +(d.msg?' Erro: '+d.msg:'')
         +(d.cru?' O servidor devolveu: "'+d.cru.replace(/\s+/g,' ').slice(0,220)+'…"':''));
     }
-    const j={sintese:'',conferencia:[],pontos:[],sugestoes:[],conclusaoGeral:''};
-    bons.forEach(o=>{
-      if(o.sintese && !j.sintese) j.sintese=o.sintese;
-      if(o.conclusaoGeral && !j.conclusaoGeral) j.conclusaoGeral=o.conclusaoGeral;
-      j.conferencia=j.conferencia.concat(arr(o.conferencia));
-      j.pontos=j.pontos.concat(arr(o.pontos));
-      j.sugestoes=j.sugestoes.concat(arr(o.sugestoes));
-    });
+    const j={sintese:oPontos.sintese||'', conferencia:[],
+             pontos:arr(oPontos.pontos), sugestoes:arr(oPontos.sugestoes),
+             conclusaoGeral:oPontos.conclusaoGeral||'',
+             pares:(oPares&&oPares.pares)||null};
     if(ruins.length) falhas.push(ruins.map(x=>'etapa "'+x.erro+'"'+(x.cortou?' (resposta cortada)':'')).join(', '));
     // a triagem devolve "pontos" (sem texto); a redação vem depois, só dos escolhidos
     j.impugnacoes=arr(j.pontos).map(x=>Object.assign({},x,{semTexto:true}));
@@ -1465,7 +1497,7 @@ async function confrontar(){
     j.sugestoes=arr(j.sugestoes).concat(fil.viraram);
     j.descartadas=fil.viraram.length;
     // 3) conferência de TODAS as verbas — a local garante que nenhuma some
-    j.conferencia=mesclarConferencia(conferenciaLocal(parecer,calc), j.conferencia);
+    j.conferencia=conferenciaLocal(parecer,calc,j.pares);
     confronto=j; dbg({parecer,calcAdv,confronto});
 
     $('ldCalc').style.display='none';
