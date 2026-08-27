@@ -221,6 +221,7 @@
       <button class="btn btn-ghost" id="btnRedigir" onclick="redigirSelecionados(true)">✍ Redigir os textos dos selecionados</button>
       <button class="btn btn-primary" onclick="gerarDocumento()">Gerar documento (Word)</button>
       <button class="btn btn-ghost" onclick="location.reload()">Recomeçar</button>
+      <button class="btn btn-ghost btn-sm" onclick="limparCache()" title="Apaga as leituras guardadas neste navegador">limpar cache</button>
     </div>
     <div class="status" id="stRedigir"></div>
     <div class="status" id="stDoc"></div>
@@ -331,11 +332,11 @@ CAMPOS CRÍTICOS PARA A IMPUGNAÇÃO (capriche):
 - honorarios: percentual, base e a cargo de quem (inclusive sucumbência recíproca).
 - rescisao: modalidade reconhecida.
 
+ECONOMIA (a resposta longa demora e pode ser cortada): devolva SOMENTE os campos do modelo. Nada de cronologia, histórico ou análise de risco. "citacao" no máximo 20 palavras. Nenhum outro campo passa de 1 frase.
+
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
-{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":"","valorCausa":0},
+{"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":""},
 "dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","citacao":"","fonte":""}},
-"cronologia":[{"tipo":"","data":null,"id":"","alterou":""}],
-"resultadoConsolidado":"",
 "parametrosGlobais":{
  "prescricao":{"marco":null,"citacao":"","fonte":"","requerConferencia":false},
  "limitacaoAoPedido":{"houve":false,"citacao":"","fonte":""},
@@ -345,8 +346,7 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
  "honorariosPericiais":{"valor":0,"aCargoDe":"","fonte":""},
  "contribuicoes":{"previdenciaria":"","fiscal":"","fonte":""},
  "responsaveis":[{"nome":"","tipo":"","limite":""}]},
-"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"exclusoes":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false,"observacao":""}],
-"pontosDeAtencao":[]}`;
+"verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false}]}`;
 
 /* ============================================================
    PROMPT 2 — leitura do cálculo adverso (roda em lotes)
@@ -405,12 +405,14 @@ function ctxCurto(parecer,calc){
    FASE B1 — TRIAGEM (rápida): confere todas as verbas e LISTA
    os pontos, SEM redigir. Saída pequena, volta em segundos.
    ============================================================ */
-function promptTriagem(parecer,calc,md){
+function promptTriagem(parecer,calc,md,parte){
   const conf = md==='conferencia';
   const cat=CATALOGO.map(x=>'- ['+x.id+'] '+x.t+' | GATILHO: '+x.g).join('\n');
   return `Você é um assistente técnico de calculista trabalhista. NESTA ETAPA VOCÊ NÃO REDIGE TEXTO — apenas confere e lista. A redação é feita depois, em outra chamada.
 
 ${conf?'CONTEXTO: o cálculo é DO PRÓPRIO CALCULISTA, em conferência interna antes do protocolo.':'CONTEXTO: o cálculo é DA PARTE CONTRÁRIA e poderá ser impugnado.'}
+
+${parte==='pontos'?'NESTA CHAMADA você devolve APENAS os PONTOS e as SUGESTÕES. NÃO devolva a conferência das verbas — ela é pedida em outra chamada. Deixe "conferencia" como lista vazia.':''}${parte==='conferencia'?'NESTA CHAMADA você devolve APENAS a CONFERÊNCIA das verbas. NÃO liste pontos nem sugestões — eles são pedidos em outra chamada. Deixe "pontos" e "sugestoes" como listas vazias.':''}
 
 ============ (A) CONFERÊNCIA DE TODAS AS VERBAS ============
 Uma linha para CADA verba da decisão e CADA rubrica do cálculo. Nenhuma pode faltar.
@@ -1059,6 +1061,44 @@ function statusArquivo(k, recortado){
 // A função serverless da Vercel corta em 300s. Resposta grande demais nunca volta:
 // por isso todo pedido tem teto de saída pequeno E um tempo-limite no cliente.
 const TIMEOUT_MS=170000;
+
+/* ------------------------------------------------------------
+   CACHE por conteúdo. Reler a MESMA decisão ou o MESMO cálculo
+   é instantâneo — importa muito enquanto se ajusta e repete.
+   ------------------------------------------------------------ */
+function hash(str){
+  let h=5381; const s2=String(str||'');
+  for(let i=0;i<s2.length;i++) h=((h*33)^s2.charCodeAt(i))>>>0;
+  return h.toString(36)+'-'+s2.length;
+}
+const CACHE_V='v3';
+function cacheLer(chave){
+  try{ const b=localStorage.getItem('fazai_cache_'+CACHE_V+'_'+chave); return b?JSON.parse(b):null; }catch(e){ return null; }
+}
+function cacheGravar(chave,valor){
+  try{
+    localStorage.setItem('fazai_cache_'+CACHE_V+'_'+chave, JSON.stringify(valor));
+  }catch(e){ // cheio: limpa o que é nosso e tenta uma vez
+    try{ Object.keys(localStorage).filter(k=>k.indexOf('fazai_cache_')===0).forEach(k=>localStorage.removeItem(k));
+         localStorage.setItem('fazai_cache_'+CACHE_V+'_'+chave, JSON.stringify(valor)); }catch(e2){}
+  }
+}
+function limparCache(){
+  try{ Object.keys(localStorage).filter(k=>k.indexOf('fazai_cache_')===0).forEach(k=>localStorage.removeItem(k));
+       alert('Cache de leituras limpo.'); }catch(e){}
+}
+
+/* cronômetro por etapa — para parar de adivinhar o que está lento */
+const TEMPOS=[];
+function cron(nome){
+  const t0=Date.now();
+  return (extra)=>{ const dt=(Date.now()-t0)/1000; TEMPOS.push({nome,dt,extra:extra||''}); return dt; };
+}
+function tempoTexto(){
+  if(!TEMPOS.length) return '';
+  const tot=TEMPOS.reduce((a,x)=>a+x.dt,0);
+  return TEMPOS.map(x=>x.nome+' '+x.dt.toFixed(0)+'s'+(x.extra?' ('+x.extra+')':'')).join(' · ')+' — total '+tot.toFixed(0)+'s';
+}
 async function chamar(content, maxTokens, ms){
   const ctrl=new AbortController();
   const t=setTimeout(()=>ctrl.abort(), ms||TIMEOUT_MS);
@@ -1100,7 +1140,13 @@ function extrairJson(txt){
   const a=txt.indexOf('{'), b=txt.lastIndexOf('}');
   if(a>=0&&b>a) tent.push(txt.slice(a,b+1));
   tent.push(txt);
+  const limpar=t=>String(t)
+    .replace(/^\uFEFF/,'')
+    .replace(/\/\/[^\n\r]*/g,'')          // comentário de linha
+    .replace(/,\s*([}\]])/g,'$1')          // vírgula sobrando antes de } ou ]
+    .trim();
   for(const t of tent){ try{ return JSON.parse(t.trim()); }catch(e){} }
+  for(const t of tent){ try{ return JSON.parse(limpar(t)); }catch(e){} }
   // tenta reparar corte
   if(a>=0){ const rep=fecharBalanceado(txt.slice(a)); try{ return JSON.parse(rep); }catch(e){} }
   return null;
@@ -1156,9 +1202,16 @@ async function lerDecisao(){
       for(const f of arqsDec) content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:await b64de(f)}});
       content.push({type:'text',text:PROMPT_DECISAO});
     } else throw new Error('Não consegui ler o arquivo.');
-    const r=await comRetry(()=>chamar(content,16000),2);
-    const j=extrairJson(r.txt);
-    if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
+    const chave='dec-'+hash(txtDec.length>200?txtDec:(arqsDec.map(f=>f.name+f.size).join('|')));
+    let j=cacheLer(chave), doCache=!!j;
+    const fim=cron('decisão');
+    if(!j){
+      const r=await comRetry(()=>chamar(content,16000),2);
+      j=extrairJson(r.txt);
+      if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
+      cacheGravar(chave,j);
+    }
+    fim(doCache?'do cache':'');
     parecer=j; dbg({parecer});
     $('ldDec').style.display='none';
     renderDecisao(j, r.cortou);
@@ -1286,8 +1339,9 @@ async function confrontar(){
   $('goCalc').disabled=true; $('ldCalc').style.display='block'; $('outCalc').innerHTML='';
   try{
     // --- fase A: extrair o cálculo (o .PJC dispensa a IA por completo) ---
-    let calc, falhas=[], mapaInfo=null, pagsLidas=pagsCalc;
+    let calc, falhas=[], mapaInfo=null, pagsLidas=pagsCalc, cacheHit=false;
     const c=chars(pagsCalc);
+    const fimA=cron('cálculo');
     if(pjc){
       $('msgCalc').textContent='Cálculo já lido do .PJC — confrontando…';
       calc=pjc;
@@ -1332,7 +1386,13 @@ async function confrontar(){
         }
       }
       pagsLidas=alvo;
-      const ls=lotes(alvo,LOTE_CHARS);
+      const chaveC='calc-'+hash(texto(alvo));
+      const doCache=cacheLer(chaveC);
+      if(doCache){
+        $('msgCalc').textContent='Cálculo já lido antes — usando o resultado guardado.';
+        calc=doCache; cacheHit=true;
+      }
+      const ls=doCache?[]:lotes(alvo,LOTE_CHARS);
       let prontos=0;
       const marcar=()=>{ prontos++; $('msgCalc').textContent='Lendo o cálculo — '+prontos+' de '+ls.length+' chamada(s) concluída(s)…'; };
       $('msgCalc').textContent='Lendo o cálculo — 0 de '+ls.length+' chamada(s)…';
@@ -1342,17 +1402,48 @@ async function confrontar(){
           marcar(); return extrairJson(r.txt);
         }catch(err){ marcar(); falhas.push('trecho '+(i+1)); return null; }
       });
-      const parciais=res.filter(Boolean);
-      if(!parciais.length) throw new Error('Nenhum trecho do cálculo pôde ser lido. Verifique o PDF ou recorte as páginas.');
-      calc=fundirCalc(parciais);
+      if(!cacheHit){
+        const parciais=res.filter(Boolean);
+        if(!parciais.length) throw new Error('Nenhum trecho do cálculo pôde ser lido. Verifique o PDF ou recorte as páginas.');
+        calc=fundirCalc(parciais);
+        cacheGravar(chaveC,calc);
+      }
     }
+    fimA(cacheHit?'do cache':(pjc?'do .PJC':''));
     calcAdv=calc; dbg({parecer,calcAdv,falhas});
 
     // --- fase B: confronto ---
     $('msgCalc').textContent='Conferindo verba a verba…';
-    const r2=await comRetry(()=>chamar([{type:'text',text:promptTriagem(parecer,calc,modo)}],8000),2);
-    const j=extrairJson(r2.txt);
-    if(!j) throw new Error('A conferência não veio em JSON válido. Tente novamente.');
+    const fimB=cron('conferência');
+    // duas chamadas independentes e em paralelo: cada resposta fica pequena,
+    // e se uma falhar a outra ainda entrega
+    const partes=await emParalelo(['conferencia','pontos'], 2, async(parte)=>{
+      try{
+        const r=await comRetry(()=>chamar([{type:'text',text:promptTriagem(parecer,calc,modo,parte)}],8000),2);
+        const o=extrairJson(r.txt);
+        if(!o) return {erro:parte, cortou:r.cortou, cru:String(r.txt||'').slice(0,400)};
+        return o;
+      }catch(e){ return {erro:parte, msg:e.message}; }
+    });
+    fimB();
+    const bons=partes.filter(x=>x&&!x.erro);
+    const ruins=partes.filter(x=>x&&x.erro);
+    if(!bons.length){
+      const d=ruins[0]||{};
+      throw new Error('A conferência não veio em JSON válido.'
+        +(d.cortou?' A resposta foi CORTADA por limite de tamanho.':'')
+        +(d.msg?' Erro: '+d.msg:'')
+        +(d.cru?' O servidor devolveu: "'+d.cru.replace(/\s+/g,' ').slice(0,220)+'…"':''));
+    }
+    const j={sintese:'',conferencia:[],pontos:[],sugestoes:[],conclusaoGeral:''};
+    bons.forEach(o=>{
+      if(o.sintese && !j.sintese) j.sintese=o.sintese;
+      if(o.conclusaoGeral && !j.conclusaoGeral) j.conclusaoGeral=o.conclusaoGeral;
+      j.conferencia=j.conferencia.concat(arr(o.conferencia));
+      j.pontos=j.pontos.concat(arr(o.pontos));
+      j.sugestoes=j.sugestoes.concat(arr(o.sugestoes));
+    });
+    if(ruins.length) falhas.push(ruins.map(x=>'etapa "'+x.erro+'"'+(x.cortou?' (resposta cortada)':'')).join(', '));
     // a triagem devolve "pontos" (sem texto); a redação vem depois, só dos escolhidos
     j.impugnacoes=arr(j.pontos).map(x=>Object.assign({},x,{semTexto:true}));
     // travas determinísticas entram sempre — não dependem da IA ter visto
@@ -1374,8 +1465,9 @@ async function confrontar(){
       +(mapaInfo.motivo?' '+esc(mapaInfo.motivo):'')
       +(mapaInfo.descartadas?' Fora: '+esc(mapaInfo.descartadas):'')
       +'<br>A memória mês a mês não traz parâmetro novo — se algum dado seu estiver só lá, recorte as páginas na mão antes de rodar.</div>'+$('outCalc').innerHTML;
-    if(falhas.length) $('outCalc').innerHTML='<div class="conf"><b>Atenção:</b> '+falhas.length+' trecho(s) do cálculo não puderam ser lidos ('+esc(falhas.join(', '))+'). O confronto foi feito sem eles — confira essas páginas manualmente.</div>'+$('outCalc').innerHTML;
+    if(falhas.length) $('outCalc').innerHTML='<div class="conf"><b>Atenção — resultado parcial:</b> '+esc(falhas.join('; '))+'. O que veio está na tela; o que faltou precisa de conferência manual.</div>'+$('outCalc').innerHTML;
     renderDivergencias(j);
+    $('contador').innerHTML+=' · <span style="color:#5A6472">tempos: '+esc(tempoTexto())+'</span>';
     $('c3').classList.remove('off');
     $('s2').classList.add('done'); $('s2').textContent='Etapa 2 ✓';
     $('c3').scrollIntoView({behavior:'smooth',block:'start'});
