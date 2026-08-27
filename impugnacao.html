@@ -1092,7 +1092,13 @@ function limparCache(){
 const TEMPOS=[];
 function cron(nome){
   const t0=Date.now();
-  return (extra)=>{ const dt=(Date.now()-t0)/1000; TEMPOS.push({nome,dt,extra:extra||''}); return dt; };
+  return (extra)=>{
+    const dt=(Date.now()-t0)/1000;
+    const i=TEMPOS.findIndex(x=>x.nome===nome);
+    const reg={nome,dt,extra:extra||''};
+    if(i>=0) TEMPOS[i]=reg; else TEMPOS.push(reg);   // uma linha por etapa, sempre a última
+    return dt;
+  };
 }
 function tempoTexto(){
   if(!TEMPOS.length) return '';
@@ -1203,18 +1209,21 @@ async function lerDecisao(){
       content.push({type:'text',text:PROMPT_DECISAO});
     } else throw new Error('Não consegui ler o arquivo.');
     const chave='dec-'+hash(txtDec.length>200?txtDec:(arqsDec.map(f=>f.name+f.size).join('|')));
-    let j=cacheLer(chave), doCache=!!j;
+    let j=cacheLer(chave), doCache=!!j, cortou=false;
     const fim=cron('decisão');
     if(!j){
       const r=await comRetry(()=>chamar(content,16000),2);
+      cortou=!!r.cortou;
       j=extrairJson(r.txt);
-      if(!j) throw new Error('A resposta não veio em JSON válido. Tente de novo ou recorte as páginas relevantes.');
+      if(!j) throw new Error('A leitura da decisão não veio em JSON válido'
+        +(cortou?' — a resposta foi CORTADA por limite de tamanho. Recorte as páginas da decisão (só sentença/acórdão/dispositivo) e tente de novo.':'. Tente de novo ou recorte as páginas relevantes.')
+        +' Início do que veio: "'+String(r.txt||'').replace(/\s+/g,' ').slice(0,200)+'…"');
       cacheGravar(chave,j);
     }
     fim(doCache?'do cache':'');
     parecer=j; dbg({parecer});
     $('ldDec').style.display='none';
-    renderDecisao(j, r.cortou);
+    renderDecisao(j, cortou);
     liberarEtapa2();
   }catch(e){
     $('ldDec').style.display='none'; $('goDec').disabled=false;
