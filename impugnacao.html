@@ -6,9 +6,846 @@
 <title>FazAI · Impugnação ao cálculo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="fazai_leis.js"></script>
-<script src="fazai_docx.js"></script>
-<script src="fazai_pjc.js"></script>
+<script>
+/* ===== INICIO MODULO EMBUTIDO: fazai_leis.js =====
+   Base de dispositivos legais transcritos na peca.
+   Para externalizar depois: recorte daqui até o FIM correspondente,
+   salve como fazai_leis.js e troque por uma tag script apontando para fazai_leis.js
+   ============================================================ */
+/* ============================================================
+   FazAI — Base de dispositivos legais para transcrição em peça
+   ------------------------------------------------------------
+   Por que existe: a IA NÃO transcreve lei. Ela escolhe QUAL
+   dispositivo se aplica; o texto literal sai daqui, de tabela
+   mantida — do mesmo jeito que os índices de correção.
+   Assim a peça nunca sai com redação inventada.
+
+   CONFERIR UMA VEZ: cada verbete tem "conferido". Ao validar a
+   redação contra a fonte oficial, troque para true. O sistema
+   avisa na tela enquanto houver verbete não conferido.
+   Para acrescentar uma tese nova, basta acrescentar aqui.
+   ============================================================ */
+window.FazAILeis = {
+
+/* ---------- CLT ---------- */
+art66: { ref:'Art. 66 da CLT', conferido:false,
+  txt:'Entre 2 (duas) jornadas de trabalho haverá um período mínimo de 11 (onze) horas consecutivas para descanso.' },
+
+art67: { ref:'Art. 67, caput, da CLT', conferido:false,
+  txt:'Será assegurado a todo empregado um descanso semanal de 24 (vinte e quatro) horas consecutivas, o qual, salvo motivo de conveniência pública ou necessidade imperiosa do serviço, deverá coincidir com o domingo, no todo ou em parte.' },
+
+art71: { ref:'Art. 71, caput, da CLT', conferido:false,
+  txt:'Em qualquer trabalho contínuo, cuja duração exceda de 6 (seis) horas, é obrigatória a concessão de um intervalo para repouso ou alimentação, o qual será, no mínimo, de 1 (uma) hora e, salvo acordo escrito ou contrato coletivo em contrário, não poderá exceder de 2 (duas) horas.' },
+
+art71p4: { ref:'Art. 71, § 4º, da CLT (redação da Lei 13.467/2017)', conferido:false,
+  txt:'A não concessão ou a concessão parcial do intervalo intrajornada mínimo, para repouso e alimentação, a empregados urbanos e rurais, implica o pagamento, de natureza indenizatória, apenas do período suprimido, com acréscimo de 50% (cinquenta por cento) sobre o valor da remuneração da hora normal de trabalho.',
+  nota:'Para contratos e períodos anteriores a 11/11/2017 aplica-se a redação anterior e a Súmula 437, I, do TST (pagamento do período integral, com natureza salarial).' },
+
+art11: { ref:'Art. 11 da CLT', conferido:false,
+  txt:'A pretensão quanto a créditos resultantes das relações de trabalho prescreve em cinco anos para os trabalhadores urbanos e rurais, até o limite de dois anos após a extinção do contrato de trabalho.' },
+
+art192: { ref:'Art. 192 da CLT', conferido:false,
+  txt:'O exercício de trabalho em condições insalubres, acima dos limites de tolerância estabelecidos pelo Ministério do Trabalho, assegura a percepção de adicional respectivamente de 40% (quarenta por cento), 20% (vinte por cento) e 10% (dez por cento) do salário-mínimo da região, segundo se classifiquem nos graus máximo, médio e mínimo.' },
+
+art193p1: { ref:'Art. 193, § 1º, da CLT', conferido:false,
+  txt:'O trabalho em condições de periculosidade assegura ao empregado um adicional de 30% (trinta por cento) sobre o salário sem os acréscimos resultantes de gratificações, prêmios ou participações nos lucros da empresa.' },
+
+art193p2: { ref:'Art. 193, § 2º, da CLT', conferido:false,
+  txt:'O empregado poderá optar pelo adicional de insalubridade que porventura lhe seja devido.' },
+
+art477p8: { ref:'Art. 477, § 8º, da CLT', conferido:false,
+  txt:'A inobservância do disposto no § 6º deste artigo sujeitará o infrator à multa de 160 BTN, por trabalhador, bem assim ao pagamento da multa a favor do empregado, em valor equivalente ao seu salário, devidamente corrigido pelo índice de variação do BTN, salvo quando, comprovadamente, o trabalhador der causa à mora.' },
+
+art487p2: { ref:'Art. 487, § 2º, da CLT', conferido:false,
+  txt:'A falta de aviso prévio por parte do empregado dá ao empregador o direito de descontar os salários correspondentes ao prazo respectivo.' },
+
+art790B: { ref:'Art. 790-B, caput, da CLT', conferido:false,
+  txt:'A responsabilidade pelo pagamento dos honorários periciais é da parte sucumbente na pretensão objeto da perícia, ainda que beneficiária da justiça gratuita.' },
+
+art791A: { ref:'Art. 791-A, caput, da CLT', conferido:false,
+  txt:'Ao advogado, ainda que atue em causa própria, serão devidos honorários de sucumbência, fixados entre o mínimo de 5% (cinco por cento) e o máximo de 15% (quinze por cento) sobre o valor que resultar da liquidação da sentença, do proveito econômico obtido ou, não sendo possível mensurá-lo, sobre o valor atualizado da causa.' },
+
+art791Ap3: { ref:'Art. 791-A, § 3º, da CLT', conferido:false,
+  txt:'Na hipótese de procedência parcial, o juízo arbitrará honorários de sucumbência recíproca, vedada a compensação entre os honorários.' },
+
+art840p1: { ref:'Art. 840, § 1º, da CLT', conferido:false,
+  txt:'Sendo escrita, a reclamação deverá conter a designação do juízo, a qualificação das partes, a breve exposição dos fatos de que resulte o dissídio, o pedido, que deverá ser certo, determinado e com indicação de seu valor, a data e a assinatura do reclamante ou de seu representante.' },
+
+art879p1: { ref:'Art. 879, § 1º, da CLT', conferido:false,
+  txt:'Na liquidação, não se poderá modificar, ou inovar, a sentença liquidanda nem discutir matéria pertinente à causa principal.' },
+
+/* ---------- Constituição ---------- */
+cf7xxix: { ref:'Art. 7º, XXIX, da Constituição Federal', conferido:false,
+  txt:'ação, quanto aos créditos resultantes das relações de trabalho, com prazo prescricional de cinco anos para os trabalhadores urbanos e rurais, até o limite de dois anos após a extinção do contrato de trabalho.' },
+
+/* ---------- Leis esparsas e Código Civil ---------- */
+lei8036a15: { ref:'Art. 15 da Lei 8.036/90', conferido:false,
+  txt:'Para os fins previstos nesta Lei, todos os empregadores ficam obrigados a depositar, até o dia 7 (sete) de cada mês, em conta bancária vinculada, a importância correspondente a 8 (oito) por cento da remuneração paga ou devida, no mês anterior, a cada trabalhador.' },
+
+lei8177a39: { ref:'Art. 39, caput, da Lei 8.177/91', conferido:false,
+  txt:'Os débitos trabalhistas de qualquer natureza, quando não satisfeitos pelo empregador nas épocas próprias assim definidas em lei, acordo ou convenção coletiva, sentença normativa ou cláusula contratual sofrerão juros de mora equivalentes à TRD acumulada no período compreendido entre a data de vencimento da obrigação e o seu efetivo pagamento.' },
+
+cc884: { ref:'Art. 884 do Código Civil', conferido:false,
+  txt:'Aquele que, sem justa causa, se enriquecer à custa de outrem, será obrigado a restituir o indevidamente auferido, feita a atualização dos valores monetários.' },
+
+cc406: { ref:'Art. 406 do Código Civil', conferido:false,
+  txt:'Quando os juros moratórios não forem convencionados, ou o forem sem taxa estipulada, ou quando provierem de determinação da lei, serão fixados de acordo com a taxa que estiver em vigor para a mora do pagamento de impostos devidos à Fazenda Nacional.',
+  nota:'Redação anterior à Lei 14.905/2024. Para fatos posteriores, conferir a nova redação (SELIC deduzido o IPCA).' },
+
+/* ---------- STF ---------- */
+adc58: { ref:'Tese firmada pelo STF nas ADCs 58 e 59', conferido:false,
+  txt:'À atualização dos créditos decorrentes de condenação judicial na Justiça do Trabalho deverão ser aplicados, até que sobrevenha solução legislativa, os mesmos índices de correção monetária e de juros vigentes para as condenações cíveis em geral: na fase pré-judicial, o IPCA-E acrescido dos juros do art. 39, caput, da Lei 8.177/91; e, a partir do ajuizamento da ação, a taxa SELIC, que já engloba correção monetária e juros de mora.',
+  nota:'Síntese da tese para uso em peça. Conferir a ementa oficial quando a transcrição integral for exigida.' },
+
+/* ---------- Súmulas do TST ---------- */
+sum63: { ref:'Súmula 63 do TST', conferido:false,
+  txt:'A contribuição para o Fundo de Garantia do Tempo de Serviço incide sobre a remuneração mensal devida ao empregado, inclusive horas extras e adicionais eventuais.' },
+
+sum146: { ref:'Súmula 146 do TST', conferido:false,
+  txt:'O trabalho prestado em domingos e feriados, não compensado, deve ser pago em dobro, sem prejuízo da remuneração relativa ao repouso semanal.' },
+
+sum191: { ref:'Súmula 191, I, do TST', conferido:false,
+  txt:'O adicional de periculosidade incide apenas sobre o salário básico e não sobre este acrescido de outros adicionais.' },
+
+sum264: { ref:'Súmula 264 do TST', conferido:false,
+  txt:'A remuneração do serviço suplementar é composta do valor da hora normal, integrado por parcelas de natureza salarial e acrescido do adicional previsto em lei, contrato, acordo, convenção coletiva ou sentença normativa.' },
+
+sum305: { ref:'Súmula 305 do TST', conferido:false,
+  txt:'O pagamento relativo ao período de aviso prévio, trabalhado ou não, está sujeito a contribuição para o FGTS.' },
+
+sum338: { ref:'Súmula 338, I, do TST', conferido:false,
+  txt:'É ônus do empregador que conta com mais de 10 (dez) empregados o registro da jornada de trabalho na forma do art. 74, § 2º, da CLT. A não-apresentação injustificada dos controles de frequência gera presunção relativa de veracidade da jornada de trabalho, a qual pode ser elidida por prova em contrário.' },
+
+sum340: { ref:'Súmula 340 do TST', conferido:false,
+  txt:'O empregado, sujeito a controle de horário, remunerado à base de comissões, tem direito ao adicional de, no mínimo, 50% (cinquenta por cento) pelo trabalho em horas extras, calculado sobre o valor-hora das comissões recebidas no mês, considerando-se como divisor o número de horas efetivamente trabalhadas.' },
+
+sum431: { ref:'Súmula 431 do TST', conferido:false,
+  txt:'Para os empregados a que alude o art. 58, caput, da CLT, quando sujeitos a 40 (quarenta) horas semanais de trabalho, aplica-se o divisor 200 (duzentos) para o cálculo do valor do salário-hora.' },
+
+sum437: { ref:'Súmula 437, I e III, do TST', conferido:false,
+  txt:'I - Após a edição da Lei nº 8.923/94, a não-concessão ou a concessão parcial do intervalo intrajornada mínimo, para repouso e alimentação, a empregados urbanos e rurais, implica o pagamento total do período correspondente, e não apenas daquele suprimido, com acréscimo de, no mínimo, 50% sobre o valor da remuneração da hora normal de trabalho, sem prejuízo do cômputo da efetiva jornada de labor para efeito de remuneração. III - Possui natureza salarial a parcela prevista no art. 71, § 4º, da CLT, repercutindo, assim, no cálculo de outras parcelas salariais.',
+  nota:'Aplicável aos períodos anteriores à Lei 13.467/2017. A partir de 11/11/2017 prevalece a nova redação do art. 71, § 4º, da CLT.' },
+
+/* ---------- Orientações Jurisprudenciais — SDI-1 ---------- */
+oj355: { ref:'OJ 355 da SDI-1 do TST', conferido:false,
+  txt:'O desrespeito ao intervalo mínimo interjornadas previsto no art. 66 da CLT acarreta, por analogia, os mesmos efeitos previstos no § 4º do art. 71 da CLT e na Súmula nº 110 do TST, devendo-se pagar a título de horas extras o período de descanso não usufruído.' },
+
+oj397: { ref:'OJ 397 da SDI-1 do TST', conferido:false,
+  txt:'O empregado que recebe salário misto (parte fixa e parte variável) tem direito a horas extras pelo trabalho em sobrejornada. Em relação à parte fixa, são devidas as horas simples acrescidas do adicional de horas extras. Em relação à parte variável, é devido somente o adicional de horas extras, aplicando-se, à hipótese, o disposto na Súmula nº 340 do TST.' },
+
+oj415: { ref:'OJ 415 da SDI-1 do TST', conferido:false,
+  txt:'A dedução das horas extras comprovadamente pagas daquelas reconhecidas em juízo não pode ser limitada ao mês de apuração, devendo ser integral e considerar todo o período do pedido.' },
+
+/* ---------- acrescentados a partir do Catálogo de Teses ---------- */
+art59p1: { ref:'Art. 59, § 1º, da CLT', conferido:false,
+  txt:'A remuneração da hora extra será, pelo menos, 50% (cinquenta por cento) superior à da hora normal.' },
+
+art73: { ref:'Art. 73, caput, da CLT', conferido:false,
+  txt:'Salvo nos casos de revezamento semanal ou quinzenal, o trabalho noturno terá remuneração superior a do diurno e, para esse efeito, sua remuneração terá um acréscimo de 20% (vinte por cento), pelo menos, sobre a hora diurna.' },
+
+art73p1: { ref:'Art. 73, § 1º, da CLT', conferido:false,
+  txt:'A hora do trabalho noturno será computada como de 52 (cinquenta e dois) minutos e 30 (trinta) segundos.' },
+
+art73p2: { ref:'Art. 73, § 2º, da CLT', conferido:false,
+  txt:'Considera-se noturno, para os efeitos deste artigo, o trabalho executado entre as 22 (vinte e duas) horas de um dia e as 5 (cinco) horas do dia seguinte.' },
+
+art477p6: { ref:'Art. 477, § 6º, da CLT', conferido:false,
+  txt:'A entrega ao empregado de documentos que comprovem a comunicação da extinção contratual aos órgãos competentes bem como o pagamento dos valores constantes do instrumento de rescisão ou recibo de quitação deverão ser efetuados até dez dias contados a partir do término do contrato.' },
+
+art818: { ref:'Art. 818 da CLT', conferido:false,
+  txt:'O ônus da prova incumbe: I - ao reclamante, quanto ao fato constitutivo de seu direito; II - ao reclamado, quanto à existência de fato impeditivo, modificativo ou extintivo do direito do reclamante.' },
+
+art879p2: { ref:'Art. 879, § 2º, da CLT', conferido:false,
+  txt:'Elaborada a conta e tornada líquida, o juízo deverá abrir às partes prazo comum de 8 (oito) dias para impugnação fundamentada com a indicação dos itens e valores objeto da discordância, sob pena de preclusão.' },
+
+lei12506: { ref:'Art. 1º e parágrafo único da Lei 12.506/2011', conferido:false,
+  txt:'O aviso prévio será concedido na proporção de 30 (trinta) dias aos empregados que contem até 1 (um) ano de serviço na mesma empresa. Parágrafo único. Ao aviso prévio previsto neste artigo serão acrescidos 3 (três) dias por ano de serviço prestado na mesma empresa, até o máximo de 60 (sessenta) dias, perfazendo um total de até 90 (noventa) dias.' },
+
+lei8212a22: { ref:'Art. 22, I e II, da Lei 8.212/91', conferido:false,
+  txt:'A contribuição a cargo da empresa, destinada à Seguridade Social, é de: I - vinte por cento sobre o total das remunerações pagas, devidas ou creditadas a qualquer título, durante o mês, aos segurados empregados e trabalhadores avulsos que lhe prestem serviços; II - para o financiamento do benefício previsto nos arts. 57 e 58 da Lei nº 8.213/91, 1% (um por cento) para as empresas em cuja atividade preponderante o risco de acidentes do trabalho seja considerado leve, 2% (dois por cento) se médio e 3% (três por cento) se grave.' },
+
+cc404: { ref:'Art. 404, parágrafo único, do Código Civil', conferido:false,
+  txt:'Provado que os juros da mora não cobrem o prejuízo, e não havendo pena convencional, pode o juiz conceder ao credor indenização suplementar.' },
+
+sum60: { ref:'Súmula 60, I e II, do TST', conferido:false,
+  txt:'I - O adicional noturno, pago com habitualidade, integra o salário do empregado para todos os efeitos. II - Cumprida integralmente a jornada no período noturno e prorrogada esta, devido é também o adicional quanto às horas prorrogadas.' },
+
+sum85: { ref:'Súmula 85, III e IV, do TST', conferido:false,
+  txt:'III - O mero não atendimento das exigências legais para a compensação de jornada, inclusive quando encetada mediante acordo tácito, não implica a repetição do pagamento das horas excedentes à jornada normal diária, se não dilatada a jornada máxima semanal, sendo devido apenas o respectivo adicional. IV - A prestação de horas extras habituais descaracteriza o acordo de compensação de jornada. Nesta hipótese, as horas que ultrapassarem a jornada semanal normal deverão ser pagas como horas extraordinárias e, quanto àquelas destinadas à compensação, deverá ser pago a mais apenas o adicional por trabalho extraordinário.',
+  nota:'Conferir a aplicação aos contratos posteriores à Lei 13.467/2017, diante do art. 59-B da CLT.' },
+
+sum172: { ref:'Súmula 172 do TST', conferido:false,
+  txt:'Computam-se no cálculo do repouso remunerado as horas extras habitualmente prestadas.' },
+
+sum341: { ref:'Súmula 341 do TST', conferido:false,
+  txt:'A indicação do perito assistente é faculdade da parte, a qual deve responder pelos respectivos honorários, ainda que vencedora no objeto da perícia.' },
+
+sum347: { ref:'Súmula 347 do TST', conferido:false,
+  txt:'O cálculo do valor das horas extras habituais, para efeito de reflexos em verbas trabalhistas, observará o número das horas efetivamente prestadas e a elas aplica-se o valor do salário-hora da época do pagamento daquelas verbas.' },
+
+sum368: { ref:'Súmula 368, II, do TST', conferido:false,
+  txt:'É do empregador a responsabilidade pelo recolhimento das contribuições previdenciárias e fiscais, resultantes de crédito do empregado oriundo de condenação judicial. A culpa do empregador pelo inadimplemento das verbas remuneratórias, contudo, não exime a responsabilidade do empregado pelos pagamentos do imposto de renda devido e da contribuição previdenciária que recaia sobre sua quota-parte.',
+  nota:'A Súmula 368 tem outros itens (fato gerador, regime de competência). Conferir e acrescentar o item necessário ao caso.' },
+
+sum396: { ref:'Súmula 396, I, do TST', conferido:false,
+  txt:'Exaurido o período de estabilidade, são devidos ao empregado apenas os salários do período compreendido entre a data da despedida e o final do período de estabilidade, não lhe sendo assegurada a reintegração no emprego.' },
+
+oj394: { ref:'OJ 394, I e II, da SDI-1 do TST', conferido:false,
+  txt:'I - A majoração do valor do repouso semanal remunerado, decorrente da integração das horas extras habitualmente prestadas, não repercute no cálculo das férias, da gratificação natalina, do aviso prévio e do FGTS, sob pena de caracterização de bis in idem. II - O item I será aplicado às horas extras trabalhadas a partir de 20.03.2023.',
+  nota:'Marco temporal relevante: para horas extras posteriores a 20/03/2023 a repercussão passou a ser admitida. Conferir o período do caso antes de impugnar.' }
+
+};
+
+/* índice para o prompt: só chave + referência (o texto não vai para a IA) */
+window.FazAILeisIndice = Object.keys(window.FazAILeis).map(function(k){
+  return k + ' = ' + window.FazAILeis[k].ref;
+});
+
+/* ===== FIM MODULO EMBUTIDO: fazai_leis.js ===== */
+</script>
+<script>
+/* ===== INICIO MODULO EMBUTIDO: fazai_docx.js =====
+   Gerador de .docx proprio, sem CDN e sem biblioteca.
+   Para externalizar depois: recorte daqui até o FIM correspondente,
+   salve como fazai_docx.js e troque por uma tag script apontando para fazai_docx.js
+   ============================================================ */
+/* ============================================================
+   FazAI — Gerador de .docx sem biblioteca externa
+   ------------------------------------------------------------
+   Por que existe: a página dependia da biblioteca "docx" vinda
+   de CDN. Quando o CDN falha, o documento simplesmente não sai
+   — e o calculista perde o trabalho. Um .docx é um ZIP com XML;
+   o motor de ZIP já foi escrito para o .PJC. Então geramos aqui,
+   sem depender de nada de fora.
+   ============================================================ */
+(function(){
+'use strict';
+
+/* ---------- ZIP (mesma mecânica usada no .PJC) ---------- */
+var TCRC=(function(){ var t=new Uint32Array(256),c,i,k;
+  for(i=0;i<256;i++){ c=i; for(k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[i]=c>>>0; }
+  return t; })();
+function crc32(b){ var c=0xFFFFFFFF; for(var i=0;i<b.length;i++) c=TCRC[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function p16(v){ return [v&0xFF,(v>>8)&0xFF]; }
+function p32(v){ return [v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>>24)&0xFF]; }
+function utf8(s){
+  if(typeof TextEncoder!=='undefined') return new TextEncoder().encode(s);
+  var out=[]; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i);
+    if(c<128) out.push(c);
+    else if(c<2048){ out.push(192|c>>6, 128|c&63); }
+    else { out.push(224|c>>12, 128|(c>>6)&63, 128|c&63); } }
+  return new Uint8Array(out);
+}
+async function deflar(bytes){
+  if(typeof CompressionStream==='undefined') return null;
+  try{
+    var cs=new CompressionStream('deflate-raw');
+    var buf=await new Response(new Blob([bytes]).stream().pipeThrough(cs)).arrayBuffer();
+    return new Uint8Array(buf);
+  }catch(e){ return null; }
+}
+async function zipar(arquivos){   // [{nome, texto}]
+  var partes=[], central=[], off=0;
+  for(var i=0;i<arquivos.length;i++){
+    var a=arquivos[i];
+    var conteudo=utf8(a.texto);
+    var crc=crc32(conteudo);
+    var comp=await deflar(conteudo), metodo=8;
+    if(!comp || comp.length>=conteudo.length){ comp=conteudo; metodo=0; }
+    var nome=[]; for(var j=0;j<a.nome.length;j++) nome.push(a.nome.charCodeAt(j)&0xFF);
+    var lfh=[].concat([0x50,0x4b,0x03,0x04],p16(20),p16(0),p16(metodo),p16(0),p16(0x5D1B>>>0&0xFFFF),
+             p32(crc),p32(comp.length),p32(conteudo.length),p16(nome.length),p16(0),nome);
+    // corrige: hora e data são dois campos de 16 bits
+    lfh=[].concat([0x50,0x4b,0x03,0x04],p16(20),p16(0),p16(metodo),p16(0x7CCB),p16(0x5D1B),
+         p32(crc),p32(comp.length),p32(conteudo.length),p16(nome.length),p16(0),nome);
+    central.push({nome:nome,crc:crc,comp:comp.length,orig:conteudo.length,metodo:metodo,off:off});
+    partes.push(lfh); partes.push(Array.prototype.slice.call(comp));
+    off+=lfh.length+comp.length;
+  }
+  var cd=[];
+  central.forEach(function(c){
+    cd=cd.concat([0x50,0x4b,0x01,0x02],p16(20),p16(20),p16(0),p16(c.metodo),p16(0x7CCB),p16(0x5D1B),
+      p32(c.crc),p32(c.comp),p32(c.orig),p16(c.nome.length),
+      p16(0),p16(0),p16(0),p16(0),p32(0),p32(c.off),c.nome);
+  });
+  var eocd=[].concat([0x50,0x4b,0x05,0x06],p16(0),p16(0),p16(central.length),p16(central.length),
+            p32(cd.length),p32(off),p16(0));
+  var todos=[];
+  partes.forEach(function(p){ todos=todos.concat(p); });
+  todos=todos.concat(cd,eocd);
+  return new Uint8Array(todos);
+}
+
+/* ---------- XML ---------- */
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'');
+}
+var NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+
+function runs(txt, o){
+  o=o||{};
+  var props='';
+  if(o.bold) props+='<w:b/>';
+  if(o.italics) props+='<w:i/>';
+  if(o.color) props+='<w:color w:val="'+esc(o.color)+'"/>';
+  props+='<w:sz w:val="'+(o.size||20)+'"/><w:szCs w:val="'+(o.size||20)+'"/>';
+  props+='<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>';
+  // quebras internas viram <w:br/>
+  var partes=String(txt==null?'':txt).split(/\r?\n/);
+  var corpo=partes.map(function(p,i){
+    return (i?'<w:br/>':'')+'<w:t xml:space="preserve">'+esc(p)+'</w:t>';
+  }).join('');
+  return '<w:r><w:rPr>'+props+'</w:rPr>'+corpo+'</w:r>';
+}
+function paragrafo(txt, o){
+  o=o||{};
+  var pPr='<w:pPr>';
+  if(o.align) pPr+='<w:jc w:val="'+o.align+'"/>';
+  if(o.indent) pPr+='<w:ind w:left="'+o.indent+'"/>';
+  if(o.bullet) pPr+='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+  pPr+='<w:spacing w:after="'+(o.after==null?120:o.after)+'"'+(o.before?' w:before="'+o.before+'"':'')+'/>';
+  pPr+='</w:pPr>';
+  return '<w:p>'+pPr+runs(txt,o)+'</w:p>';
+}
+function celula(c, largura){
+  c=c||{};
+  var tcPr='<w:tcPr><w:tcW w:w="'+(largura||2000)+'" w:type="dxa"/>';
+  if(c.fill) tcPr+='<w:shd w:val="clear" w:color="auto" w:fill="'+esc(c.fill)+'"/>';
+  tcPr+='<w:tcBorders>'
+    +'<w:top w:val="single" w:sz="4" w:color="D3D3D3"/>'
+    +'<w:left w:val="single" w:sz="4" w:color="D3D3D3"/>'
+    +'<w:bottom w:val="single" w:sz="4" w:color="D3D3D3"/>'
+    +'<w:right w:val="single" w:sz="4" w:color="D3D3D3"/>'
+    +'</w:tcBorders></w:tcPr>';
+  return '<w:tc>'+tcPr+paragrafo(c.txt,{bold:c.bold,color:c.color,size:c.size||18,after:0})+'</w:tc>';
+}
+function tabela(linhas, larguras){
+  var total=(larguras||[]).reduce(function(a,b){return a+b;},0)||9000;
+  var out='<w:tbl><w:tblPr><w:tblW w:w="'+total+'" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr>';
+  out+='<w:tblGrid>'+(larguras||[]).map(function(l){return '<w:gridCol w:w="'+l+'"/>';}).join('')+'</w:tblGrid>';
+  linhas.forEach(function(lin){
+    out+='<w:tr>'+lin.map(function(c,i){ return celula(c,(larguras||[])[i]); }).join('')+'</w:tr>';
+  });
+  return out+'</w:tbl>';
+}
+
+/* ---------- documento ---------- */
+function criar(){
+  var corpo=[];
+  var api={
+    p:function(txt,o){ corpo.push(paragrafo(txt,o)); return api; },
+    titulo:function(txt,o){ corpo.push(paragrafo(txt,Object.assign({bold:true,size:32,align:'center'},o||{}))); return api; },
+    h:function(txt,nivel,cor){ corpo.push(paragrafo(txt,{bold:true,size:nivel===2?24:28,color:cor||'16213E',before:240,after:120})); return api; },
+    bullet:function(txt,o){ corpo.push(paragrafo('•  '+txt,Object.assign({size:19,indent:360,after:80},o||{}))); return api; },
+    tabela:function(linhas,larguras){ corpo.push(tabela(linhas,larguras)); corpo.push(paragrafo('',{after:120})); return api; },
+    xml:function(){
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        +'<w:document '+NS+'><w:body>'+corpo.join('')
+        +'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
+        +'<w:pgMar w:top="1000" w:right="1000" w:bottom="1000" w:left="1000" w:header="708" w:footer="708" w:gutter="0"/>'
+        +'</w:sectPr></w:body></w:document>';
+    },
+    async bytes(){
+      return zipar([
+        {nome:'[Content_Types].xml', texto:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+          +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+          +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+          +'<Default Extension="xml" ContentType="application/xml"/>'
+          +'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+          +'<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>'
+          +'</Types>'},
+        {nome:'_rels/.rels', texto:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+          +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+          +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+          +'</Relationships>'},
+        {nome:'word/_rels/document.xml.rels', texto:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+          +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+          +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>'
+          +'</Relationships>'},
+        {nome:'word/numbering.xml', texto:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+          +'<w:numbering '+NS+'>'
+          +'<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/>'
+          +'<w:lvlText w:val="•"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+          +'<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>'},
+        {nome:'word/document.xml', texto:api.xml()}
+      ]);
+    },
+    async blob(){
+      var b=await api.bytes();
+      return new Blob([b],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    }
+  };
+  return api;
+}
+
+window.FazAIDocx={criar:criar, zipar:zipar, esc:esc};
+})();
+
+/* ===== FIM MODULO EMBUTIDO: fazai_docx.js ===== */
+</script>
+<script>
+/* ===== INICIO MODULO EMBUTIDO: fazai_pjc.js =====
+   Leitor e escritor de arquivo .PJC do PJe-Calc.
+   Para externalizar depois: recorte daqui até o FIM correspondente,
+   salve como fazai_pjc.js e troque por uma tag script apontando para fazai_pjc.js
+   ============================================================ */
+/* ============================================================
+   FazAI — Leitor de arquivo .PJC (export do PJe-Calc)
+   ------------------------------------------------------------
+   O .PJC é um ZIP com um único XML (ISO-8859-1) contendo o
+   cálculo inteiro: parâmetros, verbas, ocorrências mês a mês,
+   cartão de ponto dia a dia, FGTS, INSS, honorários.
+
+   Por que importa: lendo o .PJC não há leitura de PDF por IA —
+   a extração passa a ser exata e de custo zero. A IA só entra
+   no confronto com o que foi deferido.
+   ============================================================ */
+(function(){
+'use strict';
+
+/* ---------- ZIP: lê pela central directory (sem biblioteca) ---------- */
+function u16(d,o){ return d[o]|(d[o+1]<<8); }
+function u32(d,o){ return (d[o]|(d[o+1]<<8)|(d[o+2]<<16)|(d[o+3]<<24))>>>0; }
+
+function acharEOCD(d){
+  for(let i=d.length-22;i>=0 && i>d.length-66000;i--)
+    if(d[i]===0x50&&d[i+1]===0x4b&&d[i+2]===0x05&&d[i+3]===0x06) return i;
+  return -1;
+}
+function entradasZip(d){
+  const eocd=acharEOCD(d);
+  if(eocd<0) throw new Error('arquivo .PJC inválido: não parece um ZIP.');
+  const n=u16(d,eocd+10), ini=u32(d,eocd+16);
+  const out=[]; let p=ini;
+  for(let i=0;i<n;i++){
+    if(u32(d,p)!==0x02014b50) break;
+    const metodo=u16(d,p+10), tam=u32(d,p+20), tamOrig=u32(d,p+24);
+    const nl=u16(d,p+28), el=u16(d,p+30), cl=u16(d,p+32), off=u32(d,p+42);
+    const nome=new TextDecoder('utf-8').decode(d.slice(p+46,p+46+nl));
+    out.push({nome,metodo,tam,tamOrig,off});
+    p+=46+nl+el+cl;
+  }
+  return out;
+}
+async function inflar(bytes, metodo){
+  if(metodo===0) return bytes;
+  if(metodo!==8) throw new Error('compressão não suportada no .PJC (método '+metodo+').');
+  if(typeof DecompressionStream==='undefined')
+    throw new Error('este navegador não descompacta o .PJC — use Chrome, Edge ou Safari atualizados.');
+  const ds=new DecompressionStream('deflate-raw');
+  const buf=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+async function extrairXml(arrayBuffer, comNome){
+  const d=new Uint8Array(arrayBuffer);
+  const ents=entradasZip(d);
+  if(!ents.length) throw new Error('o .PJC está vazio.');
+  const e=ents[0];
+  // cabeçalho local: nome e extra podem ter tamanhos próprios
+  if(u32(d,e.off)!==0x04034b50) throw new Error('cabeçalho do .PJC corrompido.');
+  const nl=u16(d,e.off+26), el=u16(d,e.off+28);
+  const ini=e.off+30+nl+el;
+  const bruto=d.slice(ini, ini+(e.tam||d.length-ini));
+  const puro=await inflar(bruto, e.metodo);
+  const txt=new TextDecoder('iso-8859-1').decode(puro);
+  return comNome?{xml:txt, nome:e.nome}:txt;
+}
+
+/* ---------- utilidades ---------- */
+const T=(e,tag)=>{ if(!e) return null; const c=e.querySelector(':scope > '+tag); return c?(c.textContent||'').trim():null; };
+function nulo(v){ return v==null||v===''||v==='null'; }
+function n(v){ if(nulo(v)) return null; const x=parseFloat(String(v).replace(',','.')); return isNaN(x)?null:x; }
+function data(v){
+  if(nulo(v)) return null;
+  const ms=parseInt(v,10); if(isNaN(ms)) return null;
+  const d=new Date(ms);
+  const p=x=>String(x).padStart(2,'0');
+  return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
+}
+function moeda(x){ return x==null?null:Math.round(x*100)/100; }
+
+/* ---------- classificação da verba ---------- */
+const CARAC={DECIMO_TERCEIRO_SALARIO:'outro',FERIAS:'outro',AVISO_PREVIO:'outro',SALDO_SALARIO:'outro'};
+function classificar(nome, caracteristica, multiplicador){
+  // em reflexo ("13º SOBRE HORAS EXTRAS"), o que classifica é a parte ANTES de SOBRE
+  const base=String(nome||'').split(/\s+SOBRE\s+/i)[0];
+  if(CARAC[caracteristica]) return {motorId:CARAC[caracteristica],subtipo:null};
+  const s=base.toLowerCase();
+  if(/interjornada|inter\s*jornada|art\.?\s*66/.test(s)) return {motorId:'heArt71',subtipo:'interjornada'};
+  if(/intrajornada|intra\s*jornada|intervalo.*(refei|almo)|art\.?\s*71/.test(s)) return {motorId:'heArt71',subtipo:'intrajornada'};
+  if(/art\.?\s*384/.test(s)) return {motorId:'heArt71',subtipo:'art384'};
+  if(/art\.?\s*253/.test(s)) return {motorId:'heArt71',subtipo:'indefinido'};
+  if(/intervalo/.test(s)) return {motorId:'heArt71',subtipo:'indefinido'};
+  if(/noturn/.test(s)) return {motorId:'adicionalNoturno',subtipo:null};
+  if(/periculosidade/.test(s)) return {motorId:'periculosidade',subtipo:null};
+  if(/insalubridade/.test(s)) return {motorId:'insalubridade',subtipo:null};
+  if(/vale.?(refei|aliment)|\bvr\b|\bva\b/.test(s)) return {motorId:'vr',subtipo:null};
+  if(/hora.?s?\s*extra|sobrejornada/.test(s)) return {motorId:(multiplicador&&multiplicador>=2)?'he100':'heTotais',subtipo:null};
+  if(/domingo|feriado|repouso|dsr|rsr|folga/.test(s)) return {motorId:'he100',subtipo:null};
+  if(/f[ée]rias/.test(s) && /vencid|dobr/.test(s)) return {motorId:'feriasVencidas',subtipo:null};
+  return {motorId:'outro',subtipo:null};
+}
+
+/* ---------- índices e juros em linguagem de peça ---------- */
+const IDX={IPCAE:'IPCA-E',IPCA:'IPCA',SELIC:'SELIC',TR:'TR',TRD:'TRD',INPC:'INPC',SEM_CORRECAO:'sem correção'};
+const JUR={TRD_SIMPLES:'TRD simples (art. 39 da Lei 8.177/91)',JUROS_1_AO_MES:'1% ao mês',SELIC:'SELIC',SEM_JUROS:'sem juros'};
+const rot=(m,v)=>nulo(v)?null:(m[v]||v);
+
+/* ---------- parser principal ---------- */
+function parse(xmlText){
+  const doc=new DOMParser().parseFromString(xmlText,'text/xml');
+  const err=doc.querySelector('parsererror');
+  if(err) throw new Error('não consegui ler o XML do .PJC.');
+  const raiz=doc.documentElement;
+  if(raiz.tagName!=='Calculo') throw new Error('o arquivo não é um cálculo do PJe-Calc (raiz: '+raiz.tagName+').');
+
+  /* índice de nós por id, para resolver <internalRef> */
+  const porId={};
+  ['Calculada','Reflexo','Informada'].forEach(tag=>{
+    doc.querySelectorAll(tag).forEach(e=>{
+      const id=T(e,'id'); const nm=T(e,'nome');
+      if(id&&nm&&!porId[id]) porId[id]=e;
+    });
+  });
+  function resolver(e){
+    if(T(e,'nome')) return e;
+    const ref=T(e,'internalRef')||(e.tagName==='internalRef'?(e.textContent||'').trim():null);
+    return ref&&porId[ref]?porId[ref]:null;
+  }
+
+  /* -------- processo -------- */
+  const pid=raiz.querySelector('processo > Processo > identificador > IdentificadorDoProcesso');
+  const numero=pid?[T(pid,'numero'),T(pid,'ano'),T(pid,'justica'),T(pid,'regiao'),T(pid,'vara'),T(pid,'digito')]:null;
+  const numeroFmt=numero&&numero[0]?(String(numero[0]).padStart(7,'0')+'-'+String(numero[5]||'').padStart(2,'0')+'.'+numero[1]+'.'+numero[2]+'.'+String(numero[3]).padStart(2,'0')+'.'+String(numero[4]).padStart(4,'0')):null;
+  const proc={
+    numero:numeroFmt,
+    reclamante:T(raiz.querySelector('processo > Processo > reclamante > Reclamante'),'nome'),
+    reclamada:T(raiz.querySelector('processo > Processo > reclamado > Reclamado'),'nome'),
+    regiao:numero?numero[3]:null, vara:numero?numero[4]:null
+  };
+
+  /* -------- parâmetros de atualização -------- */
+  const pa=raiz.querySelector('parametrosDeAtualizacao > ParametrosDeAtualizacao');
+  const idxPrinc=rot(IDX,T(pa,'indiceTrabalhista'));
+  const idxOutro=rot(IDX,T(pa,'outroIndiceTrabalhista'));
+  const combinar=T(pa,'combinarOutroIndice')==='true';
+  const apartir=data(T(pa,'apartirDeOutroIndice'));
+  const juros=rot(JUR,T(pa,'juros'));
+  const jurosPre=T(pa,'aplicarJurosFasePreJudicial')==='true';
+  const fases=[];
+  if(idxPrinc) fases.push({desde:null, indice:idxPrinc});
+  Array.from(raiz.querySelectorAll('parametrosDeAtualizacao > ParametrosDeAtualizacao > listaDeCombinacaoDeIndices > Set > CombinacaoDeIndice'))
+    .map(c=>({desde:T(c,'apartirDeOutroIndice'), indice:rot(IDX,T(c,'outroIndiceTrabalhista'))}))
+    .sort((a2,b2)=>(+a2.desde||0)-(+b2.desde||0))
+    .forEach(c=>fases.push({desde:data(c.desde), indice:c.indice}));
+  const fasesJuros=[];
+  if(juros) fasesJuros.push({desde:null, juros:juros});
+  Array.from(raiz.querySelectorAll('parametrosDeAtualizacao > ParametrosDeAtualizacao > listaDeCombinacaoDeJuros > Set > CombinacaoDeJuros'))
+    .map(c=>({desde:T(c,'apartirDeOutroJuros'), juros:rot(JUR,T(c,'outroJuros'))}))
+    .sort((a2,b2)=>(+a2.desde||0)-(+b2.desde||0))
+    .forEach(c=>fasesJuros.push({desde:data(c.desde), juros:c.juros}));
+  const linha=fases.map(f=>(f.desde?'a partir de '+f.desde+': ':'')+f.indice).join(' → ');
+  const linhaJ=fasesJuros.map(f=>(f.desde?'a partir de '+f.desde+': ':'')+f.juros).join(' → ');
+  const indice={
+    preJudicial:idxPrinc,
+    judicial:fases.length>1?fases[fases.length-1].indice:idxPrinc,
+    fases, fasesJuros, linhaDoTempo:linha, linhaDoTempoJuros:linhaJ,
+    trocaEm:combinar?apartir:null,
+    juros:juros,
+    aplicarJurosFasePreJudicial:jurosPre,
+    baseDeJuros:T(pa,'baseDeJurosDasVerbas'),
+    observacao:[linha?'correção: '+linha:'', linhaJ?'juros: '+linhaJ:'', jurosPre?'juros aplicados também na fase pré-judicial':''].filter(Boolean).join(' · '),
+    ultimoIndice:T(pa,'informacaoUltimoIndice')
+  };
+
+  /* -------- verbas -------- */
+  const verbas=[], inativas=[];
+  let totalDevido=0, totalPago=0;
+  // ATENÇÃO: no export do PJe-Calc as verbas PRINCIPAIS (horas extras, intervalo)
+  // aparecem no Set como <internalRef> vazio — a definição real fica dentro do
+  // baseVerba dos reflexos. Por isso varremos o documento inteiro e deduplicamos por id.
+  const todas=[];
+  ['Calculada','Reflexo','Informada'].forEach(tag=>{
+    doc.querySelectorAll(tag).forEach(e=>{ if(T(e,'nome')) todas.push(e); });
+  });
+  const vistos=new Set();
+  todas.forEach(v=>{
+    const id=T(v,'id'); if(id&&vistos.has(id)) return; if(id) vistos.add(id);
+    const nome=T(v,'nome')||'';
+    const ativo=T(v,'ativo')==='true';
+    const carac=T(v,'caracteristica');
+    const ocs=Array.from(v.querySelectorAll(':scope > ocorrencias > List > OcorrenciaDeVerba'));
+    let qtd=0, dev=0, pago=0, div=null, mult=null, base=null, ini=null, fim=null;
+    ocs.forEach(o=>{
+      if(T(o,'ativo')==='false') return;
+      qtd+=n(T(o,'quantidade'))||0;
+      dev+=n(T(o,'devido'))||0;
+      pago+=n(T(o,'pago'))||0;
+      if(div==null) div=n(T(o,'divisor'));
+      if(mult==null) mult=n(T(o,'multiplicador'));
+      if(base==null) base=n(T(o,'base'));
+      const di=T(o,'dataInicial'), df=T(o,'dataFinal');
+      if(di&&(ini==null||+di<+ini)) ini=di;
+      if(df&&(fim==null||+df>+fim)) fim=df;
+    });
+    const cls=classificar(nome,carac,mult);
+    const ehReflexo = v.tagName==='Reflexo' || /\sSOBRE\s/i.test(nome);
+    const item={
+      descricao:nome, tipo:v.tagName, ehReflexo, caracteristica:carac, ativo,
+      motorId:cls.motorId, subtipo:cls.subtipo,
+      periodo:(ini||fim)?((data(ini)||'?')+' a '+(data(fim)||'?')):((data(T(v,'periodoInicial'))||'?')+' a '+(data(T(v,'periodoFinal'))||'?')),
+      divisor:div, multiplicador:mult, quantidade:qtd?Math.round(qtd*10000)/10000:null,
+      baseCalculo:base!=null?('R$ '+moeda(base)):null,
+      percentual:mult!=null?(mult>=2?'100%':(mult>1?Math.round((mult-1)*100)+'%':null)):null,
+      valorPrincipal:moeda(dev), valorPago:moeda(pago),
+      ocorrencias:ocs.length,
+      incidenciaFGTS:T(v,'incidenciaFGTS')==='true',
+      incidenciaINSS:T(v,'incidenciaINSS')==='true',
+      trecho:'PJe-Calc: '+nome+(div?' · divisor '+div:'')+(mult?' · mult. '+mult:'')+(qtd?' · '+Math.round(qtd*100)/100+' un.':'')
+    };
+    if(ativo){ verbas.push(item); if(!ehReflexo){} totalDevido+=dev; totalPago+=pago; }
+    else inativas.push(item);
+  });
+
+  /* -------- honorários -------- */
+  const h=raiz.querySelector('honorarios > Set > Honorario');
+  const honorarios=h?{
+    percentual:n(T(h,'aliquota')), base:T(h,'baseParaApuracao'),
+    baseValor:moeda(n(T(h,'baseHonorario'))), valor:moeda(n(T(h,'valor'))),
+    aCargoDe:T(h,'tipoDeDevedor'), descricao:T(h,'descricao')
+  }:{};
+
+  /* -------- FGTS / INSS -------- */
+  const fg=raiz.querySelector('fgts > Fgts');
+  const fgts=fg?{
+    incidiuSobre:T(fg,'incidenciaDoFgts'), multa:T(fg,'multa')==='true',
+    percentualMulta:T(fg,'multaDoFgts'), aliquota:T(fg,'aliquota'),
+    excluirAvisoDaMulta:T(fg,'excluirAvisoDaMulta')==='true',
+    observacao:'incidência: '+(T(fg,'incidenciaDoFgts')||'—')
+  }:{};
+  const ins=raiz.querySelector('inss > Inss');
+  const contribuicoes=ins?{
+    previdenciaria:(T(ins,'aliquotaEmpresaFixa')?n(T(ins,'aliquotaEmpresaFixa'))+'%':null),
+    sat:(T(ins,'aliquotaRATFixa')?n(T(ins,'aliquotaRATFixa'))+'%':null),
+    fiscal:(raiz.querySelector('irpf > Irpf')&&T(raiz.querySelector('irpf > Irpf'),'apurarImpostoRenda')==='true')?'IRPF apurado':'IRPF não apurado'
+  }:{};
+
+  /* -------- deduções -------- */
+  const deducoes=[];
+  if(totalPago>0) deducoes.push({descricao:'valores pagos lançados nas verbas',valor:moeda(totalPago)});
+  const pgs=Array.from(raiz.querySelectorAll('pagamentos > Set > *'));
+  pgs.forEach(p=>{ const v=n(T(p,'valor')); if(v) deducoes.push({descricao:T(p,'descricao')||'pagamento',valor:moeda(v)}); });
+
+  /* -------- cartão de ponto -------- */
+  const dias=Array.from(raiz.querySelectorAll('apuracoesDiariasCartaoDePonto > Set > ApuracaoDiariaCartao'));
+  const jornada={ dias:dias.length, resumo:null };
+  if(dias.length){
+    const soma=t=>dias.reduce((a,d)=>a+(n(T(d,t))||0),0);
+    jornada.resumo={
+      horasTrabalhadas:Math.round(soma('horasTrabalhadas')*100)/100,
+      horasExtrasDiaria:Math.round(soma('horasExtrasDiaria')*100)/100,
+      horasNoturnas:Math.round(soma('horasNoturnas')*100)/100,
+      horasIntraJornada:Math.round(soma('horasIntraJornada')*100)/100,
+      horasInterJornadas:Math.round(soma('horasInterJornadas')*100)/100,
+      horasDomingo:Math.round(soma('horasDomingo')*100)/100,
+      horasFeriado:Math.round(soma('horasFeriado')*100)/100
+    };
+  }
+
+  /* -------- férias -------- */
+  const ferias=Array.from(raiz.querySelectorAll('listaDeFerias > Set > Ferias')).map(f=>({
+    relativa:T(f,'relativa'), situacao:T(f,'situacao'), dobra:T(f,'dobraGeral')==='true', abono:T(f,'abono')==='true'
+  }));
+
+  return {
+    origem:'pjc',
+    versaoSistema:T(raiz,'versaoDoSistema'),
+    autorDoCalculo:'PJe-Calc ('+(T(raiz,'tipoCalculo')||'—')+')',
+    dataAtualizacao:data(T(raiz,'dataDeLiquidacao')),
+    processo:proc,
+    contrato:{
+      admissao:data(T(raiz,'dataAdmissao')), demissao:data(T(raiz,'dataDemissao')),
+      ajuizamento:data(T(raiz,'dataAjuizamento')),
+      inicioCalculo:data(T(raiz,'dataInicioCalculo')), terminoCalculo:data(T(raiz,'dataTerminoCalculo')),
+      cargaHoraria:n(T(raiz,'valorCargaHorariaPadrao')), regime:T(raiz,'regimeDoContrato')
+    },
+    flags:{
+      prescricaoQuinquenal:T(raiz,'prescricaoQuinquenal')==='true',
+      prescricaoFgts:T(raiz,'prescricaoFgts')==='true',
+      sabadoDiaUtil:T(raiz,'sabadoDiaUtil')==='true',
+      projetaAvisoIndenizado:T(raiz,'projetaAvisoIndenizado')==='true',
+      limitarAvosAoPeriodo:T(raiz,'limitarAvosAoPeriodoDoCalculo')==='true'
+    },
+    indiceCorrecao:indice,
+    verbas, verbasInativas:inativas,
+    deducoes, fgts, honorarios, contribuicoes, ferias, jornada,
+    totalGeral:moeda(totalDevido),
+    totalPago:moeda(totalPago),
+    baseBrutaPJC:h?moeda(n(T(h,'baseHonorario'))):null,
+    diasEspeciais:{ feriados:jornada.resumo?jornada.resumo.horasFeriado+'h':null, domingos:jornada.resumo?jornada.resumo.horasDomingo+'h':null, sabados:null },
+    observacoes:[]
+  };
+}
+
+/* ============================================================
+   ESCRITA DO .PJC
+   ------------------------------------------------------------
+   Estrategia deliberada: NAO montamos o XML do zero. Partimos de
+   um .PJC real como MOLDE e reescrevemos so o que muda. O schema
+   do PJe-Calc tem 636 tags e campos internos (ids, versoes,
+   hashes) que nao temos como inventar com seguranca.
+   ============================================================ */
+
+/* --- CRC32, exigido pelo cabecalho do ZIP --- */
+var TCRC=(function(){ var t=new Uint32Array(256),c,i,k;
+  for(i=0;i<256;i++){ c=i; for(k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[i]=c>>>0; }
+  return t; })();
+function crc32(b){ var c=0xFFFFFFFF; for(var i=0;i<b.length;i++) c=TCRC[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+
+/* --- texto -> bytes ISO-8859-1; o que nao couber vira entidade --- */
+function paraLatin1(txt){
+  var out=[];
+  for(var i=0;i<txt.length;i++){
+    var c=txt.charCodeAt(i);
+    if(c<256) out.push(c);
+    else { var ent='&#'+c+';'; for(var j=0;j<ent.length;j++) out.push(ent.charCodeAt(j)); }
+  }
+  return new Uint8Array(out);
+}
+async function deflar(bytes){
+  if(typeof CompressionStream==='undefined') return null;
+  var cs=new CompressionStream('deflate-raw');
+  var buf=await new Response(new Blob([bytes]).stream().pipeThrough(cs)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+function p16(v){ return [v&0xFF,(v>>8)&0xFF]; }
+function p32(v){ return [v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>>24)&0xFF]; }
+
+/* O PJe-Calc grava o ZIP com o Java (ZipOutputStream): data e hora validas,
+   flag 0x8 (data descriptor) e o nome da entrada IGUAL ao nome do arquivo.
+   Reproduzimos isso — arquivo gerado por nos tem que ser indistinguivel. */
+function dosDataHora(d){
+  var dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  var tm=(d.getHours()<<11)|(d.getMinutes()<<5)|Math.floor(d.getSeconds()/2);
+  return {data:dt&0xFFFF, hora:tm&0xFFFF};
+}
+async function montarZip(nomeArquivo, conteudo, op){
+  op=op||{};
+  var dh=op.quando?dosDataHora(op.quando):{data:0x5D1B, hora:0x7CCB};
+  var descritor = op.dataDescriptor!==false;   // igual ao Java por padrao
+  var nome=[]; for(var i=0;i<nomeArquivo.length;i++) nome.push(nomeArquivo.charCodeAt(i)&0xFF);
+  var crc=crc32(conteudo);
+  var comp=await deflar(conteudo);
+  var metodo=8;
+  if(!comp || comp.length>=conteudo.length){ comp=conteudo; metodo=0; }
+  var flag = descritor?8:0;
+  // com data descriptor, o cabecalho local vai com zeros e os valores reais vem depois
+  var lfh=[].concat([0x50,0x4b,0x03,0x04], p16(20), p16(flag), p16(metodo), p16(dh.hora), p16(dh.data),
+                    p32(descritor?0:crc), p32(descritor?0:comp.length), p32(descritor?0:conteudo.length),
+                    p16(nome.length), p16(0), nome);
+  var dados=Array.prototype.slice.call(comp);
+  var dd = descritor ? [].concat([0x50,0x4b,0x07,0x08], p32(crc), p32(comp.length), p32(conteudo.length)) : [];
+  var off=0;
+  var cd=[].concat([0x50,0x4b,0x01,0x02], p16(20), p16(20), p16(flag), p16(metodo), p16(dh.hora), p16(dh.data),
+                   p32(crc), p32(comp.length), p32(conteudo.length), p16(nome.length),
+                   p16(0), p16(0), p16(0), p16(0), p32(0), p32(off), nome);
+  var iniCd=lfh.length+dados.length+dd.length;
+  var eocd=[].concat([0x50,0x4b,0x05,0x06], p16(0), p16(0), p16(1), p16(1),
+                     p32(cd.length), p32(iniCd), p16(0));
+  return new Uint8Array(lfh.concat(dados, dd, cd, eocd));
+}
+
+/* --- serializa o XML de volta, preservando o cabecalho ISO-8859-1 --- */
+function serializar(doc){
+  var xml=new XMLSerializer().serializeToString(doc);
+  xml=xml.replace(/^<\?xml[^>]*\?>/,'');
+  return '<?xml version="1.0" encoding="ISO-8859-1"?>'+xml;
+}
+
+/* --- edicao por TEXTO: troca so o valor, sem passar por DOM.
+       Passar pelo DOMParser+XMLSerializer reescreve o documento inteiro
+       (tags vazias, entidades, espacos) e isso pode ser o que o PJe-Calc
+       recusa. Aqui o resto do arquivo fica identico. --- */
+function trocarTexto(xml, tag, valor, ancora){
+  var re;
+  if(ancora){
+    re=new RegExp('(<'+ancora+'>[\\s\\S]{0,4000}?<'+tag+'>)([\\s\\S]*?)(<\\/'+tag+'>)');
+  }else{
+    re=new RegExp('(<'+tag+'>)([\\s\\S]*?)(<\\/'+tag+'>)');
+  }
+  var achou=false;
+  var novo=xml.replace(re, function(m,a,b,c){ achou=true; return a+String(valor)+c; });
+  return {xml:novo, achou:achou};
+}
+function editarTexto(xml, edicoes){
+  var mudou=[], faltou=[];
+  (edicoes||[]).forEach(function(ed){
+    var r=trocarTexto(xml, ed.tag, ed.valor, ed.ancora);
+    xml=r.xml;
+    (r.achou?mudou:faltou).push((ed.ancora?ed.ancora+' > ':'')+ed.tag);
+  });
+  return {xml:xml, mudou:mudou, faltou:faltou};
+}
+
+/* --- aplica alteracoes simples no XML: {caminho: valor} --- */
+function aplicarPatch(doc, patch){
+  var mudou=[], faltou=[];
+  Object.keys(patch||{}).forEach(function(sel){
+    var alvo=doc.querySelector(sel);
+    if(!alvo){ faltou.push(sel); return; }
+    alvo.textContent=String(patch[sel]);
+    mudou.push(sel);
+  });
+  return {mudou:mudou, faltou:faltou};
+}
+
+window.FazAIPJC={
+  async ler(arrayBuffer){ return parse(await extrairXml(arrayBuffer)); },
+  parse, extrairXml,
+
+  /* le o XML cru, para servir de molde */
+  async lerXml(arrayBuffer){ return extrairXml(arrayBuffer); },
+  async lerXmlComNome(arrayBuffer){ return extrairXml(arrayBuffer, true); },
+
+  /* gera um .PJC a partir de um XML (molde ja alterado, ou identico) */
+  async gerar(xmlText, nomeArquivo, op){
+    if(typeof CompressionStream==='undefined' && typeof Blob==='undefined')
+      throw new Error('este navegador nao consegue montar o arquivo .PJC.');
+    var nome=nomeArquivo||('CALCULO_'+Date.now()+'.PJC');
+    var bytes=paraLatin1(xmlText);
+    var zip=await montarZip(nome, bytes, op);
+    return {bytes:zip, nome:nome};
+  },
+
+  /* caminho recomendado: molde + edicao por texto, mantendo o nome da entrada */
+  async gerarPorTexto(arrayBufferMolde, edicoes, op){
+    var r=await extrairXml(arrayBufferMolde, true);
+    var e=editarTexto(r.xml, edicoes||[]);
+    var saida=await this.gerar(e.xml, (op&&op.nome)||r.nome, op);
+    saida.alterados=e.mudou; saida.naoEncontrados=e.faltou; saida.nomeEntrada=(op&&op.nome)||r.nome;
+    return saida;
+  },
+
+  /* molde + alteracoes -> novo .PJC */
+  async gerarDeMolde(arrayBufferMolde, patch, nomeArquivo){
+    var xml=await extrairXml(arrayBufferMolde);
+    var doc=new DOMParser().parseFromString(xml,'text/xml');
+    var r=aplicarPatch(doc, patch);
+    var novo=serializar(doc);
+    var saida=await this.gerar(novo, nomeArquivo);
+    saida.alterados=r.mudou; saida.naoEncontrados=r.faltou;
+    return saida;
+  },
+
+  crc32, paraLatin1, montarZip, serializar, aplicarPatch, editarTexto, trocarTexto, dosDataHora
+};
+})();
+
+/* ===== FIM MODULO EMBUTIDO: fazai_pjc.js ===== */
+</script>
 <style>
   :root{
     --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
@@ -629,7 +1466,7 @@ function travas(p,c){
 
   /* 1) verba indeferida/excluída que o cálculo apurou */
   vNao.forEach(vn=>{
-    const hit=vCalc.find(vc=>mesmaVerba(vn,vc));
+    const hit=acharUnico(vn, vCalc, p.verbas);
     if(!hit) return;
     add({tese:'verba_excluida',confianca:'certo',
       titulo:'Apuração de verba não deferida — '+vn.descricao,
@@ -643,7 +1480,7 @@ function travas(p,c){
 
   /* 2) verba deferida que o cálculo não apurou */
   vDef.forEach(vd=>{
-    if(vCalc.some(vc=>mesmaVerba(vd,vc))) return;
+    if(acharUnico(vd, vCalc, p.verbas)) return;
     add({tese:'verba_nao_apurada',confianca:'conferir',
       titulo:'Verba deferida sem apuração no cálculo — '+vd.descricao,
       citacao:vd.citacao||'', evidencia:'rubrica ausente no demonstrativo apresentado',
@@ -656,7 +1493,7 @@ function travas(p,c){
 
   /* 3) intrajornada × interjornada trocadas */
   vDef.filter(v=>v.motorId==='heArt71'&&v.subtipo&&v.subtipo!=='indefinido').forEach(vd=>{
-    const hit=vCalc.find(vc=>mesmoGrupo(vd,vc));
+    const hit=acharUnicoGrupo(vd, vCalc);
     if(!hit||!hit.subtipo||hit.subtipo==='indefinido') return;
     if(hit.subtipo===vd.subtipo) return;
     add({tese:'troca_intra_inter',confianca:'certo',
@@ -709,7 +1546,8 @@ function travas(p,c){
   /* 7) divisor divergente */
   vDef.forEach(vd=>{
     if(!vd.divisor) return;
-    const hit=vCalc.find(vc=>mesmaVerba(vd,vc)&&vc.divisor!=null);
+    const u=acharUnico(vd, vCalc, p.verbas);
+    const hit=(u&&u.divisor!=null)?u:null;
     if(!hit || num(hit.divisor)===num(vd.divisor)) return;
     add({tese:'divisor_divergente',confianca:'certo',
       titulo:'Divisor divergente do deferido — '+vd.descricao,
@@ -878,6 +1716,34 @@ function filtrarRuido(imps){
   return {boas, viraram};
 }
 
+/* REGRA: NUNCA FUNDIR VERBA.
+   Só pareia quando o casamento é ÚNICO nos dois sentidos — uma verba da decisão
+   com exatamente uma rubrica do cálculo, e essa rubrica não servindo a mais
+   nenhuma verba. Havendo ambiguidade, não pareia: as duas aparecem separadas.
+   Errar duas vezes é conserto do calculista; fundir esconde o erro. */
+function acharUnico(v, vCalc, vDec){
+  const cands=arr(vCalc).filter(vc=>mesmaVerba(v,vc));
+  if(cands.length!==1) return null;
+  const alvo=cands[0];
+  const reversos=arr(vDec).filter(v2=>mesmaVerba(v2,alvo));
+  if(reversos.length>1) return null;
+  return alvo;
+}
+function acharUnicoGrupo(v, vCalc){
+  const cands=arr(vCalc).filter(vc=>mesmoGrupo(v,vc));
+  return cands.length===1?cands[0]:null;
+}
+
+/* um par sugerido pela IA só vale se não contrariar o que o código sabe:
+   subtipo de intervalo tem que bater, e naturezas definidas não podem divergir. */
+function parValido(v,vc){
+  if(!v||!vc) return false;
+  if(subtipoConflita(v.subtipo, vc.subtipo)) return false;
+  const a=v.motorId, b=vc.motorId;
+  if(a&&b&&a!==b&&a!=='outro'&&b!=='outro') return false;
+  return true;
+}
+
 /* conferência determinística: nenhuma verba fica de fora */
 function conferenciaLocal(p,c,pares){
   const linhas=[];
@@ -888,8 +1754,11 @@ function conferenciaLocal(p,c,pares){
   arr(pares).forEach(par=>{ if(Array.isArray(par)&&par.length===2) mapa[par[0]]=par[1]; });
   const usadas=new Set();
   vDec.forEach((v,idx)=>{
-    const porPar = (mapa[idx]!=null && vCalc[mapa[idx]]) ? vCalc[mapa[idx]] : null;
-    const hit = porPar || vCalc.find(vc=>mesmaVerba(v,vc));
+    // o par da IA não passa por cima das travas: se ela parear intrajornada com
+    // interjornada, ou naturezas diferentes, o par é DESCARTADO.
+    const cand = (mapa[idx]!=null) ? vCalc[mapa[idx]] : null;
+    const porPar = (cand && parValido(v,cand)) ? cand : null;
+    const hit = porPar || acharUnico(v, vCalc, vDec);
     if(hit) usadas.add(hit.descricao);
     const def=v.statusFinal==='DEFERIDA'
       ? [v.periodo&&(v.periodo.inicio||v.periodo.fim)?((v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?')):'',v.percentual,v.divisor?'divisor '+v.divisor:'',v.baseCalculo].filter(Boolean).join(' · ')||'deferida'
@@ -909,7 +1778,6 @@ function conferenciaLocal(p,c,pares){
   });
   vCalc.forEach(vc=>{
     if(usadas.has(vc.descricao)) return;
-    if(((p||{}).verbas||[]).some(v=>mesmaVerba(v,vc))) return;
     linhas.push({verba:vc.descricao,deferido:'não localizada na decisão',
       apurado:[vc.periodo,vc.percentual,vc.valorPrincipal!=null?'R$ '+vc.valorPrincipal:''].filter(Boolean).join(' · ')||'apurada',
       status:'SEM_DEFERIMENTO',observacao:'rubrica do cálculo sem correspondência nas verbas lidas da decisão',origem:'trava'});
@@ -1787,6 +2655,25 @@ function revisarTermos(d){
   if(ehIntra && falaInter && !falaIntra) d.alertaTermo='o ponto é de INTRAJORNADA (art. 71 §4º, 1h de refeição) mas o texto fala em interjornada — confira antes de usar';
   return d;
 }
+
+/* diagnóstico na abertura. Hoje os módulos estão embutidos, então isto
+   normalmente não aparece — só volta a servir quando forem externalizados. */
+(function(){
+ try{
+  const faltando=[];
+  if(!window.FazAILeis) faltando.push({arq:'fazai_leis.js', perda:'as transcrições de lei não saem na peça'});
+  if(!window.FazAIPJC)  faltando.push({arq:'fazai_pjc.js',  perda:'não dá para anexar arquivo .PJC'});
+  if(!faltando.length) return;
+  const el=document.createElement('div');
+  el.className='conf';
+  el.style.margin='16px 20px 0';
+  el.innerHTML='<b>Arquivo(s) faltando no servidor:</b> '
+    +faltando.map(f=>'<code>'+f.arq+'</code> — '+f.perda).join(' · ')
+    +'<br>O resto da página funciona normalmente. Confira se o arquivo foi enviado com o nome exato (sem <code>.txt</code> no fim).';
+  const w=document.querySelector&&document.querySelector('.wrap');
+  if(w&&w.insertBefore) w.insertBefore(el, w.firstChild);
+ }catch(e){ console.warn('aviso de módulo faltando não pôde ser exibido:',e); }
+})();
 
 /* modelo de estilo em localStorage */
 (function(){ try{ const m=localStorage.getItem('fazai_modelo_impugnacao'); if(m) $('modeloBase').value=m; }catch(e){} })();
