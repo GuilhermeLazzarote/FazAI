@@ -6,8 +6,8 @@
 <title>FazAI · Impugnação ao cálculo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
 <script src="fazai_leis.js"></script>
+<script src="fazai_docx.js"></script>
 <script src="fazai_pjc.js"></script>
 <style>
   :root{
@@ -304,35 +304,63 @@ const CATALOGO=[
    PROMPT 1 — leitura da decisão (foco: o que foi DEFERIDO,
    com a citação para poder ser confrontado depois)
    ============================================================ */
-const PROMPT_DECISAO=`Você é um perito contábil trabalhista. Vou te enviar a(s) decisão(ões) de um processo (pode ser uma peça ou a cadeia inteira: sentença, embargos, acórdão TRT, TST). Sua função é extrair OS PARÂMETROS EXPRESSAMENTE DEFERIDOS, para que o cálculo apresentado pela parte contrária possa ser confrontado com eles.
+const PROMPT_DECISAO=`Você é um CALCULISTA JUDICIAL SÊNIOR. Recebe as peças decisórias de um processo trabalhista (uma peça ou a cadeia inteira: sentença, embargos, acórdão do TRT, TST, decisões de execução) e extrai os PARÂMETROS da condenação, para que o cálculo possa ser conferido contra eles.
 
-Você NÃO calcula. Você NÃO interpreta o que o juiz "quis dizer". Transcreve o que está EXPRESSO e sinaliza o omisso.
+============ REGRAS INEGOCIÁVEIS — ANTI-INVENÇÃO ============
+Estas regras não se quebram em nenhuma hipótese:
+1. Use SOMENTE o que está EXPRESSO nos documentos. É proibido presumir, estimar de cabeça ou completar com conhecimento externo.
+2. Toda afirmação relevante (verba, data, valor, comando) cita a origem em "fonte", no formato "peça — fl./ID". Não localizou? Escreva "não localizado nos documentos" e marque requerConferencia. NUNCA chute.
+3. Você NÃO calcula valores nem projeta montantes. Extrai e organiza PARÂMETROS. Valor já arbitrado ou homologado no processo → transcreva em "valorFixado", citando a fonte.
+4. Você NÃO opina sobre mérito e não prevê resultado de recurso.
+5. Tudo que dependa de interpretação, norma coletiva, perícia ou premissa não expressa vai para requerConferencia — é pendência do calculista, não sua.
+6. Leia TODA a cadeia e RECONCILIE até o resultado CONSOLIDADO.
 
-REGRAS:
-1) CADEIA: o que vale é o resultado consolidado. A decisão MAIS RECENTE que tratou o ponto prevalece; o que a instância superior não tocou PERMANECE; reforma que altera só um parâmetro faz os demais serem HERDADOS (marque requerConferencia).
-2) STATUS PELO VERBO DO DISPOSITIVO: só DEFERIDA se o dispositivo deferiu/condenou. "Indefiro", "improcedente", "rejeito", "nego provimento", "indevido" => INDEFERIDA/EXCLUÍDA. Menção não é deferimento. Na dúvida use INDEFINIDO.
-3) CITAÇÃO: para CADA parâmetro relevante preencha "citacao" com o trecho curto e literal que o fixa (máx. ~20 palavras) e "fonte" com a peça/folha/ID onde está (ex.: "Sentença, fl. 412"). Essa citação é o que sustenta a impugnação — sem ela o ponto não pode ser afirmado.
-4) Não presuma base, período, reflexo ou índice omissos. Registre "omisso na decisão" e requerConferencia=true.
-5) CONCISÃO: todo campo de texto é CURTO (máx. 1 frase). Resposta longa é cortada.
+============ RECONCILIAÇÃO DA CADEIA — O NÚCLEO ============
+Rastreie CADA verba peça a peça:
+   Sentença → Acórdão TRT → TST/Embargos → Liquidação/Execução → resultado consolidado
 
-CLASSIFICAÇÃO TÉCNICA ("motorId") — classifique CADA verba (deferida ou não) pela NATUREZA do que foi tratado, não pelas palavras: "heTotais" (horas extras comuns, sobrejornada), "he100" (labor em dia de descanso: feriados, domingos, folgas, em dobro), "heArt71" (qualquer intervalo: intrajornada art.71, interjornada art.66, art.384), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, dano moral, diferenças salariais, rescisórias, seguro-desemprego etc.). Use EXATAMENTE um desses valores.
+- O que se executa é o RESULTADO CONSOLIDADO, não o que a sentença deferiu.
+- A fase que mais altera o valor na prática é a EXECUÇÃO: cálculo homologado, embargos à execução, impugnação de cálculos, contadoria, exclusão de quantum. Uma verba deferida e transitada ainda pode ser esvaziada na liquidação. HAVENDO CÁLCULO HOMOLOGADO, ele é a fonte de MAIOR PESO — registre-o.
+- A decisão MAIS RECENTE que tratou o ponto prevalece. O que a instância superior NÃO tocou PERMANECE. Reforma que altera só um parâmetro faz os demais serem HERDADOS — marque requerConferencia dizendo de qual peça herdou.
+- Em "definidaEm", diga a peça exata onde a verba assumiu a forma final.
 
-INTERVALOS — DISTINÇÃO OBRIGATÓRIA (erro comum e grave): quando motorId="heArt71", preencha "subtipo" com EXATAMENTE um destes:
- - "intrajornada": intervalo para refeição e descanso DENTRO da jornada (1h de almoço) — art. 71 §4º CLT, Súmula 437 TST;
- - "interjornada": descanso mínimo de 11 HORAS ENTRE o fim de uma jornada e o início da seguinte — art. 66 CLT, OJ 355 SDI-1;
- - "art384": intervalo de 15 min da mulher antes da sobrejornada;
- - "indefinido": a decisão não permite distinguir (marque requerConferencia=true).
-NUNCA troque um pelo outro e nunca use "interjornada" como sinônimo de intervalo de almoço. Nas demais verbas, "subtipo" fica null.
+============ STATUS PELO VERBO DO DISPOSITIVO ============
+Só marque DEFERIDA se o dispositivo DEFERIU/CONDENOU/JULGOU PROCEDENTE. "Indefiro", "improcedente", "rejeito", "nego provimento", "não faz jus", "indevido" ⇒ INDEFERIDA/EXCLUÍDA. Menção ao nome da verba NÃO é deferimento. Na dúvida: INDEFINIDO + requerConferencia — jamais DEFERIDA.
+Atenção redobrada em SEGURO-DESEMPREGO/guias CD-SD (costuma ser indeferido; e quando deferido é obrigação de fazer ou valor arbitrado, nunca apuração por horas) e em verbas de nome parecido — "salário extrafolha", "diferenças salariais" e "13º salário" são verbas DISTINTAS: nunca as confunda por compartilharem a palavra "salário".
 
-CAMPOS CRÍTICOS PARA A IMPUGNAÇÃO (capriche):
-- correcaoJuros: transcreva a remissão literal (ADC 58/59, Lei 14.905/2024, "na forma da lei") e o índice implicado por fase (pré-judicial e judicial).
-- limitacaoAoPedido: houve limitação aos valores da inicial? Transcreva.
-- deducoes: a decisão autorizou dedução/abatimento de valores pagos? Transcreva (OJ 415 e afins).
-- jornada: se a decisão FIXA a jornada (dias e horários), transcreva — é o que permite impugnar feriado/sábado/domingo computado indevidamente.
-- honorarios: percentual, base e a cargo de quem (inclusive sucumbência recíproca).
-- rescisao: modalidade reconhecida.
+============ INTERVALOS — ERRO GRAVE E FREQUENTE ============
+Três institutos distintos. Use "subtipo" com o valor exato:
+- "intrajornada" — art. 71, §4º, da CLT: intervalo de 1 (uma) hora para refeição e descanso DENTRO da jornada. Supressão total ou parcial.
+- "interjornada" — art. 66 da CLT: descanso mínimo de 11 (onze) HORAS ENTRE o fim de uma jornada e o início da seguinte, no dia seguinte. Somado às 24h do repouso semanal, perfaz 35 (trinta e cinco) horas nos DSRs.
+- "art384" — 15 minutos da mulher antes da sobrejornada.
+- "indefinido" — a decisão não permite distinguir (marque requerConferencia).
+JAMAIS troque um pelo outro e jamais use "interjornada" como sinônimo de intervalo de almoço. Se a decisão disser apenas "intervalo", use "indefinido".
 
-ECONOMIA (a resposta longa demora e pode ser cortada): devolva SOMENTE os campos do modelo. Nada de cronologia, histórico ou análise de risco. "citacao" no máximo 20 palavras. Nenhum outro campo passa de 1 frase.
+============ CLASSIFICAÇÃO TÉCNICA (motorId) ============
+Classifique CADA verba pela NATUREZA, não pelas palavras. Use exatamente um: "heTotais" (horas extras comuns, sobrejornada), "he100" (labor em dia de descanso: feriados, domingos, folgas, em dobro), "heArt71" (qualquer intervalo — preencha o subtipo), "periculosidade", "insalubridade", "adicionalNoturno", "feriasVencidas", "vr", "outro" (multas, honorários, indenizações, dano moral, diferenças salariais, rescisórias, seguro-desemprego etc.).
+
+============ PARÂMETROS QUE SUSTENTAM A CONFERÊNCIA ============
+Capriche nestes, porque é contra eles que o cálculo será confrontado:
+- correcaoJuros: transcreva a remissão literal (ADC 58/59, Lei 14.905/2024, "na forma da lei") e o índice implicado por fase. Decisão OMISSA em crédito trabalhista → registre a premissa padrão (IPCA-E até o ajuizamento, SELIC a partir daí, sem juros de 1% na fase pré-judicial) e marque pontoControvertido=true, como premissa a confirmar.
+- prescricao: marco declarado e a citação.
+- limitacaoAoPedido: houve limitação aos valores da inicial?
+- deducoes: a decisão autorizou abater valores pagos? Em que critério?
+- honorarios: percentual, base e a cargo de quem, inclusive sucumbência recíproca.
+- jornada: se a decisão FIXA horário, transcreva — é o que permite conferir HE, feriado e intervalo.
+- Por verba: período, base de cálculo, percentual/adicional, divisor, reflexos deferidos, abatimentos.
+
+============ CITAÇÃO ============
+"citacao" é o trecho LITERAL e curto (máx. 20 palavras) que fixa o comando. Sem ela o ponto não pode ser afirmado depois. "fonte" é onde está: "Sentença, fl. 412", "Acórdão TRT, fl. 638".
+
+============ ANTES DE RESPONDER, CONFIRA ============
+- Toda verba tem "fonte" ou "não localizado nos documentos".
+- Nenhum valor foi calculado por você.
+- Cada verba que mudou na cadeia tem "definidaEm" apontando a peça.
+- Nenhuma verba foi marcada DEFERIDA sem verbo de deferimento no dispositivo.
+- Verbas de nome parecido não foram fundidas.
+- Todo intervalo tem subtipo preenchido.
+
+ECONOMIA (resposta longa demora e pode ser cortada): devolva SOMENTE os campos do modelo. Nada de cronologia, histórico ou análise de risco. Nenhum campo passa de 1 frase, salvo a citação.
 
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
 {"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":""},
@@ -345,6 +373,7 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
  "honorariosSucumbenciais":{"percentual":0,"base":"","aCargoDe":"","reciproca":false,"citacao":"","fonte":""},
  "honorariosPericiais":{"valor":0,"aCargoDe":"","fonte":""},
  "contribuicoes":{"previdenciaria":"","fiscal":"","fonte":""},
+ "calculoHomologado":{"existe":false,"valor":null,"fonte":""},
  "responsaveis":[{"nome":"","tipo":"","limite":""}]},
 "verbas":[{"descricao":"","motorId":"heTotais|he100|heArt71|periculosidade|insalubridade|adicionalNoturno|feriasVencidas|vr|outro","subtipo":null,"statusFinal":"DEFERIDA|EXCLUÍDA|INDEFERIDA|INDEFINIDO","valorFixado":null,"definidaEm":{"tipo":"","data":null,"id":""},"periodo":{"inicio":null,"fim":null},"baseCalculo":"","percentual":"","divisor":null,"reflexos":[],"abatimento":"","citacao":"","fonte":"","requerConferencia":false}]}`;
 
@@ -421,7 +450,9 @@ Liste os pontos, SEM texto corrido. Cada ponto exige OBRIGATORIAMENTE:
 Sem os DOIS, o ponto não é divergência — mande para "sugestoes".
 É PROIBIDO listar ponto por suposição ou praxe. Ponto sem lastro derruba a peça: prefira deixar de fora.
 
-ART. 71 × ART. 66: intrajornada (art. 71 §4º) é o intervalo de refeição DENTRO da jornada; interjornada (art. 66) é o descanso de 11h ENTRE jornadas. Nunca troque um pelo outro.
+INTERVALOS — não confunda: INTRAJORNADA (art. 71, §4º) é a 1 (uma) hora de refeição e descanso DENTRO da jornada; INTERJORNADA (art. 66) é o descanso de 11 (onze) horas ENTRE o fim de uma jornada e o início da seguinte, que somado às 24h do repouso semanal perfaz 35 (trinta e cinco) horas nos DSRs. São verbas distintas, com artigos e apuração próprios. Nunca troque uma pela outra.
+
+VERBAS DE NOME PARECIDO: não trate como a mesma verba "salário extrafolha", "13º salário", "diferenças salariais" e "saldo de salário"; nem "multa do art. 477" e "multa do art. 467"; nem periculosidade e insalubridade. Impugnar a verba errada é o pior defeito possível — na dúvida, não impugne.
 
 Varra também o catálogo de teses abaixo e inclua as que tiverem gatilho amarrado a um dado concreto:
 ${cat}
@@ -453,6 +484,13 @@ function promptPareamento(parecer,calc){
 
 Case pela NATUREZA da verba, não pelo nome literal ("Horas extras excedentes da 8ª diária" e "HORAS EXTRAS 50%" são a mesma coisa). Um item de A pode não ter par em B, e vice-versa. Reflexo NUNCA pareia com verba principal.
 
+NUNCA pareie por palavra em comum. São verbas DIFERENTES, mesmo compartilhando termos:
+- "salário extrafolha" × "13º salário" × "diferenças salariais" × "saldo de salário";
+- "multa do art. 477" × "multa do art. 467";
+- adicional de periculosidade × adicional de insalubridade;
+- INTRAJORNADA (1h de refeição dentro da jornada, art. 71 §4º) × INTERJORNADA (11h entre o fim de uma jornada e o início da seguinte, art. 66; 35h somando o DSR) × art. 384.
+Na dúvida, NÃO pareie — deixe em soEmA/soEmB. Par errado gera impugnação de verba errada, que é o pior defeito possível.
+
 LISTA A — verbas da decisão:
 ${D||'(nenhuma)'}
 
@@ -473,6 +511,8 @@ function promptRedacao(ponto,parecer,calc,modelo,md){
   return `Você redige UM ponto ${conf?'de conferência técnica':'de impugnação'} em processo trabalhista. Devolva SOMENTE este ponto.
 
 ${conf?'CONTEXTO: o cálculo é DO PRÓPRIO CALCULISTA, em conferência interna. Linguagem técnica e neutra ("O cálculo apurou X, quando a decisão fixou Y"), apontando o que deve ser CORRIGIDO. NÃO use "Equivocou-se o Autor" nem "Resta impugnado".':'CONTEXTO: o cálculo é DA PARTE CONTRÁRIA. Linguagem forense de impugnação.'}
+
+INTERVALOS — se o ponto tratar de intervalo, use o nome e o artigo corretos: INTRAJORNADA é a 1 (uma) hora de refeição DENTRO da jornada (art. 71, §4º, da CLT); INTERJORNADA é o descanso de 11 (onze) horas ENTRE o fim de uma jornada e o início da seguinte (art. 66 da CLT), que somado ao repouso semanal perfaz 35 (trinta e cinco) horas. Nunca troque um pelo outro no texto.
 
 ESTRUTURA OBRIGATÓRIA, em três blocos de texto corrido (sem bullet, sem markdown):
 1) "abertura" — 1 parágrafo identificando com precisão a rubrica e o critério divergente.
@@ -501,21 +541,53 @@ RESPONDA EXCLUSIVAMENTE COM O JSON:
    deferido com o que o cálculo adverso fez. O que a trava pega,
    pega sempre. A IA fica por conta do resto e da redação.
    ============================================================ */
-const STOP=new Set(['adicional','horas','extras','hora','extra','verba','verbas','valores','valor','reflexos','reflexo','diferencas','diferenças','indenizacao','indenização','sobre','pagamento','pagamentos','trabalho','de','da','do','das','dos','e','em','a','o','por']);
+const STOP=new Set(['horas','extras','hora','extra','sobre','trabalho','de','da','do','das','dos','e','em','a','o','por']);
+/* palavras genéricas demais para casar sozinhas: "salário extrafolha" casava com
+   "13º salário" só por causa de "salario", e virava impugnação de verba errada.
+   Uma palavra fraca só vale acompanhada de outra. */
+const FRACAS=new Set(['salario','salarios','salarial','salariais','multa','multas',
+  'indenizacao','indenizacoes','adicional','adicionais','diferenca','diferencas',
+  'media','medias','verba','verbas','valor','valores','reflexo','reflexos',
+  'pagamento','pagamentos','contribuicao','contribuicoes','integracao','incidencia',
+  'complementacao','principal','trabalhista','trabalhistas','proporcional','proporcionais',
+  'intervalo','intervalos','jornada','jornadas']);
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
-function tokens(s){ return norm(s).split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)); }
-// compara por PALAVRA INTEIRA, não por pedaço de palavra:
-// "diária" (da jornada) casava com "diárias" (de viagem) por substring.
+// número com 3+ dígitos também é token: separa "multa do art. 477" de "art. 467"
+function tokens(s){
+  return norm(s).split(/[^a-z0-9]+/)
+    .filter(w=>(/^\d{3,}$/.test(w) || w.length>=5) && !STOP.has(w));
+}
+// Duas travas contra falso positivo, ambas vindas de erro real:
+// 1) palavra INTEIRA, não pedaço ("diária" da jornada × "diárias" de viagem);
+// 2) palavra genérica não basta sozinha ("salário extrafolha" × "13º salário").
 function casa(a,b){
   const ta=tokens(a), tb=new Set(tokens(b));
-  return ta.some(w=>tb.has(w));
+  const comuns=ta.filter(w=>tb.has(w));
+  if(!comuns.length) return false;
+  if(comuns.some(w=>!FRACAS.has(w))) return true;   // ao menos uma palavra distintiva
+  return comuns.length>=2;                          // ou duas genéricas juntas
 }
 // casa a verba deferida com a rubrica do cálculo: motorId primeiro (robusto),
 // texto como reserva. "outro" é genérico demais para casar sozinho.
-function mesmaVerba(vp,vc){
+// mesmo GRUPO: só a natureza (usado para detectar a troca intra x inter)
+function mesmoGrupo(vp,vc){
   if(!vp||!vc) return false;
   if(vp.motorId&&vc.motorId&&vp.motorId===vc.motorId&&vp.motorId!=='outro') return true;
   return casa(vp.descricao,vc.descricao)||casa(vc.descricao,vp.descricao);
+}
+// mesma VERBA: além da natureza, o subtipo tem que bater.
+// INTRAJORNADA (1h de refeição dentro da jornada, art. 71 §4º) e
+// INTERJORNADA (11h entre o fim de uma jornada e o início da outra, art. 66;
+// 35h quando somada ao repouso semanal) são verbas DIFERENTES e nunca se casam.
+function subtipoConflita(a,b){
+  if(!a||!b) return false;
+  if(a==='indefinido'||b==='indefinido') return false;
+  return a!==b;
+}
+function mesmaVerba(vp,vc){
+  if(!mesmoGrupo(vp,vc)) return false;
+  if(subtipoConflita(vp.subtipo, vc.subtipo)) return false;
+  return true;
 }
 function num(x){ if(x==null) return null; const m=String(x).replace(/\./g,'').replace(',','.').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):null; }
 function ano(s){ const m=String(s||'').match(/(19|20)\d{2}/); return m?parseInt(m[0],10):null; }
@@ -584,7 +656,7 @@ function travas(p,c){
 
   /* 3) intrajornada × interjornada trocadas */
   vDef.filter(v=>v.motorId==='heArt71'&&v.subtipo&&v.subtipo!=='indefinido').forEach(vd=>{
-    const hit=vCalc.find(vc=>mesmaVerba(vd,vc));
+    const hit=vCalc.find(vc=>mesmoGrupo(vd,vc));
     if(!hit||!hit.subtipo||hit.subtipo==='indefinido') return;
     if(hit.subtipo===vd.subtipo) return;
     add({tese:'troca_intra_inter',confianca:'certo',
@@ -593,7 +665,7 @@ function travas(p,c){
       impacto:'Apuração de intervalo de natureza distinta da deferida.',
       disp: vd.subtipo==='intrajornada' ? ['art71p4','sum437','art879p1'] : ['art66','oj355','art879p1'],
       abertura:'Equivocou-se o Autor ao apurar, sob a rubrica "'+hit.descricao+'", o '+(NOME_INTERVALO[hit.subtipo]||'intervalo')+', quando o que se deferiu foi o '+(NOME_INTERVALO[vd.subtipo]||'intervalo')+'.',
-      desenvolvimento:'A decisão deferiu, de forma expressa, o '+(NOME_INTERVALO[vd.subtipo]||'intervalo')+FOLHA(vd.fonte)+(vd.citacao?': "'+vd.citacao+'".':'.')+'\n\nVejamos: são institutos distintos. O intervalo INTRAJORNADA, previsto no art. 71, §4º, da CLT e disciplinado pela Súmula 437 do TST, é o período destinado a repouso e alimentação DENTRO da jornada. Já o intervalo INTERJORNADA, do art. 66 da CLT, é o descanso mínimo de 11 (onze) horas ENTRE o término de uma jornada e o início da seguinte, cuja supressão é remunerada na forma da OJ 355 da SDI-1 do TST. Não se confundem, nem na natureza, nem na base, nem na forma de apuração.\n\nAo apurar instituto diverso do deferido, o cálculo altera o título executivo, em afronta ao art. 879, §1º, da CLT.',
+      desenvolvimento:'A decisão deferiu, de forma expressa, o '+(NOME_INTERVALO[vd.subtipo]||'intervalo')+FOLHA(vd.fonte)+(vd.citacao?': "'+vd.citacao+'".':'.')+'\n\nVejamos: são institutos distintos, com fato gerador e apuração próprios. O intervalo INTRAJORNADA, do art. 71, §4º, da CLT, é o período de 1 (uma) hora destinado a repouso e alimentação DENTRO da jornada, e sua supressão gera o pagamento do período suprimido. Já o intervalo INTERJORNADA, do art. 66 da CLT, é o descanso mínimo de 11 (onze) horas ENTRE o término de uma jornada e o início da seguinte — que se somam às 24 (vinte e quatro) horas do repouso semanal, perfazendo 35 (trinta e cinco) horas —, e sua supressão é remunerada como hora extra na forma da OJ 355 da SDI-1 do TST. Não se confundem nem na natureza, nem na quantidade de horas, nem na base de apuração.\n\nAo apurar instituto diverso do deferido, o cálculo altera o título executivo, em afronta ao art. 879, §1º, da CLT.',
       conclusao:'Impõe-se a retificação da conta, para que a apuração observe estritamente o intervalo efetivamente deferido. Resta impugnado o cálculo obreiro.'});
   });
 
@@ -1576,6 +1648,7 @@ function renderDivergencias(j){
      +'</div>'
      +'<span class="toggle" onclick="abrir('+i+')">'+(d.semTexto?'texto ainda não redigido':'editar texto')+' ▾</span>'
      +(d.evidencia?'<div class="hint" style="margin-top:4px">Evidência no cálculo: <b>'+esc(d.evidencia)+'</b></div>':'')
+     +(d.alertaTermo?'<div class="conf" style="margin-top:6px"><b>Atenção:</b> '+esc(d.alertaTermo)+'</div>':'')
      +'<div class="dbody" id="db'+i+'">'
      +fld('Início — onde está o erro','t_abe'+i,d.abertura,3)
      +fld('Meio — erro do autor + fundamento (decisão, lei, artigo, súmula)','t_des'+i,d.desenvolvimento,10)
@@ -1681,6 +1754,7 @@ async function redigirSelecionados(avisar){
       item.d.abertura=j.abertura||''; item.d.desenvolvimento=j.desenvolvimento||''; item.d.conclusao=j.conclusao||'';
       item.d.dispositivos=j.dispositivos; item.d.dispositivosNaoCatalogados=j.dispositivosNaoCatalogados;
       normalizarDispositivos(item.d);
+      revisarTermos(item.d);
       item.d.semTexto=false;
       marca();
     }catch(e){ erros++; marca(); console.warn('falha ao redigir',item.d.titulo,e); }
@@ -1697,6 +1771,21 @@ async function redigirSelecionados(avisar){
     ? '<div class="err">'+erros+' ponto(s) não puderam ser redigidos. Tente de novo ou escreva à mão.</div>'
     : '<span class="okmsg">✓ '+pendentes.length+' ponto(s) redigido(s).</span>';
   return pendentes.length-erros;
+}
+
+/* trava final: o texto redigido não pode usar o termo trocado.
+   Se o ponto invoca o art. 66 mas o texto fala em intrajornada (ou o contrário),
+   marca o card — é o erro que mais se repetiu no uso real. */
+function revisarTermos(d){
+  const txt=norm([d.abertura,d.desenvolvimento,d.conclusao].join(' '));
+  const disp=arr(d.dispositivos);
+  const ehInter = disp.indexOf('art66')>=0 || disp.indexOf('oj355')>=0 || /interjornada/.test(norm(d.titulo));
+  const ehIntra = disp.indexOf('art71p4')>=0 || disp.indexOf('sum437')>=0 || /intrajornada/.test(norm(d.titulo));
+  const falaInter=/interjornada/.test(txt), falaIntra=/intrajornada/.test(txt);
+  d.alertaTermo='';
+  if(ehInter && falaIntra && !falaInter) d.alertaTermo='o ponto é de INTERJORNADA (art. 66, 11h entre jornadas) mas o texto fala em intrajornada — confira antes de usar';
+  if(ehIntra && falaInter && !falaIntra) d.alertaTermo='o ponto é de INTRAJORNADA (art. 71 §4º, 1h de refeição) mas o texto fala em interjornada — confira antes de usar';
+  return d;
 }
 
 /* modelo de estilo em localStorage */
@@ -1744,47 +1833,38 @@ function baixarTexto(){
   setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
 async function _gerarDocumento(){
-  if(!window.docx) throw new Error('a biblioteca de Word (docx) não carregou — recarregue a página com internet ativa.');
+  if(!window.FazAIDocx) throw new Error('fazai_docx.js não carregou — confira se o arquivo está no servidor.');
   if(!confronto||!parecer) throw new Error('faça as etapas 1 e 2 antes de gerar o documento.');
   // se algum ponto marcado ainda não tem texto, redige antes de montar o Word
   const faltam=arr(confronto.impugnacoes).some((d,i)=>$('ck'+i)&&$('ck'+i).checked&&d.semTexto);
   if(faltam){ $('stDoc').innerHTML='Redigindo os pontos selecionados antes de gerar…'; await redigirSelecionados(false); }
-  const D=window.docx;
-  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType}=D;
-  const NAVY='16213E';
-  const pr=parecer.processo||{}, g=parecer.parametrosGlobais||{};
 
-  const P=(txt,o={})=>new Paragraph({alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:undefined),spacing:{after:o.after==null?120:o.after},children:[new TextRun({text:String(txt==null?'':txt),bold:o.bold,italics:o.ital,color:o.color||'222222',size:o.size||20})]});
-  const H=(txt,lvl)=>new Paragraph({heading:lvl===2?HeadingLevel.HEADING_2:HeadingLevel.HEADING_1,spacing:{before:240,after:120},children:[new TextRun({text:txt,bold:true,color:NAVY,size:lvl===2?24:28})]});
-  const cell=(txt,o={})=>new TableCell({width:{size:o.w||2000,type:WidthType.DXA},shading:o.head?{type:ShadingType.CLEAR,fill:NAVY}:(o.fill?{type:ShadingType.CLEAR,fill:o.fill}:undefined),
-    children:[new Paragraph({children:[new TextRun({text:String(txt==null?'':txt),bold:!!o.head||!!o.bold,color:o.head?'FFFFFF':(o.color||'222222'),size:o.size||18})]})]});
-  const bullet=(txt)=>new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:String(txt),size:19})]});
-
-  const k=[];
+  const NAVY='16213E', CINZA='5A6472';
   const R=ROTULOS[modo]||ROTULOS.impugnacao;
-  k.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:R.doc,bold:true,color:NAVY,size:32})]}));
-  k.push(P(R.sub,{center:true,ital:true,color:'5A6472',size:19,after:220}));
+  const pr=parecer.processo||{}, g=parecer.parametrosGlobais||{};
+  const d=window.FazAIDocx.criar();
+  const paragrafos=(txt,o)=>String(txt||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>d.p(x,o));
+
+  d.titulo(R.doc,{color:NAVY});
+  d.p(R.sub,{italics:true,color:CINZA,size:19,align:'center',after:220});
 
   /* 1. Identificação */
-  k.push(H('1. Identificação',1));
-  const idRows=[
-    ['Processo nº',pr.numero||'—'],
-    ['Reclamante',pr.reclamante||'—'],
-    ['Reclamada(s)',arr(pr.reclamadas).join(', ')||'—'],
-    ['Vara / Tribunal',pr.vara||'—'],
-    ['Objeto','Impugnação ao cálculo apresentado'+(calcAdv&&calcAdv.autorDoCalculo?' por '+calcAdv.autorDoCalculo:'')],
-    ['Valor impugnado',(calcAdv&&calcAdv.totalGeral!=null)?String(calcAdv.totalGeral):'—'],
-    ['Data de atualização do cálculo',(calcAdv&&calcAdv.dataAtualizacao)||'—']
-  ];
-  k.push(new Table({columnWidths:[2900,6100],width:{size:9000,type:WidthType.DXA},
-    rows:idRows.map(r=>new TableRow({children:[cell(r[0],{w:2900,bold:true,fill:'F2F5FA'}),cell(r[1],{w:6100})]}))}));
-  k.push(P('',{after:120}));
+  d.h('1. Identificação',1);
+  d.tabela([
+    ['Processo nº', pr.numero||'—'],
+    ['Reclamante', pr.reclamante||'—'],
+    ['Reclamada(s)', arr(pr.reclamadas).join(', ')||'—'],
+    ['Vara / Tribunal', pr.vara||'—'],
+    ['Objeto', (modo==='conferencia'?'Conferência interna do cálculo':'Impugnação ao cálculo apresentado')+((calcAdv&&calcAdv.autorDoCalculo)?' — '+calcAdv.autorDoCalculo:'')],
+    ['Valor do cálculo', (calcAdv&&calcAdv.totalGeral!=null)?String(calcAdv.totalGeral):'—'],
+    ['Data de atualização', (calcAdv&&calcAdv.dataAtualizacao)||'—']
+  ].map(l=>[{txt:l[0],bold:true,fill:'F2F5FA'},{txt:l[1]}]),[2900,6100]);
 
   /* 2. Parâmetros da condenação */
-  k.push(H('2. Parâmetros da condenação',1));
-  k.push(P('Os parâmetros a seguir decorrem do que foi expressamente deferido e transitado em julgado, sendo vedada, em sede de liquidação, qualquer alteração do julgado.',{just:true,size:19}));
+  d.h('2. Parâmetros da condenação',1);
+  d.p('Os parâmetros a seguir decorrem do que foi expressamente deferido e transitado em julgado, sendo vedada, em sede de liquidação, qualquer alteração do julgado.',{align:'both',size:19});
   const defs=(parecer.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
-  k.push(H('2.1 Verbas deferidas',2));
+  d.h('2.1 Verbas deferidas',2);
   defs.forEach(v=>{
     const det=[];
     if(v.periodo&&(v.periodo.inicio||v.periodo.fim)) det.push('período '+(v.periodo.inicio||'?')+' a '+(v.periodo.fim||'?'));
@@ -1794,97 +1874,90 @@ async function _gerarDocumento(){
     if(arr(v.reflexos).length) det.push('reflexos: '+arr(v.reflexos).join(', '));
     if(v.abatimento) det.push('abatimento: '+v.abatimento);
     if(v.valorFixado) det.push('valor fixado R$ '+v.valorFixado);
-    let linha=(v.descricao||'')+(det.length?' — '+det.join('; '):'');
-    if(v.fonte) linha+=' ('+v.fonte+')';
-    k.push(bullet(linha));
-    if(v.citacao) k.push(new Paragraph({spacing:{after:100},indent:{left:720},children:[new TextRun({text:'"'+v.citacao+'"',italics:true,color:'5A6472',size:17})]}));
+    d.bullet((v.descricao||'')+(det.length?' — '+det.join('; '):'')+(v.fonte?' ('+v.fonte+')':''));
+    if(v.citacao) d.p('“'+v.citacao+'”',{italics:true,color:CINZA,size:17,indent:720,after:100});
   });
   const naoDef=(parecer.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
   if(naoDef.length){
-    k.push(H('2.2 Verbas não deferidas / excluídas',2));
-    naoDef.forEach(v=>k.push(bullet((v.descricao||'')+' — '+(v.statusFinal||'')+(v.fonte?' ('+v.fonte+')':''))));
+    d.h('2.2 Verbas não deferidas / excluídas',2);
+    naoDef.forEach(v=>d.bullet((v.descricao||'')+' — '+(v.statusFinal||'')+(v.fonte?' ('+v.fonte+')':'')));
   }
-  k.push(H('2.3 Correção monetária, juros e demais parâmetros',2));
+  d.h('2.3 Correção monetária, juros e demais parâmetros',2);
   const cj=g.correcaoJuros||{};
   if(cj.transcricaoLiteral||cj.indicePreJudicial||cj.indiceJudicial)
-    k.push(bullet('Correção e juros: '+[cj.transcricaoLiteral,cj.indicePreJudicial?'pré-judicial: '+cj.indicePreJudicial:'',cj.indiceJudicial?'judicial: '+cj.indiceJudicial:'',cj.juros?'juros: '+cj.juros:''].filter(Boolean).join(' — ')+(cj.fonte?' ('+cj.fonte+')':'')));
+    d.bullet('Correção e juros: '+[cj.transcricaoLiteral,cj.indicePreJudicial?'pré-judicial: '+cj.indicePreJudicial:'',cj.indiceJudicial?'judicial: '+cj.indiceJudicial:'',cj.juros?'juros: '+cj.juros:''].filter(Boolean).join(' — ')+(cj.fonte?' ('+cj.fonte+')':''));
   if(g.limitacaoAoPedido&&g.limitacaoAoPedido.houve)
-    k.push(bullet('Limitação aos valores da inicial: '+(g.limitacaoAoPedido.citacao||'deferida')+(g.limitacaoAoPedido.fonte?' ('+g.limitacaoAoPedido.fonte+')':'')));
+    d.bullet('Limitação aos valores da inicial: '+(g.limitacaoAoPedido.citacao||'deferida')+(g.limitacaoAoPedido.fonte?' ('+g.limitacaoAoPedido.fonte+')':''));
   if(g.deducoes&&g.deducoes.autorizada)
-    k.push(bullet('Dedução de valores pagos: '+(g.deducoes.criterio||g.deducoes.citacao||'autorizada')+(g.deducoes.fonte?' ('+g.deducoes.fonte+')':'')));
+    d.bullet('Dedução de valores pagos: '+(g.deducoes.criterio||g.deducoes.citacao||'autorizada')+(g.deducoes.fonte?' ('+g.deducoes.fonte+')':''));
   if(g.honorariosSucumbenciais&&g.honorariosSucumbenciais.percentual)
-    k.push(bullet('Honorários sucumbenciais: '+g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'o valor apurado')+(g.honorariosSucumbenciais.reciproca?' — sucumbência recíproca':'')+(g.honorariosSucumbenciais.fonte?' ('+g.honorariosSucumbenciais.fonte+')':'')));
+    d.bullet('Honorários sucumbenciais: '+g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'o valor apurado')+(g.honorariosSucumbenciais.fonte?' ('+g.honorariosSucumbenciais.fonte+')':''));
   if(g.contribuicoes&&g.contribuicoes.previdenciaria)
-    k.push(bullet('Contribuições previdenciárias: '+g.contribuicoes.previdenciaria));
+    d.bullet('Contribuições previdenciárias: '+g.contribuicoes.previdenciaria);
   const jor=(parecer.dadosContratuais||{}).jornada;
-  if(jor&&jor.descricao) k.push(bullet('Jornada fixada: '+jor.descricao+(jor.fonte?' ('+jor.fonte+')':'')));
+  if(jor&&jor.descricao) d.bullet('Jornada fixada: '+jor.descricao+(jor.fonte?' ('+jor.fonte+')':''));
 
-  /* 3. Impugnação */
-  k.push(H(R.sec,1));
-  if(confronto.sintese) k.push(P(confronto.sintese,{just:true,size:19}));
+  /* 3. Impugnação / divergências */
+  d.h(R.sec,1);
+  if(confronto.sintese) d.p(confronto.sintese,{align:'both',size:19});
   const imps=arr(confronto.impugnacoes);
-  const paragrafos=(txt,o)=>String(txt||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>k.push(P(x,o)));
   let n=0;
-  imps.forEach((d,i)=>{
+  imps.forEach((item,i)=>{
     if(!($('ck'+i)&&$('ck'+i).checked)) return;
     n++;
     const get=id=>{ const el=$(id); return (el&&el.value)?el.value:''; };
-    k.push(H('3.'+n+'. '+(d.titulo||'Ponto '+n),2));
-    paragrafos(get('t_abe'+i)||d.abertura, {just:true,size:19});
-    paragrafos(get('t_des'+i)||d.desenvolvimento, {just:true,size:19});
-    // transcrição literal do dispositivo — texto vem da base, não da IA
-    const ls=leisDe(d.dispositivos), nc=arr(d.naoCatalogados);
+    d.h('3.'+n+'. '+(item.titulo||'Ponto '+n),2);
+    paragrafos(get('t_abe'+i)||item.abertura,{align:'both',size:19});
+    paragrafos(get('t_des'+i)||item.desenvolvimento,{align:'both',size:19});
+    const ls=leisDe(item.dispositivos), nc=arr(item.naoCatalogados);
     if(ls.length){
-      k.push(P('Transcreve-se o dispositivo invocado:',{just:true,size:19,after:60}));
+      d.p('Transcreve-se o dispositivo invocado:',{align:'both',size:19,after:60});
       ls.forEach(x=>{
-        k.push(new Paragraph({spacing:{after:40},indent:{left:720},children:[new TextRun({text:x.ref+':',bold:true,color:NAVY,size:18})]}));
-        k.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,spacing:{after:x.nota?40:140},indent:{left:720},children:[new TextRun({text:'“'+x.txt+'”',italics:true,size:18})]}));
-        if(x.nota) k.push(new Paragraph({spacing:{after:140},indent:{left:720},children:[new TextRun({text:'('+x.nota+')',italics:true,color:'8A5A00',size:16})]}));
+        d.p(x.ref+':',{bold:true,color:NAVY,size:18,indent:720,after:40});
+        d.p('“'+x.txt+'”',{italics:true,size:18,indent:720,align:'both',after:x.nota?40:140});
+        if(x.nota) d.p('('+x.nota+')',{italics:true,color:'8A5A00',size:16,indent:720,after:140});
       });
     }
-    nc.forEach(r=>k.push(P('['+r+' — transcrever]',{ital:true,color:'8A5A00',size:17,after:120})));
-    paragrafos(get('t_con'+i)||d.conclusao, {just:true,bold:true,size:19});
-    const disp=get('t_dis'+i)||d.dispositivo;
-    if(disp) k.push(P('Fundamento legal: '+disp,{ital:true,color:'5A6472',size:17,after:200}));
+    nc.forEach(rf=>d.p('['+rf+' — transcrever]',{italics:true,color:'8A5A00',size:17,after:120}));
+    paragrafos(get('t_con'+i)||item.conclusao,{align:'both',bold:true,size:19});
+    const disp=get('t_dis'+i)||item.dispositivo;
+    if(disp) d.p('Fundamento legal: '+disp,{italics:true,color:CINZA,size:17,after:200});
   });
-  if(!n) k.push(P('Nenhum ponto de impugnação foi selecionado.',{ital:true,color:'8A5A00',size:19}));
+  if(!n) d.p('Nenhum ponto foi selecionado.',{italics:true,color:'8A5A00',size:19});
 
-  /* teses a desenvolver */
   const sugs=arr(confronto.sugestoes).filter((s,i)=>$('sg'+i)&&$('sg'+i).checked);
   if(sugs.length){
-    k.push(H('3.'+(n+1)+'. Pontos a desenvolver (conferência em curso)',2));
-    sugs.forEach(s=>k.push(bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||''))));
+    d.h('3.'+(n+1)+'. Pontos a desenvolver (conferência em curso)',2);
+    sugs.forEach(s=>d.bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||'')));
   }
 
-  /* 3.x conferência de todas as verbas */
+  /* 4. Conferência verba a verba */
   const conf=arr(confronto.conferencia);
   if(conf.length){
-    k.push(H('4. Conferência verba a verba',1));
-    k.push(P('Quadro de conferência de todas as verbas do processo e de todas as rubricas do cálculo apresentado.',{just:true,size:19}));
+    d.h('4. Conferência verba a verba',1);
+    d.p('Quadro de conferência de todas as verbas do processo e de todas as rubricas do cálculo apresentado.',{align:'both',size:19});
     const rotulo={OK:'Confere',DIVERGENTE:'Divergente',NAO_APURADA:'Não apurada',SEM_DEFERIMENTO:'Sem deferimento',CONFERIR:'Conferir'};
     const cor={OK:'EAF5EC',DIVERGENTE:'FBECEC',SEM_DEFERIMENTO:'FBECEC',NAO_APURADA:'FFF0D8',CONFERIR:'FFF0D8'};
-    const rows=[new TableRow({children:[cell('Verba',{head:true,w:2800}),cell('Deferido',{head:true,w:2400}),cell('Apurado',{head:true,w:2400}),cell('Status',{head:true,w:1400})]})];
-    conf.forEach(l=>rows.push(new TableRow({children:[
-      cell(l.verba,{w:2800,bold:true}), cell(l.deferido,{w:2400}), cell(l.apurado,{w:2400}),
-      cell(rotulo[l.status]||l.status||'—',{w:1400,bold:true,fill:cor[l.status]||'FFFFFF'})]})));
-    k.push(new Table({columnWidths:[2800,2400,2400,1400],width:{size:9000,type:WidthType.DXA},rows}));
-    k.push(P('',{after:120}));
+    const linhas=[[{txt:'Verba',bold:true,fill:NAVY,color:'FFFFFF'},{txt:'Deferido',bold:true,fill:NAVY,color:'FFFFFF'},
+                   {txt:'Apurado',bold:true,fill:NAVY,color:'FFFFFF'},{txt:'Status',bold:true,fill:NAVY,color:'FFFFFF'}]];
+    conf.forEach(l=>linhas.push([{txt:l.verba,bold:true},{txt:l.deferido},{txt:l.apurado},
+      {txt:rotulo[l.status]||l.status||'—',bold:true,fill:cor[l.status]||'FFFFFF'}]));
+    d.tabela(linhas,[2800,2400,2400,1400]);
   }
 
   /* 5. Conclusão */
-  k.push(H(conf.length?'5. Conclusão':'4. Conclusão',1));
-  String(confronto.conclusaoGeral||'Pelos fundamentos acima, restam impugnados os cálculos apresentados pela parte contrária, requerendo-se sua retificação nos exatos termos do julgado.').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean).forEach(x=>k.push(P(x,{just:true,size:19})));
-  k.push(P('',{after:200}));
-  k.push(P('Parecer elaborado a partir da leitura das decisões e do cálculo apresentado pela parte contrária. Os pontos assinalados como "conferir" dependem de confirmação nos autos.',{ital:true,color:'8A5A00',size:17}));
-  k.push(P('FazAI Tech · Cálculos Judiciais Trabalhistas · fazai.tech',{center:true,color:'5A6472',size:16}));
+  d.h(conf.length?'5. Conclusão':'4. Conclusão',1);
+  paragrafos(confronto.conclusaoGeral||'Pelos fundamentos acima, requer-se a retificação do cálculo nos exatos termos do julgado.',{align:'both',size:19});
+  d.p('',{after:200});
+  d.p('Documento elaborado a partir da leitura das decisões e do cálculo apresentado. Os pontos assinalados como "conferir" dependem de confirmação nos autos.',{italics:true,color:'8A5A00',size:17});
+  d.p('FazAI Tech · Cálculos Judiciais Trabalhistas · fazai.tech',{align:'center',color:CINZA,size:16});
 
-  const doc=new Document({sections:[{properties:{page:{margin:{top:1000,bottom:1000,left:1000,right:1000}}},children:k}]});
-  const blob=await Packer.toBlob(doc);
+  const blob=await d.blob();
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url;
   a.download=R.arq+String(pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
   a.click(); URL.revokeObjectURL(url);
-  $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s) de impugnação).</span>';
+  $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s)).</span>';
 }
 </script>
 </body>
