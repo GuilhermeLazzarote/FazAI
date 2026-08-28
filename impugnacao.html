@@ -200,7 +200,6 @@ oj394: { ref:'OJ 394, I e II, da SDI-1 do TST', conferido:false,
 window.FazAILeisIndice = Object.keys(window.FazAILeis).map(function(k){
   return k + ' = ' + window.FazAILeis[k].ref;
 });
-
 /* ===== FIM MODULO EMBUTIDO: fazai_leis.js ===== */
 </script>
 <script>
@@ -383,7 +382,6 @@ function criar(){
 
 window.FazAIDocx={criar:criar, zipar:zipar, esc:esc};
 })();
-
 /* ===== FIM MODULO EMBUTIDO: fazai_docx.js ===== */
 </script>
 <script>
@@ -466,6 +464,108 @@ function data(v){
   return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
 }
 function moeda(x){ return x==null?null:Math.round(x*100)/100; }
+
+/* ============================================================
+   FERIADOS — calendario nacional (fixos + moveis pela Pascoa).
+   Estadual e municipal variam por comarca: quando o usuario nao
+   informa, dizemos isso na propria saida em vez de fingir que
+   cobrimos tudo.
+   ============================================================ */
+function pascoa(ano){
+  const a=ano%19, b=Math.floor(ano/100), c=ano%100;
+  const d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+  const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+  const mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1;
+  return new Date(Date.UTC(ano,mes-1,dia));
+}
+function iso(d){ return d.toISOString().slice(0,10); }
+function feriadosNacionais(anoIni,anoFim){
+  const out={};
+  for(var y=anoIni;y<=anoFim;y++){
+    [['01-01','Confraternização Universal'],['04-21','Tiradentes'],['05-01','Dia do Trabalho'],
+     ['09-07','Independência'],['10-12','N. Sra. Aparecida'],['11-02','Finados'],
+     ['11-15','Proclamação da República'],['11-20','Consciência Negra'],['12-25','Natal']
+    ].forEach(function(f){ out[y+'-'+f[0]]=f[1]; });
+    const p=pascoa(y), dia=86400000;
+    out[iso(new Date(+p-48*dia))]='Carnaval';
+    out[iso(new Date(+p-47*dia))]='Carnaval';
+    out[iso(new Date(+p-2*dia))]='Sexta-feira Santa';
+    out[iso(new Date(+p+60*dia))]='Corpus Christi';
+  }
+  return out;
+}
+
+/* ============================================================
+   JORNADA LANCADA — padrao por dia da semana, aderencia e mes a mes.
+   A aderencia responde a pergunta que decide a impugnacao:
+   "o cara lancou o cartao de ponto, ou repetiu o mesmo horario?"
+   ============================================================ */
+const DIA_SEMANA=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+function montarJornadaDetalhada(j, dias){
+  const L=[];
+  dias.forEach(function(d){
+    const ms=T(d,'dataOcorrencia'); if(!ms) return;
+    const dt=new Date(parseInt(ms,10));
+    L.push({
+      iso:iso(dt), dow:dt.getUTCDay(),
+      marca:String(T(d,'frequenciaDiaria')||'').replace(/\s+/g,' ').trim(),
+      ht:n(T(d,'horasTrabalhadas'))||0, he:n(T(d,'horasExtrasDiaria'))||0,
+      hn:n(T(d,'horasNoturnas'))||0, hfer:n(T(d,'horasFeriado'))||0
+    });
+  });
+  L.sort(function(a,b){ return a.iso<b.iso?-1:1; });
+  if(!L.length) return;
+  j.inicio=L[0].iso; j.fim=L[L.length-1].iso;
+  const comLabor=L.filter(function(x){ return x.ht>0; });
+  j.diasComLabor=comLabor.length;
+  j.primeiroDiaComHoras=comLabor.length?comLabor[0].iso:null;
+  j.ultimoDiaComHoras=comLabor.length?comLabor[comLabor.length-1].iso:null;
+
+  /* padrão por dia da semana */
+  const porDow={};
+  comLabor.forEach(function(x){
+    const b=porDow[x.dow]||(porDow[x.dow]={dia:x.dow,nome:DIA_SEMANA[x.dow],total:0,cont:{}});
+    b.total++; b.cont[x.marca]=(b.cont[x.marca]||0)+1;
+  });
+  j.porDiaSemana=Object.keys(porDow).map(function(k){
+    const b=porDow[k];
+    const chaves=Object.keys(b.cont).sort(function(p,q){ return b.cont[q]-b.cont[p]; });
+    return { dia:b.dia, nome:b.nome, diasComLabor:b.total,
+             marcacaoModal:chaves[0]||'', repeticoes:b.cont[chaves[0]]||0,
+             variantes:chaves.length,
+             aderencia:b.total?Math.round((b.cont[chaves[0]]/b.total)*1000)/1000:0 };
+  }).sort(function(a,b){ return a.dia-b.dia; });
+  const somaDias=j.porDiaSemana.reduce(function(a,b){ return a+b.diasComLabor; },0);
+  const somaMod=j.porDiaSemana.reduce(function(a,b){ return a+b.repeticoes; },0);
+  j.repetitividade = somaDias?Math.round((somaMod/somaDias)*1000)/1000:0;
+  j.variantesDistintas = j.porDiaSemana.reduce(function(a,b){ return a+b.variantes; },0);
+  /* britânica: 20+ dias e praticamente sempre o mesmo horário no mesmo dia da semana */
+  j.britanica = comLabor.length>=20 && j.repetitividade>=0.9;
+
+  /* mês a mês */
+  const mm={};
+  L.forEach(function(x){
+    const k=x.iso.slice(0,7);
+    const b=mm[k]||(mm[k]={mes:k,dias:0,diasComLabor:0,horas:0,he:0,hn:0});
+    b.dias++; if(x.ht>0) b.diasComLabor++;
+    b.horas+=x.ht; b.he+=x.he; b.hn+=x.hn;
+  });
+  j.porMes=Object.keys(mm).sort().map(function(k){
+    const b=mm[k];
+    return {mes:k,dias:b.dias,diasComLabor:b.diasComLabor,
+      horas:Math.round(b.horas*100)/100, he:Math.round(b.he*100)/100, hn:Math.round(b.hn*100)/100};
+  });
+
+  /* feriados nacionais com jornada lançada */
+  const y1=parseInt(j.inicio.slice(0,4),10), y2=parseInt(j.fim.slice(0,4),10);
+  const FER=feriadosNacionais(y1,y2);
+  j.feriadosComJornada=comLabor.filter(function(x){ return FER[x.iso]; })
+    .map(function(x){ return {data:x.iso, nome:FER[x.iso], dia:DIA_SEMANA[x.dow], horas:x.ht, he:x.he}; });
+  j.heEmFeriado=Math.round(j.feriadosComJornada.reduce(function(a,b){ return a+b.he; },0)*100)/100;
+  j.observacaoFeriados='calendário nacional (fixos + móveis). Feriados estaduais e municipais não entram nesta conferência.';
+}
+
 
 /* ---------- classificação da verba ---------- */
 const CARAC={DECIMO_TERCEIRO_SALARIO:'outro',FERIAS:'outro',AVISO_PREVIO:'outro',SALDO_SALARIO:'outro'};
@@ -579,8 +679,15 @@ function parse(xmlText){
     const carac=T(v,'caracteristica');
     const ocs=Array.from(v.querySelectorAll(':scope > ocorrencias > List > OcorrenciaDeVerba'));
     let qtd=0, dev=0, pago=0, div=null, mult=null, base=null, ini=null, fim=null;
+    const mensal=[];   /* mes a mes: e o que permite cruzar com o cartao de ponto */
     ocs.forEach(o=>{
       if(T(o,'ativo')==='false') return;
+      const dIni=T(o,'dataInicial');
+      if(dIni) mensal.push({
+        mes:new Date(parseInt(dIni,10)).toISOString().slice(0,7),
+        quantidade:Math.round((n(T(o,'quantidade'))||0)*10000)/10000,
+        devido:moeda(n(T(o,'devido'))||0), pago:moeda(n(T(o,'pago'))||0)
+      });
       qtd+=n(T(o,'quantidade'))||0;
       dev+=n(T(o,'devido'))||0;
       pago+=n(T(o,'pago'))||0;
@@ -601,7 +708,7 @@ function parse(xmlText){
       baseCalculo:base!=null?('R$ '+moeda(base)):null,
       percentual:mult!=null?(mult>=2?'100%':(mult>1?Math.round((mult-1)*100)+'%':null)):null,
       valorPrincipal:moeda(dev), valorPago:moeda(pago),
-      ocorrencias:ocs.length,
+      ocorrencias:ocs.length, mensal:mensal,
       incidenciaFGTS:T(v,'incidenciaFGTS')==='true',
       incidenciaINSS:T(v,'incidenciaINSS')==='true',
       trecho:'PJe-Calc: '+nome+(div?' · divisor '+div:'')+(mult?' · mult. '+mult:'')+(qtd?' · '+Math.round(qtd*100)/100+' un.':'')
@@ -639,7 +746,13 @@ function parse(xmlText){
   const pgs=Array.from(raiz.querySelectorAll('pagamentos > Set > *'));
   pgs.forEach(p=>{ const v=n(T(p,'valor')); if(v) deducoes.push({descricao:T(p,'descricao')||'pagamento',valor:moeda(v)}); });
 
-  /* -------- cartão de ponto -------- */
+  /* -------- cartão de ponto --------
+     Aqui não basta somar. O que decide uma impugnação é COMO a jornada
+     foi lançada: se bate com o horário fixado na decisão, e se — quando
+     a apuração deveria seguir o cartão de ponto — o lançamento é
+     britânico (o mesmo horário todo santo dia), sinal de que o cartão
+     não foi seguido. Por isso guardamos o padrão por dia da semana,
+     a aderência a esse padrão e o mês a mês. */
   const dias=Array.from(raiz.querySelectorAll('apuracoesDiariasCartaoDePonto > Set > ApuracaoDiariaCartao'));
   const jornada={ dias:dias.length, resumo:null };
   if(dias.length){
@@ -653,6 +766,7 @@ function parse(xmlText){
       horasDomingo:Math.round(soma('horasDomingo')*100)/100,
       horasFeriado:Math.round(soma('horasFeriado')*100)/100
     };
+    montarJornadaDetalhada(jornada, dias);
   }
 
   /* -------- férias -------- */
@@ -843,7 +957,6 @@ window.FazAIPJC={
   crc32, paraLatin1, montarZip, serializar, aplicarPatch, editarTexto, trocarTexto, dosDataHora
 };
 })();
-
 /* ===== FIM MODULO EMBUTIDO: fazai_pjc.js ===== */
 </script>
 <style>
@@ -1094,6 +1207,8 @@ const CATALOGO=[
  {id:'he_verba_indenizatoria',d:["sum264"],t:'Verba indenizatória na base da HE (auxílio-condutor e afins)',g:'verba de natureza indenizatória incluída na base de cálculo da HE',f:'natureza indenizatória não integra a base',c:'provavel'},
  {id:'sumula340',d:["sum340","oj397"],t:'Súmula 340 TST / OJ 397 — comissionista misto',g:'HE sobre parte variável com divisor fixo (180/220) em vez de divisor variável, ou hora+adicional onde só cabe o adicional',f:'Súmula 340 TST e OJ 397 SDI-1',c:'certo'},
  {id:'he_quantidade',d:["sum338","art818"],t:'Quantidade de horas extras sem lastro probatório',g:'quantidade de HE sem cartão de ponto juntado / valores arbitrados aleatoriamente',f:'ônus da prova; Súmula 338 TST',c:'provavel'},
+ {id:'jornada_divergente',d:["art879p1","sum338"],t:'Jornada lançada no cálculo diverge da fixada na decisão',g:'o horário lançado no cartão de ponto do cálculo não corresponde ao horário fixado na sentença',f:'coisa julgada — art. 879, §1º, da CLT',c:'certo'},
+ {id:'cp_nao_seguido',d:["sum338","art879p1"],t:'Apuração deveria seguir os cartões de ponto, mas repete jornada fixa',g:'a decisão mandou apurar pelos registros de horário e o cálculo lança o mesmo horário todos os dias (jornada britânica)',f:'Súmula 338 TST; art. 879, §1º, da CLT',c:'certo'},
  {id:'he_feriados',d:["sum146","art879p1"],t:'Feriados/sábados/domingos computados fora da jornada fixada',g:'HE apurada em feriado, sábado ou domingo quando a jornada deferida é seg-sex',f:'coisa julgada — jornada fixada na decisão',c:'certo'},
  {id:'he_art71',d:["art71p4","sum437"],t:'Intervalo INTRAJORNADA (art. 71 §4º) apurado em divergência',g:'intervalo de refeição e descanso DENTRO da jornada apurado de forma diversa do deferido (hora cheia x só adicional; período)',f:'art. 71 §4º CLT; Súmula 437, I e III, TST',c:'provavel'},
  {id:'he_art66',d:["art66","oj355"],t:'INTERJORNADA (art. 66) — descanso de 11h entre jornadas',g:'apuração do intervalo ENTRE jornadas divergente do deferido, ou apurada sem deferimento',f:'art. 66 CLT; OJ 355 SDI-1 TST',c:'provavel'},
@@ -1183,7 +1298,10 @@ Capriche nestes, porque é contra eles que o cálculo será confrontado:
 - limitacaoAoPedido: houve limitação aos valores da inicial?
 - deducoes: a decisão autorizou abater valores pagos? Em que critério?
 - honorarios: percentual, base e a cargo de quem, inclusive sucumbência recíproca.
-- jornada: se a decisão FIXA horário, transcreva — é o que permite conferir HE, feriado e intervalo.
+- jornada: ESTE CAMPO DECIDE A IMPUGNAÇÃO DAS HORAS EXTRAS. Duas coisas diferentes:
+  (a) a decisão FIXOU horário ("das 8h às 18h, de segunda a sexta")? Então preencha "dias" com uma linha por horário, usando os nomes "segunda","terça","quarta","quinta","sexta","sábado","domingo", e ponha baseApuracao="jornada fixada".
+  (b) a decisão mandou apurar PELOS CARTÕES DE PONTO / registros de horário juntados? Então baseApuracao="cartao de ponto" e NÃO invente horário — deixe "dias" vazio.
+  Se a decisão não define nem uma coisa nem outra, baseApuracao="não definida". Transcreva sempre o trecho em "citacao".
 - Por verba: período, base de cálculo, percentual/adicional, divisor, reflexos deferidos, abatimentos.
 
 ============ CITAÇÃO ============
@@ -1196,12 +1314,13 @@ Capriche nestes, porque é contra eles que o cálculo será confrontado:
 - Nenhuma verba foi marcada DEFERIDA sem verbo de deferimento no dispositivo.
 - Verbas de nome parecido não foram fundidas.
 - Todo intervalo tem subtipo preenchido.
+- A jornada tem baseApuracao preenchida; se foi fixada, os horários estão em "dias".
 
 ECONOMIA (resposta longa demora e pode ser cortada): devolva SOMENTE os campos do modelo. Nada de cronologia, histórico ou análise de risco. Nenhum campo passa de 1 frase, salvo a citação.
 
 RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem markdown, sem explicação.
 {"processo":{"numero":"","reclamante":"","reclamadas":[],"vara":""},
-"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"jornada":{"tipo":"fixa|variavel|nao_consta","descricao":"","citacao":"","fonte":""}},
+"dadosContratuais":{"dataAjuizamento":null,"dataAdmissao":null,"dataDemissao":null,"tipoRescisao":"","funcao":"","salario":null,"jornada":{"tipo":"fixa|variavel|nao_consta","baseApuracao":"jornada fixada|cartao de ponto|não definida","descricao":"","dias":[{"diasSemana":[],"entrada":"","saida":"","intervalo":""}],"citacao":"","fonte":""}},
 "parametrosGlobais":{
  "prescricao":{"marco":null,"citacao":"","fonte":"","requerConferencia":false},
  "limitacaoAoPedido":{"houve":false,"citacao":"","fonte":""},
@@ -1389,6 +1508,21 @@ const FRACAS=new Set(['salario','salarios','salarial','salariais','multa','multa
   'complementacao','principal','trabalhista','trabalhistas','proporcional','proporcionais',
   'intervalo','intervalos','jornada','jornadas']);
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+/* --- jornada: nomes de dia, horário normalizado e janela do dia --- */
+const DIA_IDX={domingo:0,segunda:1,'segunda-feira':1,terca:2,'terca-feira':2,quarta:3,'quarta-feira':3,
+  quinta:4,'quinta-feira':4,sexta:5,'sexta-feira':5,sabado:6,'sabado-feira':6};
+function hhmm(v){
+  const m=/(\d{1,2})\s*[:h]\s*(\d{2})?/.exec(String(v||''));
+  if(!m) return '';
+  return ('0'+m[1]).slice(-2)+':'+(m[2]||'00');
+}
+/* "06:30-12:00 13:00-18:30" -> primeira entrada e última saída */
+function janela(marca){
+  const hs=String(marca||'').match(/\d{1,2}:\d{2}/g)||[];
+  if(!hs.length) return {entrada:'',saida:'',marcacoes:0};
+  return {entrada:hhmm(hs[0]), saida:hhmm(hs[hs.length-1]), marcacoes:hs.length};
+}
 // número com 3+ dígitos também é token: separa "multa do art. 477" de "art. 467"
 function tokens(s){
   return norm(s).split(/[^a-z0-9]+/)
@@ -1454,6 +1588,68 @@ function bloco(o){
     confianca:o.confianca, impacto:o.impacto||''
   };
 }
+/* ============================================================
+   ABATIMENTO — o que se deduz e o que NÃO se deduz.
+   INSS e IRRF são descontos legais sobre o crédito, não são
+   pagamento a idêntico título: não podem ser lidos como dedução.
+   E a ausência de valores pagos NÃO é, por si, impugnação — é
+   CONFERÊNCIA: só os recibos dos autos dizem se houve pagamento.
+   ============================================================ */
+const NAO_E_DEDUCAO=/\binss\b|previdenc|\birrf\b|\birpf\b|imposto de renda|imposto sobre|fiscal|custas|honorari|pensao aliment|fgts a recolher|contribui[cç]/;
+function deducoesReais(lista){
+  return arr(lista).filter(d=>{
+    if(!d) return false;
+    if((num(d.valor)||0)===0) return false;
+    return !NAO_E_DEDUCAO.test(norm(d.descricao||''));
+  });
+}
+/* o que cada natureza exige abater, quando houver pagamento nos autos */
+const ABATE_POR_MOTOR={
+  heTotais:'horas extras já pagas no período, sob qualquer rubrica (extras, extras noturnas, adicional de horas extras, banco de horas quitado)',
+  he100:'labor em feriado/domingo/folga já pago, inclusive em dobro',
+  heArt71:'intervalos já pagos sob a mesma rubrica',
+  adicionalNoturno:'adicional noturno já pago nos recibos',
+  periculosidade:'periculosidade já paga e, no mesmo período, o adicional de insalubridade quitado — os adicionais não são cumuláveis (art. 193, §2º, da CLT)',
+  insalubridade:'adicional de insalubridade já pago no período',
+  vr:'vale-refeição/auxílio-alimentação já fornecido ou pago',
+  feriasVencidas:'férias já quitadas no TRCT ou em recibo',
+  outro:'valores pagos a idêntico título'
+};
+const ABATE_POR_NOME=[
+  {re:/vale.?transporte|\bvt\b/, txt:'vale-transporte já fornecido ou pago'},
+  {re:/di[aá]ria/,               txt:'diárias já pagas'},
+  {re:/vale.?refei|alimenta/,    txt:'vale-refeição/auxílio-alimentação já pago'},
+  {re:/comiss/,                  txt:'comissões já pagas'},
+  {re:/pr[eê]mio|gratifica/,     txt:'prêmios e gratificações já pagos'}
+];
+function exigemAbatimento(verbas){
+  const out=[], vistos={};
+  arr(verbas).forEach(v=>{
+    if(!v || v.ehReflexo) return;
+    const nm=norm(v.descricao||'');
+    let txt=null;
+    for(let i=0;i<ABATE_POR_NOME.length;i++) if(ABATE_POR_NOME[i].re.test(nm)){ txt=ABATE_POR_NOME[i].txt; break; }
+    if(!txt) txt=ABATE_POR_MOTOR[v.motorId];
+    if(!txt) return;
+    const k=(v.descricao||'')+'|'+txt;
+    if(vistos[k]) return; vistos[k]=1;
+    out.push({verba:v.descricao||'(sem nome)', abater:txt});
+  });
+  return out;
+}
+function textoConferenciaAbatimento(g, lista, evid){
+  const itens=lista.map(x=>'• '+x.verba+' — abater: '+x.abater).join('\n');
+  return {
+    titulo:'Abatimento dos valores pagos — conferência obrigatória nos recibos',
+    abertura:'A decisão autorizou a dedução dos valores comprovadamente pagos a idêntico título, e o cálculo apresentado não registra abatimento algum. O ponto exige conferência nos recibos e no TRCT antes de ser impugnado.',
+    desenvolvimento:'A decisão autorizou expressamente a dedução'+FOLHA((g.deducoes||{}).fonte)+((g.deducoes||{}).criterio?', nos seguintes termos: "'+g.deducoes.criterio+'".':'.')
+      +'\n\nVejamos: '+evid+'. A Orientação Jurisprudencial 415 da SDI-1 do TST determina que a dedução se opera de forma GLOBAL por título, e não mês a mês.'
+      +'\n\nVerbas apuradas que exigem confronto com os recibos:\n'+itens
+      +'\n\nATENÇÃO: a ausência de lançamento não prova, por si, que nada foi pago — nem o contrário. Localizado o pagamento nos autos, este ponto vira impugnação por enriquecimento sem causa (art. 884 do Código Civil); não localizado, deve ser descartado.',
+    conclusao:'Confira nos recibos e no TRCT os pagamentos sob cada uma das rubricas acima. Confirmado o pagamento sem o correspondente abatimento, requer-se a retificação da conta para a dedução global por título.'
+  };
+}
+
 const NOME_INTERVALO={intrajornada:'intervalo intrajornada (art. 71, §4º, da CLT)',interjornada:'intervalo interjornada (art. 66 da CLT)',art384:'intervalo do art. 384 da CLT',indefinido:'intervalo'};
 
 function travas(p,c){
@@ -1532,16 +1728,21 @@ function travas(p,c){
       conclusao:'Impõe-se a retificação da conta para excluir os juros de mora cumulados à SELIC no período judicial. Resta impugnado o cálculo obreiro.'});
 
   /* 6) dedução autorizada e não realizada */
-  const ded=arr(c.deducoes).filter(d=>d&&(num(d.valor)||0)!==0);
-  if(g.deducoes&&g.deducoes.autorizada&&!ded.length)
-    add({tese:'abatimento_pagos',confianca:'certo',
-      titulo:'Ausência de dedução dos valores comprovadamente pagos',
-      citacao:(g.deducoes||{}).citacao||'', evidencia:'nenhuma linha de dedução no demonstrativo',
-      impacto:'Enriquecimento sem causa por ausência de abatimento.',
+  const ded=deducoesReais(c.deducoes);
+  const soDescontoLegal=arr(c.deducoes).length>ded.length;
+  if(g.deducoes&&g.deducoes.autorizada&&!ded.length){
+    const t=textoConferenciaAbatimento(g, exigemAbatimento(arr(c.verbas).length?c.verbas:vDef),
+      soDescontoLegal
+        ? 'o demonstrativo traz apenas descontos legais (INSS/IRRF), que não são pagamento a idêntico título e não servem de abatimento'
+        : 'o demonstrativo não contém uma única linha de dedução ou abatimento');
+    add({tese:'abatimento_pagos',confianca:'conferir',
+      titulo:t.titulo,
+      citacao:(g.deducoes||{}).citacao||'',
+      evidencia:soDescontoLegal?'somente descontos legais lançados (INSS/IRRF)':'nenhuma linha de dedução no demonstrativo',
+      impacto:'Se houver pagamento nos autos, todo o valor pago está sendo cobrado em duplicidade.',
       disp:['oj415','cc884'],
-      abertura:'Equivocou-se o Autor ao apurar as verbas deferidas pelo valor integral, sem proceder a qualquer dedução dos valores já quitados sob o mesmo título.',
-      desenvolvimento:'A decisão autorizou expressamente a dedução dos valores pagos'+FOLHA((g.deducoes||{}).fonte)+((g.deducoes||{}).criterio?', nos seguintes termos: "'+g.deducoes.criterio+'".':'.')+'\n\nVejamos: o demonstrativo apresentado não contém uma única linha de dedução ou abatimento. A Orientação Jurisprudencial 415 da SDI-1 do TST estabelece que a dedução se opera de forma global por título, e não mês a mês, sendo devida sempre que comprovado o pagamento sob a mesma rubrica.\n\nApurar a verba pelo valor cheio, ignorando o que já foi pago, importa enriquecimento sem causa, vedado pelo art. 884 do Código Civil, e contraria comando expresso do título executivo.',
-      conclusao:'Requer-se a retificação da conta para que sejam deduzidos todos os valores comprovadamente quitados sob o mesmo título. Restam impugnados os cálculos apresentados.'});
+      abertura:t.abertura, desenvolvimento:t.desenvolvimento, conclusao:t.conclusao});
+  }
 
   /* 7) divisor divergente */
   vDef.forEach(vd=>{
@@ -1687,15 +1888,92 @@ function travasPjc(p,c){
     });
   }
 
+  /* 6) JORNADA — o ponto que decide a impugnação de horas extras.
+     Duas perguntas, nesta ordem:
+     (a) o horário lançado bate com o horário FIXADO na decisão?
+     (b) se a apuração deveria seguir os CARTÕES DE PONTO, o cara
+         seguiu — ou repetiu o mesmo horário todo dia (britânica)?
+     Só o .PJC permite responder isso, porque traz o cartão dia a dia. */
+  const jc=c.jornada||{};
+  const jd=((p.dadosContratuais||{}).jornada)||{};
+  const baseAp=norm(jd.baseApuracao||'');
+  const diasDef=arr(jd.dias).filter(x=>x&&(x.entrada||x.saida));
+  if(arr(jc.porDiaSemana).length){
+
+    /* (a) decisão FIXOU horário — confronto dia da semana a dia da semana */
+    if(diasDef.length){
+      const alvo={};
+      diasDef.forEach(l=>{
+        arr(l.diasSemana).forEach(nm=>{
+          const i=DIA_IDX[norm(nm)]; if(i==null) return;
+          alvo[i]={entrada:hhmm(l.entrada), saida:hhmm(l.saida), intervalo:l.intervalo||''};
+        });
+      });
+      const dif=[];
+      arr(jc.porDiaSemana).forEach(d=>{
+        const a=alvo[d.dia]; if(!a) return;
+        const jan=janela(d.marcacaoModal);
+        if(!jan.entrada) return;
+        const problemas=[];
+        if(a.entrada && jan.entrada!==a.entrada) problemas.push('entrada '+jan.entrada+' (deferida '+a.entrada+')');
+        if(a.saida   && jan.saida  !==a.saida  ) problemas.push('saída '+jan.saida+' (deferida '+a.saida+')');
+        if(problemas.length) dif.push(d.nome+': '+problemas.join('; '));
+      });
+      /* dia da semana lançado que a decisão não previu */
+      arr(jc.porDiaSemana).forEach(d=>{
+        if(alvo[d.dia]==null && d.diasComLabor>0)
+          dif.push(d.nome+': '+d.diasComLabor+' dia(s) com jornada lançada, sem horário fixado na decisão para esse dia');
+      });
+      if(dif.length)
+        add({tese:'jornada_divergente',confianca:'certo',disp:['art879p1','sum338'],
+          titulo:'Jornada lançada no cálculo diverge da fixada na decisão',
+          citacao:jd.citacao||jd.descricao||'', evidencia:dif.join(' · '),
+          impacto:'Toda a quantidade de horas extras é alterada.',
+          abertura:'Equivocou-se o Autor ao lançar, no cartão de ponto do cálculo, jornada diversa da que a decisão fixou.',
+          desenvolvimento:'A decisão fixou a jornada'+FOLHA(jd.fonte)+(jd.citacao?': "'+jd.citacao+'".':'.')
+            +'\n\nVejamos: a apuração diária que instrui o cálculo registra '+dif.join('; ')+'.'
+            +'\n\nA jornada fixada na sentença é o próprio fato gerador das horas extras: alterá-la em liquidação, ainda que por minutos diários, modifica a quantidade de horas de todo o período e, por consequência, o principal e todos os reflexos. É alteração do título executivo, vedada pelo art. 879, §1º, da CLT.',
+          conclusao:'Impõe-se a retificação do cartão de ponto do cálculo para que reproduza exatamente a jornada fixada na decisão. Resta impugnado o cálculo obreiro.'});
+    }
+
+    /* (b) apuração que deveria seguir o cartão de ponto e veio britânica */
+    else if(/cartao|cartao de ponto|registro|ponto|controle de jornada/.test(baseAp) && jc.britanica){
+      const amostra=arr(jc.porDiaSemana).map(d=>d.nome+' '+d.marcacaoModal+' ('+d.diasComLabor+' dias)').join(' · ');
+      add({tese:'cp_nao_seguido',confianca:'certo',disp:['sum338','art879p1'],
+        titulo:'Jornada britânica — a apuração deveria seguir os cartões de ponto',
+        citacao:jd.citacao||'', evidencia:'aderência de '+Math.round(jc.repetitividade*100)+'% ao mesmo horário, em '+jc.diasComLabor+' dias com labor · '+amostra,
+        impacto:'A quantidade de horas extras não reflete os registros de horário dos autos.',
+        abertura:'Equivocou-se o Autor ao apurar as horas extras por jornada uniforme, quando a decisão determinou a apuração pelos cartões de ponto juntados aos autos.',
+        desenvolvimento:'A decisão determinou que a apuração observasse os registros de horário'+FOLHA(jd.fonte)+(jd.citacao?': "'+jd.citacao+'".':'.')
+          +'\n\nVejamos: a apuração diária do próprio cálculo repete o MESMO horário em '+Math.round(jc.repetitividade*100)+'% dos '+jc.diasComLabor+' dias com labor — '+amostra+'. Jornada real não se comporta assim: cartão de ponto tem atraso, hora extra pontual, saída antecipada, falta, compensação. Registro idêntico dia após dia é jornada arbitrada, não jornada apurada.'
+          +'\n\nA chamada "jornada britânica" é justamente o que a Súmula 338 do TST e a jurisprudência repelem como prova de horário, e a apuração por horário uniforme, onde o título mandou seguir o cartão, altera o critério fixado na decisão (art. 879, §1º, da CLT).',
+        conclusao:'Requer-se a retificação da conta, com a apuração dia a dia dos cartões de ponto juntados aos autos. Resta impugnado o cálculo obreiro.'});
+    }
+  }
+
+  /* 7) feriados com jornada lançada — ponto secundário, entra como conferência */
+  if(arr(jc.feriadosComJornada).length){
+    const fs=jc.feriadosComJornada;
+    const lista=fs.map(f=>f.data+' ('+f.nome+', '+f.dia+') — '+f.horas+'h, HE '+f.he+'h').join(' · ');
+    add({tese:'he_feriados',confianca:'conferir',disp:['sum146','art879p1'],
+      titulo:'Feriados nacionais com jornada lançada no cartão — conferir',
+      citacao:jd.citacao||'', evidencia:fs.length+' feriado(s), '+jc.heEmFeriado+'h de hora extra',
+      impacto:'Até '+jc.heEmFeriado+' horas extras apuradas em dias de feriado.',
+      abertura:'O cartão de ponto do cálculo registra jornada integral em '+fs.length+' feriado(s) nacional(is).',
+      desenvolvimento:'Vejamos: '+lista+'.\n\nO lançamento de jornada em feriado só é devido se houve labor efetivo no dia e se a decisão o deferiu. Não havendo deferimento de trabalho em feriado, as horas desses dias não podem compor a apuração.\n\nRessalva: esta conferência usa o '+(jc.observacaoFeriados||'calendário nacional')+' — feriados estaduais e municipais precisam ser conferidos à parte, assim como eventual compensação ou ponto facultativo.',
+      conclusao:'Ponto a conferir nos autos; confirmado o não deferimento de labor em feriado, requer-se a exclusão desses dias da apuração.'});
+  }
+
   /* 5) valores pagos não deduzidos, com dedução autorizada */
-  if((g.deducoes||{}).autorizada && !(c.totalPago>0))
-    add({tese:'abatimento_pagos',confianca:'certo',disp:['oj415','cc884'],
-      titulo:'Nenhum valor pago lançado para dedução',
-      citacao:(g.deducoes||{}).citacao||'', evidencia:'total pago no arquivo: R$ 0,00',
-      impacto:'Ausência integral de abatimento.',
-      abertura:'O cálculo não registra qualquer valor pago para dedução, embora a decisão a tenha autorizado.',
-      desenvolvimento:'A decisão autorizou expressamente a dedução dos valores pagos'+FOLHA((g.deducoes||{}).fonte)+'.\n\nVejamos: no arquivo do PJe-Calc a soma dos valores lançados como pagos é zero, em todas as verbas.',
-      conclusao:'Devem ser lançados os valores comprovadamente quitados sob o mesmo título.'});
+  if((g.deducoes||{}).autorizada && !(c.totalPago>0)){
+    const t=textoConferenciaAbatimento(g, exigemAbatimento(c.verbas),
+      'no arquivo do PJe-Calc a soma dos valores lançados na aba de valores pagos é R$ 0,00, em todas as verbas');
+    add({tese:'abatimento_pagos',confianca:'conferir',disp:['oj415','cc884'],
+      titulo:t.titulo,
+      citacao:(g.deducoes||{}).citacao||'', evidencia:'total pago lançado no arquivo: R$ 0,00',
+      impacto:'Se houver pagamento nos autos, todo o valor pago está sendo cobrado em duplicidade.',
+      abertura:t.abertura, desenvolvimento:t.desenvolvimento, conclusao:t.conclusao});
+  }
 
   return out;
 }
@@ -2166,6 +2444,54 @@ $('fileDec').onchange=async e=>{
   }
 };
 
+/* ============================================================
+   VARREDURA DO TEXTO BRUTO — a rede de segurança da Etapa 1.
+   A IA lê e resume; esta função NÃO lê nada, só procura palavra.
+   Se o parâmetro está escrito no PDF e não apareceu no parecer,
+   alguém tem de ser avisado. Custo zero de token, e foi
+   exatamente esta classe de falha que deixou passar a limitação
+   aos valores da inicial (que estava no acórdão) num caso real.
+   ============================================================ */
+const SENTINELAS=[
+ {id:'limitacao',
+  re:/limita(c|ç)[ãa]o aos valores|limitad[oa]s? aos valores|valores atribu[íi]dos aos pedidos|valores? da (peti[çc][ãa]o )?inicial|limite dos valores|adstri(c|ç)[ãa]o aos valores/i,
+  ok:p=>!!((((p||{}).parametrosGlobais||{}).limitacaoAoPedido||{}).houve),
+  falta:'o texto fala em LIMITAÇÃO AOS VALORES DA INICIAL e o parecer não registrou limitação. Sem isso a conta não tem teto por pedido.'},
+ {id:'embargos',
+  re:/embargos de declara[çc][ãa]o|acolho os embargos|em sede de embargos/i,
+  ok:p=>/embargos|\bed\b/i.test(JSON.stringify(p||{})),
+  falta:'há EMBARGOS DE DECLARAÇÃO no texto e nenhuma verba/parâmetro aponta para eles. ED costuma corrigir base, índice ou período — confira o que mudou.'},
+ {id:'acordao',
+  re:/ac[óo]rd[ãa]o|recurso ordin[áa]rio|dou provimento|d[áa]-se provimento|provimento parcial|ac[óo]rd[ãa]m/i,
+  ok:p=>/ac[óo]rd|trt|recurso/i.test(JSON.stringify(p||{})),
+  falta:'o texto tem ACÓRDÃO/recurso e o parecer só cita a sentença. O que se executa é o resultado consolidado, não o que a sentença deferiu.'},
+ {id:'cartao',
+  re:/cart[õo]es de ponto|controles? de (ponto|jornada)|registros? de hor[áa]rio|folhas? de ponto/i,
+  ok:p=>!!norm(((((p||{}).dadosContratuais||{}).jornada)||{}).baseApuracao),
+  falta:'o texto menciona CARTÕES DE PONTO e o parecer não diz se a apuração segue o cartão ou a jornada fixada. É o que decide toda a conta de horas extras.'},
+ {id:'prescricao',
+  re:/prescri(c|ç)[ãa]o (quinquenal|bienal)|pronuncio a prescri|prescri(c|ç)[ãa]o dos cr[ée]ditos/i,
+  ok:p=>!!((((p||{}).parametrosGlobais||{}).prescricao||{}).marco),
+  falta:'o texto pronuncia PRESCRIÇÃO e o parecer não trouxe o marco. Sem marco não dá para conferir o período apurado.'},
+ {id:'deducao',
+  re:/dedu(c|ç)[ãa]o dos valores|compensa(c|ç)[ãa]o|abatimento|id[êe]ntico t[íi]tulo/i,
+  ok:p=>!!((((p||{}).parametrosGlobais||{}).deducoes||{}).autorizada),
+  falta:'o texto autoriza DEDUÇÃO/abatimento e o parecer não registrou. Sem isso a conta sai cheia.'}
+];
+function varrerDecisaoBruta(txt, p){
+  const out=[];
+  if(!txt || txt.length<200) return out;
+  SENTINELAS.forEach(sn=>{
+    const m=sn.re.exec(txt);
+    if(!m) return;
+    let acha=false; try{ acha=!!sn.ok(p); }catch(e){}
+    if(acha) return;
+    const i=Math.max(0,m.index-110), tre=txt.slice(i,m.index+m[0].length+110).replace(/\s+/g,' ').trim();
+    out.push({id:sn.id, falta:sn.falta, trecho:'…'+tre+'…'});
+  });
+  return out;
+}
+
 async function lerDecisao(){
   $('goDec').disabled=true; $('ldDec').style.display='block'; $('outDec').innerHTML='';
   try{
@@ -2190,7 +2516,9 @@ async function lerDecisao(){
       cacheGravar(chave,j);
     }
     fim(doCache?'do cache':'');
+    sanearSubtipos(j.verbas);
     parecer=j; dbg({parecer});
+    alertasBrutos=varrerDecisaoBruta(txtDec, j);
     $('ldDec').style.display='none';
     renderDecisao(j, cortou);
     liberarEtapa2();
@@ -2203,18 +2531,25 @@ async function lerDecisao(){
 function carregarJson(){
   try{
     const j=JSON.parse($('jsonParecer').value);
+    sanearSubtipos(j.verbas);
     parecer=j; dbg({parecer});
+    alertasBrutos=varrerDecisaoBruta(txtDec, j);
     renderDecisao(j,false); liberarEtapa2();
     $('boxJson').style.display='none';
   }catch(e){ $('outDec').innerHTML='<div class="err">JSON inválido.</div>'; }
 }
 
+let alertasBrutos=[];
 function renderDecisao(j, cortou){
   const pr=j.processo||{}, g=j.parametrosGlobais||{};
   const defs=(j.verbas||[]).filter(v=>v.statusFinal==='DEFERIDA');
   const nao=(j.verbas||[]).filter(v=>v.statusFinal!=='DEFERIDA');
   let h='';
   if(cortou) h+='<div class="conf"><b>Atenção:</b> a resposta foi cortada por limite de tamanho. Confira se todas as verbas apareceram.</div>';
+  if(arr(alertasBrutos).length)
+    h+='<div class="err" style="margin-bottom:12px"><b>Está escrito no PDF e não entrou na régua ('+alertasBrutos.length+'):</b>'
+      +alertasBrutos.map(a=>'<div style="margin-top:8px">• '+esc(a.falta)+'<br><i style="color:#5A6472">'+esc(a.trecho)+'</i></div>').join('')
+      +'<div style="margin-top:8px">Isto não é a IA falando: é busca literal no texto extraído do PDF. Confira e, se for o caso, corrija o JSON antes de seguir.</div></div>';
   h+='<div class="sec-title">Régua da condenação</div>';
   h+='<table><tr><th>Processo</th><td>'+esc(pr.numero||'—')+'</td></tr>'
    +'<tr><th>Reclamante</th><td>'+esc(pr.reclamante||'—')+'</td></tr>'
@@ -2388,6 +2723,7 @@ async function confrontar(){
       }
     }
     fimA(cacheHit?'do cache':(pjc?'do .PJC':''));
+    sanearSubtipos(calc&&calc.verbas);
     calcAdv=calc; dbg({parecer,calcAdv,falhas});
 
     // --- fase B: confronto ---
@@ -2434,7 +2770,12 @@ async function confrontar(){
     const fil=filtrarRuido(j.impugnacoes);
     // 2) travas determinísticas entram sempre e prevalecem na confiança
     j.impugnacoes=mesclar(travas(parecer,calc).concat(extras), fil.boas);
-    j.sugestoes=arr(j.sugestoes).concat(fil.viraram);
+    // 2.1) VETO — tese que contraria a lei invocada, o próprio deferimento
+    //      ou os dados do arquivo não entra na peça de jeito nenhum.
+    montarVetos(parecer);
+    const vet=aplicarVetos(j.impugnacoes, parecer, calc);
+    j.impugnacoes=vet.ficam; j.vetados=vet.saem;
+    j.sugestoes=arr(j.sugestoes).concat(fil.viraram, vet.viraSugestao);
     j.descartadas=fil.viraram.length;
     // 3) conferência de TODAS as verbas — a local garante que nenhuma some
     j.conferencia=conferenciaLocal(parecer,calc,j.pares);
@@ -2507,7 +2848,7 @@ function renderDivergencias(j){
   if(j.sintese) h+='<div class="conf"><b>Síntese:</b> '+esc(j.sintese)+'</div>';
   imps.forEach((d,i)=>{
     const cf=(d.confianca||'conferir').toLowerCase();
-    const marcado = cf!=='conferir';
+    const marcado = cf!=='conferir' && !d.bloqueio;
     h+='<div class="dcard '+cf+(marcado?'':' off')+'" id="dc'+i+'">'
      +'<div class="dhead">'
      +'<input type="checkbox" id="ck'+i+'" '+(marcado?'checked':'')+' onchange="tgl('+i+')">'
@@ -2517,6 +2858,7 @@ function renderDivergencias(j){
      +'<span class="toggle" onclick="abrir('+i+')">'+(d.semTexto?'texto ainda não redigido':'editar texto')+' ▾</span>'
      +(d.evidencia?'<div class="hint" style="margin-top:4px">Evidência no cálculo: <b>'+esc(d.evidencia)+'</b></div>':'')
      +(d.alertaTermo?'<div class="conf" style="margin-top:6px"><b>Atenção:</b> '+esc(d.alertaTermo)+'</div>':'')
+     +(d.bloqueio?'<div class="err" style="margin-top:6px"><b>BLOQUEADO:</b> '+esc(d.bloqueio)+'</div>':'')
      +'<div class="dbody" id="db'+i+'">'
      +fld('Início — onde está o erro','t_abe'+i,d.abertura,3)
      +fld('Meio — erro do autor + fundamento (decisão, lei, artigo, súmula)','t_des'+i,d.desenvolvimento,10)
@@ -2537,6 +2879,10 @@ function renderDivergencias(j){
        +'<div><b>'+esc(s.titulo||s.id||'')+'</b><br>'+esc(s.porque||'')+(s.oQueVerificar?'<br><i>Verificar: '+esc(s.oQueVerificar)+'</i>':'')+'</div></div>';
     });
   }
+  if(arr(j.vetados).length)
+    hs+='<div class="sec-title">Teses descartadas pelo sistema ('+j.vetados.length+')</div>'
+      +'<div class="hint" style="margin-bottom:10px">Não entram na peça e não têm caixa para marcar: sustentam tese contra a lei invocada, contra o próprio deferimento ou contra os dados do arquivo.</div>'
+      +j.vetados.map(v=>'<div class="sugcard" style="opacity:.85"><div><b>'+esc(v.titulo||'')+'</b><br><span style="color:#B00020">'+esc(v.motivo)+'</span></div></div>').join('');
   $('listaSug').innerHTML=hs;
   renderConferencia(j);
   const usadas=new Set(); arr(j.impugnacoes).forEach(d=>arr(d.dispositivos).forEach(k=>usadas.add(k)));
@@ -2641,6 +2987,129 @@ async function redigirSelecionados(avisar){
   return pendentes.length-erros;
 }
 
+/* ============================================================
+   INTERVALOS: duas defesas, porque errar a quantidade de horas
+   numa peça destrói a credibilidade do documento inteiro.
+   1) na LEITURA: subtipo que contradiz o próprio texto da verba
+      é rebaixado a "indefinido" — na dúvida não se afirma;
+   2) na SAÍDA: texto que atribua 1 hora à interjornada, ou 11
+      horas à intrajornada, é BLOQUEADO e não entra no Word.
+   ============================================================ */
+function suspeitaDeSubtipo(v){
+  const t=norm([v.descricao,v.citacao,v.observacao,v.trecho].filter(Boolean).join(' '));
+  if(!t) return '';
+  const fala1h=/\b(1|uma)\s*\(?\s*(uma)?\s*\)?\s*hora\b/.test(t) || /refei[cc]|almo[cc]|repouso e alimenta/.test(t);
+  const fala11h=/\b11\s*\(?\s*onze\s*\)?\s*horas?\b/.test(t) || /entre.{0,30}jornadas?|dia seguinte/.test(t);
+  if(v.subtipo==='interjornada' && fala1h && !fala11h)
+    return 'marcada como interjornada, mas o texto fala em 1 hora / intervalo de refeicao';
+  if(v.subtipo==='intrajornada' && fala11h && !fala1h)
+    return 'marcada como intrajornada, mas o texto fala em 11 horas / descanso entre jornadas';
+  return '';
+}
+function sanearSubtipos(lista){
+  arr(lista).forEach(v=>{
+    if(!v || v.motorId!=='heArt71') return;
+    const sus=suspeitaDeSubtipo(v);
+    if(sus){ v.subtipoOriginal=v.subtipo; v.subtipo='indefinido'; v.requerConferencia=true;
+             v.avisoSubtipo=sus+' — rebaixado para "a definir"'; }
+  });
+  return lista;
+}
+function problemaDeIntervalo(d){
+  const t=norm([d.titulo,d.abertura,d.desenvolvimento,d.conclusao].join(' '));
+  if(!/intrajornada|interjornada/.test(t)) return '';
+  const e1=/interjornada[^.]{0,90}?\b(1|uma)\s*\(?\s*(uma)?\s*\)?\s*hora\b/;
+  const e2=/\b(1|uma)\s*\(?\s*(uma)?\s*\)?\s*hora[^.]{0,90}?interjornada/;
+  if(e1.test(t)||e2.test(t))
+    return 'o texto atribui 1 hora a INTERJORNADA — o art. 66 e de 11 horas entre jornadas. Corrija o texto ou descarte o ponto.';
+  const e3=/intrajornada[^.]{0,90}?\b11\s*\(?\s*onze\s*\)?\s*horas?\b/;
+  const e4=/\b11\s*\(?\s*onze\s*\)?\s*horas?[^.]{0,90}?intrajornada/;
+  if(e3.test(t)||e4.test(t))
+    return 'o texto atribui 11 horas a INTRAJORNADA — o art. 71, §4º e de 1 hora de refeicao. Corrija o texto ou descarte o ponto.';
+  return '';
+}
+
+/* ============================================================
+   VETOS — teses que o sistema NÃO pode sustentar.
+   Diferente do bloqueio de intervalo (que é erro de quantidade),
+   aqui o erro é de TESE: o ponto contraria a lei que ele mesmo
+   invoca, ou contraria o que a própria decisão deferiu. Uma peça
+   que transcreve o artigo e argumenta contra ele entrega o caso.
+   Regra do dono: na dúvida, cala a boca.
+   ============================================================ */
+let VETOS=[];
+function montarVetos(parecer){
+  const V=[];
+
+  /* 1) juros do art. 39, caput, da Lei 8.177/91 SÃO a TRD.
+     É o texto literal: "juros de mora equivalentes à TRD acumulada".
+     Impugnar a TRD como JUROS invocando esse artigo é argumentar
+     contra a lei transcrita na própria peça.
+     Atenção: impugnar TR/TRD como ÍNDICE DE CORREÇÃO na fase
+     pré-judicial continua VÁLIDO (ali o índice é o IPCA-E) — por
+     isso o teste exige "juros" e exclui textos que falam de IPCA. */
+  V.push({id:'juros_trd_art39', onde:'cabeca',
+    testa:t=> /juros/.test(t) && /\btr\b|\btrd\b|taxa referencial/.test(t) && !/ipca/.test(t),
+    motivo:'o art. 39, caput, da Lei 8.177/91 define os juros como a TRD acumulada — é a letra do artigo. Impugnar a aplicação da TRD como JUROS invocando esse mesmo artigo sustenta tese contra a lei que a peça transcreve. (Impugnar TR/TRD como ÍNDICE DE CORREÇÃO na fase pré-judicial continua válido: ali o índice é o IPCA-E.)'});
+
+  /* 2) adicional noturno na base da HE, quando a decisão mandou
+     que ele integrasse o salário para todos os fins (Súmula 60, I). */
+  const txtP=norm(JSON.stringify(parecer||{}));
+  const integra = /adicional noturno[\s\S]{0,220}?(integra|integrando|para todos os (fins|efeitos))/.test(txtP)
+               || /(integra|integrando)[\s\S]{0,140}?adicional noturno/.test(txtP);
+  if(integra) V.push({id:'noturno_base_he', onde:'tudo',
+    testa:t=> /adicional noturno/.test(t)
+           && /(base[^.]{0,40}(hora|he)\b|base de calculo das horas)/.test(t)
+           && /(exclu|retir|afast|nao (deve|pode) integrar|indevid|sem que integre)/.test(t),
+    motivo:'a decisão deferiu o adicional noturno integrando o salário para todos os fins (Súmula 60, I, do TST). Pedir sua exclusão da base da hora extra contraria o próprio título executivo.'});
+
+  VETOS=V; return V;
+}
+
+/* fora do escopo: não é erro de conta, é matéria de outra sede.
+   Não veta — rebaixa para sugestão, para o calculista decidir. */
+function foraDoEscopo(d){
+  const t=norm([d.titulo,d.abertura].join(' '));
+  if(/sucumbencia reciproca|honorarios? (advocaticios? )?devidos pel[ao] (reclamante|autor)/.test(t))
+    return 'o cálculo de liquidação apura o crédito do exequente; honorários a cargo da parte contrária, ainda mais com exigibilidade suspensa, não alteram esse crédito. Ponto de petição, não de conta.';
+  return '';
+}
+
+function vetoDoPonto(d){
+  const cabeca=norm([d.titulo,d.abertura].join(' '));
+  const tudo=norm([d.titulo,d.abertura,d.desenvolvimento,d.conclusao].join(' '));
+  for(let i=0;i<VETOS.length;i++){
+    const v=VETOS[i], t=(v.onde==='cabeca')?cabeca:tudo;
+    try{ if(v.testa(t)) return v.motivo; }catch(e){}
+  }
+  return '';
+}
+
+/* veto aritmético: alegar período apurado a maior quando o próprio
+   arquivo mostra que a apuração começa na data deferida. Foi o erro
+   de confundir período CADASTRADO da verba com período APURADO. */
+function vetoPorApuracao(d, calc){
+  const j=(calc&&calc.jornada)||{};
+  if(!j.primeiroDiaComHoras) return '';
+  const t=norm([d.titulo,d.abertura].join(' '));
+  if(!/(marco|periodo|termo) inicial|inicio (da )?apuracao|anterior ao deferido|apurou.{0,30}antes/.test(t)) return '';
+  return 'o cartão de ponto do próprio arquivo só registra horas a partir de '+j.primeiroDiaComHoras
+    +'. O período que aparece na verba é o cadastrado, não o apurado — nos dias anteriores não há uma hora lançada. Alegar apuração a maior aqui é erro de leitura.';
+}
+
+function aplicarVetos(lista, parecer, calc){
+  const ficam=[], saem=[], viraSugestao=[];
+  arr(lista).forEach(d=>{
+    if(!d||typeof d!=='object') return;
+    const m = vetoDoPonto(d) || vetoPorApuracao(d, calc);
+    if(m){ saem.push({titulo:d.titulo||d.tese||'', motivo:m}); return; }
+    const fe=foraDoEscopo(d);
+    if(fe){ viraSugestao.push({id:d.tese||'',titulo:d.titulo||'',porque:fe,oQueVerificar:d.abertura||''}); return; }
+    ficam.push(d);
+  });
+  return {ficam, saem, viraSugestao};
+}
+
 /* trava final: o texto redigido não pode usar o termo trocado.
    Se o ponto invoca o art. 66 mas o texto fala em intrajornada (ou o contrário),
    marca o card — é o erro que mais se repetiu no uso real. */
@@ -2653,6 +3122,8 @@ function revisarTermos(d){
   d.alertaTermo='';
   if(ehInter && falaIntra && !falaInter) d.alertaTermo='o ponto é de INTERJORNADA (art. 66, 11h entre jornadas) mas o texto fala em intrajornada — confira antes de usar';
   if(ehIntra && falaInter && !falaIntra) d.alertaTermo='o ponto é de INTRAJORNADA (art. 71 §4º, 1h de refeição) mas o texto fala em interjornada — confira antes de usar';
+  /* erro grave de quantidade de horas: não é aviso, é bloqueio. */
+  d.bloqueio=problemaDeIntervalo(d);
   return d;
 }
 
@@ -2789,8 +3260,12 @@ async function _gerarDocumento(){
   if(confronto.sintese) d.p(confronto.sintese,{align:'both',size:19});
   const imps=arr(confronto.impugnacoes);
   let n=0;
+  let bloqueados=0;
   imps.forEach((item,i)=>{
     if(!($('ck'+i)&&$('ck'+i).checked)) return;
+    // reavalia AGORA, porque o texto pode ter sido editado à mão
+    revisarTermos(item);
+    if(item.bloqueio){ bloqueados++; return; }
     n++;
     const get=id=>{ const el=$(id); return (el&&el.value)?el.value:''; };
     d.h('3.'+n+'. '+(item.titulo||'Ponto '+n),2);
@@ -2812,11 +3287,10 @@ async function _gerarDocumento(){
   });
   if(!n) d.p('Nenhum ponto foi selecionado.',{italics:true,color:'8A5A00',size:19});
 
+  /* as teses não confirmadas NÃO entram no corpo da peça: vão para um
+     anexo separado, no fim, marcado como interno. Ponto "em conferência"
+     dentro da impugnação entrega ao juiz que a peça saiu pela metade. */
   const sugs=arr(confronto.sugestoes).filter((s,i)=>$('sg'+i)&&$('sg'+i).checked);
-  if(sugs.length){
-    d.h('3.'+(n+1)+'. Pontos a desenvolver (conferência em curso)',2);
-    sugs.forEach(s=>d.bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||'')));
-  }
 
   /* 4. Conferência verba a verba */
   const conf=arr(confronto.conferencia);
@@ -2836,6 +3310,12 @@ async function _gerarDocumento(){
   d.h(conf.length?'5. Conclusão':'4. Conclusão',1);
   paragrafos(confronto.conclusaoGeral||'Pelos fundamentos acima, requer-se a retificação do cálculo nos exatos termos do julgado.',{align:'both',size:19});
   d.p('',{after:200});
+  if(sugs.length){
+    d.p('',{after:400});
+    d.h('ANEXO INTERNO — não integra a peça',1,'8A5A00');
+    d.p('Pontos levantados que o sistema NÃO conseguiu confirmar nos dados. Servem de roteiro de conferência para o calculista. Apague esta página antes de protocolar.',{italics:true,color:'8A5A00',size:18,align:'both'});
+    sugs.forEach(s=>d.bullet((s.titulo||'')+' — '+(s.oQueVerificar||s.porque||'')));
+  }
   d.p('Documento elaborado a partir da leitura das decisões e do cálculo apresentado. Os pontos assinalados como "conferir" dependem de confirmação nos autos.',{italics:true,color:'8A5A00',size:17});
   d.p('FazAI Tech · Cálculos Judiciais Trabalhistas · fazai.tech',{align:'center',color:CINZA,size:16});
 
@@ -2844,7 +3324,8 @@ async function _gerarDocumento(){
   const a=document.createElement('a'); a.href=url;
   a.download=R.arq+String(pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
   a.click(); URL.revokeObjectURL(url);
-  $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s)).</span>';
+  $('stDoc').innerHTML='<span class="okmsg">✓ Documento gerado e baixado ('+n+' ponto(s)).</span>'
+    +(bloqueados?'<div class="err" style="margin-top:6px"><b>'+bloqueados+' ponto(s) ficaram DE FORA</b> por erro na quantidade de horas do intervalo. Corrija o texto no card e gere de novo — sair errado numa peça é pior do que não sair.</div>':'');
 }
 </script>
 </body>
