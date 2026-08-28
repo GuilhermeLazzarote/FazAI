@@ -1208,7 +1208,6 @@ const CATALOGO=[
  {id:'sumula340',d:["sum340","oj397"],t:'Súmula 340 TST / OJ 397 — comissionista misto',g:'HE sobre parte variável com divisor fixo (180/220) em vez de divisor variável, ou hora+adicional onde só cabe o adicional',f:'Súmula 340 TST e OJ 397 SDI-1',c:'certo'},
  {id:'he_quantidade',d:["sum338","art818"],t:'Quantidade de horas extras sem lastro probatório',g:'quantidade de HE sem cartão de ponto juntado / valores arbitrados aleatoriamente',f:'ônus da prova; Súmula 338 TST',c:'provavel'},
  {id:'jornada_divergente',d:["art879p1","sum338"],t:'Jornada lançada no cálculo diverge da fixada na decisão',g:'o horário lançado no cartão de ponto do cálculo não corresponde ao horário fixado na sentença',f:'coisa julgada — art. 879, §1º, da CLT',c:'certo'},
- {id:'cp_nao_seguido',d:["sum338","art879p1"],t:'Apuração deveria seguir os cartões de ponto, mas repete jornada fixa',g:'a decisão mandou apurar pelos registros de horário e o cálculo lança o mesmo horário todos os dias (jornada britânica)',f:'Súmula 338 TST; art. 879, §1º, da CLT',c:'certo'},
  {id:'he_feriados',d:["sum146","art879p1"],t:'Feriados/sábados/domingos computados fora da jornada fixada',g:'HE apurada em feriado, sábado ou domingo quando a jornada deferida é seg-sex',f:'coisa julgada — jornada fixada na decisão',c:'certo'},
  {id:'he_art71',d:["art71p4","sum437"],t:'Intervalo INTRAJORNADA (art. 71 §4º) apurado em divergência',g:'intervalo de refeição e descanso DENTRO da jornada apurado de forma diversa do deferido (hora cheia x só adicional; período)',f:'art. 71 §4º CLT; Súmula 437, I e III, TST',c:'provavel'},
  {id:'he_art66',d:["art66","oj355"],t:'INTERJORNADA (art. 66) — descanso de 11h entre jornadas',g:'apuração do intervalo ENTRE jornadas divergente do deferido, ou apurada sem deferimento',f:'art. 66 CLT; OJ 355 SDI-1 TST',c:'provavel'},
@@ -1295,6 +1294,7 @@ Classifique CADA verba pela NATUREZA, não pelas palavras. Use exatamente um: "h
 Capriche nestes, porque é contra eles que o cálculo será confrontado:
 - correcaoJuros: transcreva a remissão literal (ADC 58/59, Lei 14.905/2024, "na forma da lei") e o índice implicado por fase. Decisão OMISSA em crédito trabalhista → registre a premissa padrão (IPCA-E até o ajuizamento, SELIC a partir daí, sem juros de 1% na fase pré-judicial) e marque pontoControvertido=true, como premissa a confirmar.
 - prescricao: marco declarado e a citação.
+- periodosExcluidos: TODO intervalo de datas que a decisão (ou os embargos) mandou EXCLUIR da apuração — folgas, viagens, licenças, atestados, afastamentos, períodos sem prova de labor. Liste cada um com motivo e fonte. NÃO transforme uma exclusão inicial em "novo marco inicial": o período deferido continua sendo o do contrato; o que muda é que aqueles dias não têm labor.
 - limitacaoAoPedido: houve limitação aos valores da inicial?
 - deducoes: a decisão autorizou abater valores pagos? Em que critério?
 - honorarios: percentual, base e a cargo de quem, inclusive sucumbência recíproca.
@@ -1315,6 +1315,7 @@ Capriche nestes, porque é contra eles que o cálculo será confrontado:
 - Verbas de nome parecido não foram fundidas.
 - Todo intervalo tem subtipo preenchido.
 - A jornada tem baseApuracao preenchida; se foi fixada, os horários estão em "dias".
+- Os períodos que a decisão mandou excluir estão em periodosExcluidos, e NÃO viraram um marco inicial diferente.
 
 ECONOMIA (resposta longa demora e pode ser cortada): devolva SOMENTE os campos do modelo. Nada de cronologia, histórico ou análise de risco. Nenhum campo passa de 1 frase, salvo a citação.
 
@@ -1324,6 +1325,7 @@ RESPONDA EXCLUSIVAMENTE COM O JSON, começando com { e terminando com }. Sem mar
 "parametrosGlobais":{
  "prescricao":{"marco":null,"citacao":"","fonte":"","requerConferencia":false},
  "limitacaoAoPedido":{"houve":false,"citacao":"","fonte":""},
+ "periodosExcluidos":[{"inicio":null,"fim":null,"motivo":"","fonte":""}],
  "correcaoJuros":{"transcricaoLiteral":"","indicePreJudicial":"","indiceJudicial":"","juros":"","pontoControvertido":false,"fonte":""},
  "deducoes":{"autorizada":false,"criterio":"","citacao":"","fonte":""},
  "honorariosSucumbenciais":{"percentual":0,"base":"","aCargoDe":"","reciproca":false,"citacao":"","fonte":""},
@@ -1531,6 +1533,29 @@ function tokens(s){
 // Duas travas contra falso positivo, ambas vindas de erro real:
 // 1) palavra INTEIRA, não pedaço ("diária" da jornada × "diárias" de viagem);
 // 2) palavra genérica não basta sozinha ("salário extrafolha" × "13º salário").
+/* Para LIGAR UM REFLEXO À SUA VERBA PRINCIPAL o critério é outro:
+   aqui "horas extras" precisa contar. O risco de fusão indevida não
+   existe neste uso — não se cria impugnação, só se diz de quem o
+   reflexo é filho. Por isso um tokenizador próprio, sem as stopwords
+   de horas extras. */
+const STOP_GRAMATICA=new Set(['de','da','do','das','dos','e','em','a','o','por','sobre','com','ao','aos','na','no']);
+function tokensBase(s){
+  return norm(s).split(/[^a-z0-9]+/)
+    .filter(w=>(/^\d{2,}$/.test(w) || w.length>=4) && !STOP_GRAMATICA.has(w));
+}
+function casaBase(a,b){
+  const ta=tokensBase(a), tb=new Set(tokensBase(b));
+  const comuns=ta.filter(w=>tb.has(w));
+  if(!comuns.length) return false;
+  if(comuns.some(w=>!FRACAS.has(w) && !/^\d+$/.test(w))) return true;
+  return comuns.length>=2;
+}
+function ehRubricaDeReflexo(v){
+  if(!v) return false;
+  if(v.ehReflexo===true) return true;
+  return /\ssobre\s/i.test(String(v.descricao||''));
+}
+
 function casa(a,b){
   const ta=tokens(a), tb=new Set(tokens(b));
   const comuns=ta.filter(w=>tb.has(w));
@@ -1936,19 +1961,11 @@ function travasPjc(p,c){
           conclusao:'Impõe-se a retificação do cartão de ponto do cálculo para que reproduza exatamente a jornada fixada na decisão. Resta impugnado o cálculo obreiro.'});
     }
 
-    /* (b) apuração que deveria seguir o cartão de ponto e veio britânica */
-    else if(/cartao|cartao de ponto|registro|ponto|controle de jornada/.test(baseAp) && jc.britanica){
-      const amostra=arr(jc.porDiaSemana).map(d=>d.nome+' '+d.marcacaoModal+' ('+d.diasComLabor+' dias)').join(' · ');
-      add({tese:'cp_nao_seguido',confianca:'certo',disp:['sum338','art879p1'],
-        titulo:'Jornada britânica — a apuração deveria seguir os cartões de ponto',
-        citacao:jd.citacao||'', evidencia:'aderência de '+Math.round(jc.repetitividade*100)+'% ao mesmo horário, em '+jc.diasComLabor+' dias com labor · '+amostra,
-        impacto:'A quantidade de horas extras não reflete os registros de horário dos autos.',
-        abertura:'Equivocou-se o Autor ao apurar as horas extras por jornada uniforme, quando a decisão determinou a apuração pelos cartões de ponto juntados aos autos.',
-        desenvolvimento:'A decisão determinou que a apuração observasse os registros de horário'+FOLHA(jd.fonte)+(jd.citacao?': "'+jd.citacao+'".':'.')
-          +'\n\nVejamos: a apuração diária do próprio cálculo repete o MESMO horário em '+Math.round(jc.repetitividade*100)+'% dos '+jc.diasComLabor+' dias com labor — '+amostra+'. Jornada real não se comporta assim: cartão de ponto tem atraso, hora extra pontual, saída antecipada, falta, compensação. Registro idêntico dia após dia é jornada arbitrada, não jornada apurada.'
-          +'\n\nA chamada "jornada britânica" é justamente o que a Súmula 338 do TST e a jurisprudência repelem como prova de horário, e a apuração por horário uniforme, onde o título mandou seguir o cartão, altera o critério fixado na decisão (art. 879, §1º, da CLT).',
-        conclusao:'Requer-se a retificação da conta, com a apuração dia a dia dos cartões de ponto juntados aos autos. Resta impugnado o cálculo obreiro.'});
-    }
+    /* (b) A trava de "jornada britânica" FOI REMOVIDA de propósito.
+       Cartão repetitivo é o comportamento normal do PJe-Calc quando a
+       jornada vem do módulo de ponto — não prova nada sobre a conduta
+       de quem calculou. O número continua sendo medido e aparece no
+       painel como informação, mas não vira ponto de impugnação. */
   }
 
   /* 7) feriados com jornada lançada — ponto secundário, entra como conferência */
@@ -2000,7 +2017,10 @@ function filtrarRuido(imps){
    nenhuma verba. Havendo ambiguidade, não pareia: as duas aparecem separadas.
    Errar duas vezes é conserto do calculista; fundir esconde o erro. */
 function acharUnico(v, vCalc, vDec){
-  const cands=arr(vCalc).filter(vc=>mesmaVerba(v,vc));
+  /* verba principal da decisão casa com rubrica PRINCIPAL do cálculo.
+     O reflexo tem dono próprio e é resolvido em resolverReflexo — se
+     entrar aqui, gera ambiguidade e a verba principal fica órfã. */
+  const cands=arr(vCalc).filter(vc=>!ehRubricaDeReflexo(vc) && mesmaVerba(v,vc));
   if(cands.length!==1) return null;
   const alvo=cands[0];
   const reversos=arr(vDec).filter(v2=>mesmaVerba(v2,alvo));
@@ -2023,6 +2043,79 @@ function parValido(v,vc){
 }
 
 /* conferência determinística: nenhuma verba fica de fora */
+/* ============================================================
+   REFLEXO NÃO É VERBA SEM DEFERIMENTO.
+   "13º SALÁRIO SOBRE HORAS EXTRAS 50% E RSR" não é uma verba
+   autônoma: é o reflexo de uma verba deferida. Marcá-lo como
+   "não localizada na decisão" numa peça é entregar ao juiz que
+   o parecer não entendeu o próprio cálculo — ainda mais quando
+   a mesma peça, duas páginas antes, lista esse reflexo como
+   deferido. Aqui o reflexo é resolvido contra a lista de
+   reflexos da verba PRINCIPAL.
+   ============================================================ */
+const TIPOS_REFLEXO=[
+  {k:'dsr',    re:/\b(dsr|rsr)\b|repouso semanal|descanso semanal/,           rot:'DSR/RSR'},
+  {k:'13',     re:/13\s*º?|decimo terceiro|gratifica[cç][aã]o natalina/,      rot:'13º salário'},
+  {k:'aviso',  re:/aviso pr[eé]vio/,                                          rot:'aviso prévio'},
+  {k:'ferias', re:/f[eé]rias|1\/3|ter[cç]o constitucional/,                   rot:'férias + 1/3'},
+  {k:'fgts',   re:/\bfgts\b|fundo de garantia|multa de 40|multa 3,?2|3,2%/,   rot:'FGTS'},
+  {k:'inss',   re:/inss|previdenci/,                                          rot:'INSS'},
+  {k:'irpf',   re:/irpf|irrf|imposto de renda/,                               rot:'IRPF'}
+];
+function tipoDeReflexo(txt){
+  const t=norm(txt);
+  for(let i=0;i<TIPOS_REFLEXO.length;i++) if(TIPOS_REFLEXO[i].re.test(t)) return TIPOS_REFLEXO[i];
+  return null;
+}
+/* "13º SALÁRIO SOBRE HORAS EXTRAS 50% E RSR" -> {tipo:'13', principal:'HORAS EXTRAS 50% E RSR'} */
+function partirReflexo(desc){
+  const m=/^(.*?)\s+sobre\s+(.*)$/i.exec(String(desc||''));
+  if(m) return {cabeca:m[1], principal:m[2]};
+  return null;
+}
+/* devolve {status, deferido, observacao} para uma rubrica do cálculo
+   que não casou com nenhuma verba da decisão. */
+function resolverReflexo(vc, vDec){
+  const desc=String(vc.descricao||'');
+  const part=partirReflexo(desc);
+  const tp = part ? tipoDeReflexo(part.cabeca) : tipoDeReflexo(desc);
+  if(!tp) return null;
+  if(tp.k==='inss'||tp.k==='irpf')
+    return {status:'OK', deferido:'desconto legal — não é verba deferida',
+            observacao:'contribuição/retenção legal, fora do confronto de verbas'};
+
+  /* acha a verba principal deferida a que este reflexo se refere */
+  const defs=arr(vDec).filter(v=>v&&v.statusFinal==='DEFERIDA');
+  let pai=null;
+  if(part){
+    const cands=defs.filter(v=>casaBase(v.descricao,part.principal)||casaBase(part.principal,v.descricao));
+    if(cands.length===1) pai=cands[0];
+    if(!pai && cands.length>1){
+      /* desempata pela natureza (motorId), sem fundir nada */
+      const porMotor=cands.filter(v=>v.motorId&&vc.motorId&&v.motorId===vc.motorId);
+      if(porMotor.length===1) pai=porMotor[0];
+    }
+  }
+  if(!pai && tp.k==='fgts'){
+    /* FGTS 8% / FGTS 3,2% não trazem "SOBRE": vale se alguma verba deferida
+       tem FGTS entre os reflexos */
+    const comFgts=defs.filter(v=>arr(v.reflexos).some(r=>/fgts|fundo de garantia|3,?2|40%/i.test(String(r))));
+    if(comFgts.length) pai=comFgts[0];
+  }
+  if(!pai) return null;   /* não é reflexo reconhecível: segue o fluxo normal */
+
+  const listados=arr(pai.reflexos).map(r=>String(r));
+  const bate=listados.some(r=>tp.re.test(norm(r)));
+  const rot=listados.join(', ')||'(a decisão não listou os reflexos)';
+  if(bate)
+    return {status:'OK',
+      deferido:'reflexo de "'+pai.descricao+'" — deferido'+(pai.fonte?' ('+pai.fonte+')':''),
+      observacao:'reflexo em '+tp.rot+' consta entre os deferidos: '+rot};
+  return {status:'SEM_DEFERIMENTO',
+    deferido:'reflexo de "'+pai.descricao+'"'+(pai.fonte?' ('+pai.fonte+')':''),
+    observacao:'a decisão deferiu reflexos em '+rot+' — '+tp.rot+' NÃO consta na lista. Confira o dispositivo antes de impugnar.'};
+}
+
 function conferenciaLocal(p,c,pares){
   const linhas=[];
   const vDec=((p||{}).verbas)||[];
@@ -2056,8 +2149,10 @@ function conferenciaLocal(p,c,pares){
   });
   vCalc.forEach(vc=>{
     if(usadas.has(vc.descricao)) return;
-    linhas.push({verba:vc.descricao,deferido:'não localizada na decisão',
-      apurado:[vc.periodo,vc.percentual,vc.valorPrincipal!=null?'R$ '+vc.valorPrincipal:''].filter(Boolean).join(' · ')||'apurada',
+    const apu=[vc.periodo,vc.percentual,vc.valorPrincipal!=null?'R$ '+vc.valorPrincipal:''].filter(Boolean).join(' · ')||'apurada';
+    const rx=resolverReflexo(vc, vDec);
+    if(rx){ linhas.push({verba:vc.descricao,deferido:rx.deferido,apurado:apu,status:rx.status,observacao:rx.observacao,origem:'trava'}); return; }
+    linhas.push({verba:vc.descricao,deferido:'não localizada na decisão',apurado:apu,
       status:'SEM_DEFERIMENTO',observacao:'rubrica do cálculo sem correspondência nas verbas lidas da decisão',origem:'trava'});
   });
   return linhas;
@@ -3063,6 +3158,20 @@ function montarVetos(parecer){
            && /(exclu|retir|afast|nao (deve|pode) integrar|indevid|sem que integre)/.test(t),
     motivo:'a decisão deferiu o adicional noturno integrando o salário para todos os fins (Súmula 60, I, do TST). Pedir sua exclusão da base da hora extra contraria o próprio título executivo.'});
 
+  /* 3) MÉTODO/FERRAMENTA não é tese. No PJe-Calc, importar a jornada
+     do módulo de cartão de ponto é o caminho NORMAL: qualquer cálculo,
+     inclusive o correto, sai com o cartão preenchido e com o mesmo
+     horário repetido quando a decisão fixou jornada. Impugnar isso
+     mostra que quem escreveu não sabe operar o sistema — e o outro
+     lado responde em uma linha. Impugna-se o RESULTADO contra o
+     título, nunca o caminho que a ferramenta usou. */
+  V.push({id:'metodo_ferramenta', onde:'tudo',
+    testa:t=> /(importad|importou|importa)[^.]{0,60}(cartao|cart[aã]o de ponto|modulo|m[oó]dulo)/.test(t)
+           || /jornada britanica|britanic/.test(t)
+           || /(repetitividade|mesmo horario em|horario identico)[^.]{0,60}(dias|cartao)/.test(t)
+           || /(pje.?calc|sistema|ferramenta|planilha)[^.]{0,50}(gerou|importou|preencheu|montou)/.test(t),
+    motivo:'a tese ataca COMO o cálculo foi montado na ferramenta, não o resultado contra o título. Importar a jornada do módulo de cartão de ponto é o procedimento padrão do PJe-Calc — qualquer cálculo, inclusive o correto, sai assim. Impugne a quantidade, o período, a base ou o índice; nunca o caminho da ferramenta.'});
+
   VETOS=V; return V;
 }
 
@@ -3070,7 +3179,7 @@ function montarVetos(parecer){
    Não veta — rebaixa para sugestão, para o calculista decidir. */
 function foraDoEscopo(d){
   const t=norm([d.titulo,d.abertura].join(' '));
-  if(/sucumbencia reciproca|honorarios? (advocaticios? )?devidos pel[ao] (reclamante|autor)/.test(t))
+  if(/sucumbencia reciproca|honorarios?[^.]{0,40}(devidos|a cargo|de sucumbencia) (pel|d)[ao] (reclamante|autor)|honorarios de sucumbencia d[ao] (reclamante|autor)/.test(t))
     return 'o cálculo de liquidação apura o crédito do exequente; honorários a cargo da parte contrária, ainda mais com exigibilidade suspensa, não alteram esse crédito. Ponto de petição, não de conta.';
   return '';
 }
@@ -3261,16 +3370,39 @@ async function _gerarDocumento(){
   const imps=arr(confronto.impugnacoes);
   let n=0;
   let bloqueados=0;
-  imps.forEach((item,i)=>{
-    if(!($('ck'+i)&&$('ck'+i).checked)) return;
+  /* Padrão da peça de verdade: a seção de impugnação só carrega o que se
+     AFIRMA. O que ainda depende de conferência nos autos vai para uma
+     subseção própria, no fim, dizendo que é conferência. Misturar os dois
+     é o que faz o juiz ler "possivelmente" numa impugnação. */
+  const ehConferencia=x=>String((x&&x.confianca)||'')==='conferir';
+  const selec=imps.map((x,i)=>({x,i})).filter(o=>$('ck'+o.i)&&$('ck'+o.i).checked);
+  const ordem=selec.filter(o=>!ehConferencia(o.x)).concat(selec.filter(o=>ehConferencia(o.x)));
+  let abriuConf=false;
+  ordem.forEach(o=>{
+    const item=o.x, i=o.i;
+    if(ehConferencia(item)&&!abriuConf){
+      abriuConf=true;
+      d.h('Pontos de conferência — antes de impugnar',2,'8A5A00');
+      d.p('Os itens abaixo NÃO são impugnação. São divergências que dependem de confirmação nos autos (recibos, laudos, cartões). Confirmado o erro, o ponto sobe para a seção de impugnação; não confirmado, apague-o.',{italics:true,color:'8A5A00',size:18,align:'both'});
+    }
     // reavalia AGORA, porque o texto pode ter sido editado à mão
     revisarTermos(item);
     if(item.bloqueio){ bloqueados++; return; }
     n++;
     const get=id=>{ const el=$(id); return (el&&el.value)?el.value:''; };
-    d.h('3.'+n+'. '+(item.titulo||'Ponto '+n),2);
+    d.h((abriuConf?'':'3.'+n+'. ')+(item.titulo||'Ponto '+n),2);
     paragrafos(get('t_abe'+i)||item.abertura,{align:'both',size:19});
+    /* padrão da peça real: depois de dizer o que foi deferido, entra o
+       print da decisão; depois de mostrar o erro, entra o print do
+       cálculo. O texto sozinho não convence — a imagem do dispositivo
+       ao lado do número do cálculo é o que fecha o ponto. */
+    d.p('Vejamos o deferimento:',{bold:true,size:19,after:40});
+    d.p('[ COLE AQUI O PRINT DA DECISÃO'+(item.fonteDeferido?' — '+item.fonteDeferido:(item.deferidoCitacao?' — trecho: "'+String(item.deferidoCitacao).slice(0,90)+'"':''))+' ]',
+        {italics:true,color:'8A5A00',size:17,align:'center',after:140});
     paragrafos(get('t_des'+i)||item.desenvolvimento,{align:'both',size:19});
+    d.p('Vejamos a apuração:',{bold:true,size:19,after:40});
+    d.p('[ COLE AQUI O PRINT DO CÁLCULO'+(item.evidencia?' — '+String(item.evidencia).slice(0,110):'')+' ]',
+        {italics:true,color:'8A5A00',size:17,align:'center',after:140});
     const ls=leisDe(item.dispositivos), nc=arr(item.naoCatalogados);
     if(ls.length){
       d.p('Transcreve-se o dispositivo invocado:',{align:'both',size:19,after:60});
