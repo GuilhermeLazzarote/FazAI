@@ -45,7 +45,7 @@ async function inflar(bytes, metodo){
   const buf=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
   return new Uint8Array(buf);
 }
-async function extrairXml(arrayBuffer){
+async function extrairXml(arrayBuffer, comNome){
   const d=new Uint8Array(arrayBuffer);
   const ents=entradasZip(d);
   if(!ents.length) throw new Error('o .PJC está vazio.');
@@ -56,7 +56,8 @@ async function extrairXml(arrayBuffer){
   const ini=e.off+30+nl+el;
   const bruto=d.slice(ini, ini+(e.tam||d.length-ini));
   const puro=await inflar(bruto, e.metodo);
-  return new TextDecoder('iso-8859-1').decode(puro);
+  const txt=new TextDecoder('iso-8859-1').decode(puro);
+  return comNome?{xml:txt, nome:e.nome}:txt;
 }
 
 /* ---------- utilidades ---------- */
@@ -71,6 +72,108 @@ function data(v){
   return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
 }
 function moeda(x){ return x==null?null:Math.round(x*100)/100; }
+
+/* ============================================================
+   FERIADOS — calendario nacional (fixos + moveis pela Pascoa).
+   Estadual e municipal variam por comarca: quando o usuario nao
+   informa, dizemos isso na propria saida em vez de fingir que
+   cobrimos tudo.
+   ============================================================ */
+function pascoa(ano){
+  const a=ano%19, b=Math.floor(ano/100), c=ano%100;
+  const d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+  const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+  const mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1;
+  return new Date(Date.UTC(ano,mes-1,dia));
+}
+function iso(d){ return d.toISOString().slice(0,10); }
+function feriadosNacionais(anoIni,anoFim){
+  const out={};
+  for(var y=anoIni;y<=anoFim;y++){
+    [['01-01','Confraternização Universal'],['04-21','Tiradentes'],['05-01','Dia do Trabalho'],
+     ['09-07','Independência'],['10-12','N. Sra. Aparecida'],['11-02','Finados'],
+     ['11-15','Proclamação da República'],['11-20','Consciência Negra'],['12-25','Natal']
+    ].forEach(function(f){ out[y+'-'+f[0]]=f[1]; });
+    const p=pascoa(y), dia=86400000;
+    out[iso(new Date(+p-48*dia))]='Carnaval';
+    out[iso(new Date(+p-47*dia))]='Carnaval';
+    out[iso(new Date(+p-2*dia))]='Sexta-feira Santa';
+    out[iso(new Date(+p+60*dia))]='Corpus Christi';
+  }
+  return out;
+}
+
+/* ============================================================
+   JORNADA LANCADA — padrao por dia da semana, aderencia e mes a mes.
+   A aderencia responde a pergunta que decide a impugnacao:
+   "o cara lancou o cartao de ponto, ou repetiu o mesmo horario?"
+   ============================================================ */
+const DIA_SEMANA=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+function montarJornadaDetalhada(j, dias){
+  const L=[];
+  dias.forEach(function(d){
+    const ms=T(d,'dataOcorrencia'); if(!ms) return;
+    const dt=new Date(parseInt(ms,10));
+    L.push({
+      iso:iso(dt), dow:dt.getUTCDay(),
+      marca:String(T(d,'frequenciaDiaria')||'').replace(/\s+/g,' ').trim(),
+      ht:n(T(d,'horasTrabalhadas'))||0, he:n(T(d,'horasExtrasDiaria'))||0,
+      hn:n(T(d,'horasNoturnas'))||0, hfer:n(T(d,'horasFeriado'))||0
+    });
+  });
+  L.sort(function(a,b){ return a.iso<b.iso?-1:1; });
+  if(!L.length) return;
+  j.inicio=L[0].iso; j.fim=L[L.length-1].iso;
+  const comLabor=L.filter(function(x){ return x.ht>0; });
+  j.diasComLabor=comLabor.length;
+  j.primeiroDiaComHoras=comLabor.length?comLabor[0].iso:null;
+  j.ultimoDiaComHoras=comLabor.length?comLabor[comLabor.length-1].iso:null;
+
+  /* padrão por dia da semana */
+  const porDow={};
+  comLabor.forEach(function(x){
+    const b=porDow[x.dow]||(porDow[x.dow]={dia:x.dow,nome:DIA_SEMANA[x.dow],total:0,cont:{}});
+    b.total++; b.cont[x.marca]=(b.cont[x.marca]||0)+1;
+  });
+  j.porDiaSemana=Object.keys(porDow).map(function(k){
+    const b=porDow[k];
+    const chaves=Object.keys(b.cont).sort(function(p,q){ return b.cont[q]-b.cont[p]; });
+    return { dia:b.dia, nome:b.nome, diasComLabor:b.total,
+             marcacaoModal:chaves[0]||'', repeticoes:b.cont[chaves[0]]||0,
+             variantes:chaves.length,
+             aderencia:b.total?Math.round((b.cont[chaves[0]]/b.total)*1000)/1000:0 };
+  }).sort(function(a,b){ return a.dia-b.dia; });
+  const somaDias=j.porDiaSemana.reduce(function(a,b){ return a+b.diasComLabor; },0);
+  const somaMod=j.porDiaSemana.reduce(function(a,b){ return a+b.repeticoes; },0);
+  j.repetitividade = somaDias?Math.round((somaMod/somaDias)*1000)/1000:0;
+  j.variantesDistintas = j.porDiaSemana.reduce(function(a,b){ return a+b.variantes; },0);
+  /* britânica: 20+ dias e praticamente sempre o mesmo horário no mesmo dia da semana */
+  j.britanica = comLabor.length>=20 && j.repetitividade>=0.9;
+
+  /* mês a mês */
+  const mm={};
+  L.forEach(function(x){
+    const k=x.iso.slice(0,7);
+    const b=mm[k]||(mm[k]={mes:k,dias:0,diasComLabor:0,horas:0,he:0,hn:0});
+    b.dias++; if(x.ht>0) b.diasComLabor++;
+    b.horas+=x.ht; b.he+=x.he; b.hn+=x.hn;
+  });
+  j.porMes=Object.keys(mm).sort().map(function(k){
+    const b=mm[k];
+    return {mes:k,dias:b.dias,diasComLabor:b.diasComLabor,
+      horas:Math.round(b.horas*100)/100, he:Math.round(b.he*100)/100, hn:Math.round(b.hn*100)/100};
+  });
+
+  /* feriados nacionais com jornada lançada */
+  const y1=parseInt(j.inicio.slice(0,4),10), y2=parseInt(j.fim.slice(0,4),10);
+  const FER=feriadosNacionais(y1,y2);
+  j.feriadosComJornada=comLabor.filter(function(x){ return FER[x.iso]; })
+    .map(function(x){ return {data:x.iso, nome:FER[x.iso], dia:DIA_SEMANA[x.dow], horas:x.ht, he:x.he}; });
+  j.heEmFeriado=Math.round(j.feriadosComJornada.reduce(function(a,b){ return a+b.he; },0)*100)/100;
+  j.observacaoFeriados='calendário nacional (fixos + móveis). Feriados estaduais e municipais não entram nesta conferência.';
+}
+
 
 /* ---------- classificação da verba ---------- */
 const CARAC={DECIMO_TERCEIRO_SALARIO:'outro',FERIAS:'outro',AVISO_PREVIO:'outro',SALDO_SALARIO:'outro'};
@@ -184,8 +287,15 @@ function parse(xmlText){
     const carac=T(v,'caracteristica');
     const ocs=Array.from(v.querySelectorAll(':scope > ocorrencias > List > OcorrenciaDeVerba'));
     let qtd=0, dev=0, pago=0, div=null, mult=null, base=null, ini=null, fim=null;
+    const mensal=[];   /* mes a mes: e o que permite cruzar com o cartao de ponto */
     ocs.forEach(o=>{
       if(T(o,'ativo')==='false') return;
+      const dIni=T(o,'dataInicial');
+      if(dIni) mensal.push({
+        mes:new Date(parseInt(dIni,10)).toISOString().slice(0,7),
+        quantidade:Math.round((n(T(o,'quantidade'))||0)*10000)/10000,
+        devido:moeda(n(T(o,'devido'))||0), pago:moeda(n(T(o,'pago'))||0)
+      });
       qtd+=n(T(o,'quantidade'))||0;
       dev+=n(T(o,'devido'))||0;
       pago+=n(T(o,'pago'))||0;
@@ -206,7 +316,7 @@ function parse(xmlText){
       baseCalculo:base!=null?('R$ '+moeda(base)):null,
       percentual:mult!=null?(mult>=2?'100%':(mult>1?Math.round((mult-1)*100)+'%':null)):null,
       valorPrincipal:moeda(dev), valorPago:moeda(pago),
-      ocorrencias:ocs.length,
+      ocorrencias:ocs.length, mensal:mensal,
       incidenciaFGTS:T(v,'incidenciaFGTS')==='true',
       incidenciaINSS:T(v,'incidenciaINSS')==='true',
       trecho:'PJe-Calc: '+nome+(div?' · divisor '+div:'')+(mult?' · mult. '+mult:'')+(qtd?' · '+Math.round(qtd*100)/100+' un.':'')
@@ -244,7 +354,13 @@ function parse(xmlText){
   const pgs=Array.from(raiz.querySelectorAll('pagamentos > Set > *'));
   pgs.forEach(p=>{ const v=n(T(p,'valor')); if(v) deducoes.push({descricao:T(p,'descricao')||'pagamento',valor:moeda(v)}); });
 
-  /* -------- cartão de ponto -------- */
+  /* -------- cartão de ponto --------
+     Aqui não basta somar. O que decide uma impugnação é COMO a jornada
+     foi lançada: se bate com o horário fixado na decisão, e se — quando
+     a apuração deveria seguir o cartão de ponto — o lançamento é
+     britânico (o mesmo horário todo santo dia), sinal de que o cartão
+     não foi seguido. Por isso guardamos o padrão por dia da semana,
+     a aderência a esse padrão e o mês a mês. */
   const dias=Array.from(raiz.querySelectorAll('apuracoesDiariasCartaoDePonto > Set > ApuracaoDiariaCartao'));
   const jornada={ dias:dias.length, resumo:null };
   if(dias.length){
@@ -258,6 +374,7 @@ function parse(xmlText){
       horasDomingo:Math.round(soma('horasDomingo')*100)/100,
       horasFeriado:Math.round(soma('horasFeriado')*100)/100
     };
+    montarJornadaDetalhada(jornada, dias);
   }
 
   /* -------- férias -------- */
@@ -329,23 +446,38 @@ async function deflar(bytes){
 function p16(v){ return [v&0xFF,(v>>8)&0xFF]; }
 function p32(v){ return [v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>>24)&0xFF]; }
 
-async function montarZip(nomeArquivo, conteudo){
+/* O PJe-Calc grava o ZIP com o Java (ZipOutputStream): data e hora validas,
+   flag 0x8 (data descriptor) e o nome da entrada IGUAL ao nome do arquivo.
+   Reproduzimos isso — arquivo gerado por nos tem que ser indistinguivel. */
+function dosDataHora(d){
+  var dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  var tm=(d.getHours()<<11)|(d.getMinutes()<<5)|Math.floor(d.getSeconds()/2);
+  return {data:dt&0xFFFF, hora:tm&0xFFFF};
+}
+async function montarZip(nomeArquivo, conteudo, op){
+  op=op||{};
+  var dh=op.quando?dosDataHora(op.quando):{data:0x5D1B, hora:0x7CCB};
+  var descritor = op.dataDescriptor!==false;   // igual ao Java por padrao
   var nome=[]; for(var i=0;i<nomeArquivo.length;i++) nome.push(nomeArquivo.charCodeAt(i)&0xFF);
   var crc=crc32(conteudo);
   var comp=await deflar(conteudo);
   var metodo=8;
   if(!comp || comp.length>=conteudo.length){ comp=conteudo; metodo=0; }
-  var lfh=[].concat([0x50,0x4b,0x03,0x04], p16(20), p16(0), p16(metodo), p16(0), p16(0),
-                    p32(crc), p32(comp.length), p32(conteudo.length), p16(nome.length), p16(0), nome);
+  var flag = descritor?8:0;
+  // com data descriptor, o cabecalho local vai com zeros e os valores reais vem depois
+  var lfh=[].concat([0x50,0x4b,0x03,0x04], p16(20), p16(flag), p16(metodo), p16(dh.hora), p16(dh.data),
+                    p32(descritor?0:crc), p32(descritor?0:comp.length), p32(descritor?0:conteudo.length),
+                    p16(nome.length), p16(0), nome);
   var dados=Array.prototype.slice.call(comp);
+  var dd = descritor ? [].concat([0x50,0x4b,0x07,0x08], p32(crc), p32(comp.length), p32(conteudo.length)) : [];
   var off=0;
-  var cd=[].concat([0x50,0x4b,0x01,0x02], p16(20), p16(20), p16(0), p16(metodo), p16(0), p16(0),
+  var cd=[].concat([0x50,0x4b,0x01,0x02], p16(20), p16(20), p16(flag), p16(metodo), p16(dh.hora), p16(dh.data),
                    p32(crc), p32(comp.length), p32(conteudo.length), p16(nome.length),
                    p16(0), p16(0), p16(0), p16(0), p32(0), p32(off), nome);
-  var iniCd=lfh.length+dados.length;
+  var iniCd=lfh.length+dados.length+dd.length;
   var eocd=[].concat([0x50,0x4b,0x05,0x06], p16(0), p16(0), p16(1), p16(1),
                      p32(cd.length), p32(iniCd), p16(0));
-  return new Uint8Array(lfh.concat(dados, cd, eocd));
+  return new Uint8Array(lfh.concat(dados, dd, cd, eocd));
 }
 
 /* --- serializa o XML de volta, preservando o cabecalho ISO-8859-1 --- */
@@ -353,6 +485,31 @@ function serializar(doc){
   var xml=new XMLSerializer().serializeToString(doc);
   xml=xml.replace(/^<\?xml[^>]*\?>/,'');
   return '<?xml version="1.0" encoding="ISO-8859-1"?>'+xml;
+}
+
+/* --- edicao por TEXTO: troca so o valor, sem passar por DOM.
+       Passar pelo DOMParser+XMLSerializer reescreve o documento inteiro
+       (tags vazias, entidades, espacos) e isso pode ser o que o PJe-Calc
+       recusa. Aqui o resto do arquivo fica identico. --- */
+function trocarTexto(xml, tag, valor, ancora){
+  var re;
+  if(ancora){
+    re=new RegExp('(<'+ancora+'>[\\s\\S]{0,4000}?<'+tag+'>)([\\s\\S]*?)(<\\/'+tag+'>)');
+  }else{
+    re=new RegExp('(<'+tag+'>)([\\s\\S]*?)(<\\/'+tag+'>)');
+  }
+  var achou=false;
+  var novo=xml.replace(re, function(m,a,b,c){ achou=true; return a+String(valor)+c; });
+  return {xml:novo, achou:achou};
+}
+function editarTexto(xml, edicoes){
+  var mudou=[], faltou=[];
+  (edicoes||[]).forEach(function(ed){
+    var r=trocarTexto(xml, ed.tag, ed.valor, ed.ancora);
+    xml=r.xml;
+    (r.achou?mudou:faltou).push((ed.ancora?ed.ancora+' > ':'')+ed.tag);
+  });
+  return {xml:xml, mudou:mudou, faltou:faltou};
 }
 
 /* --- aplica alteracoes simples no XML: {caminho: valor} --- */
@@ -373,15 +530,25 @@ window.FazAIPJC={
 
   /* le o XML cru, para servir de molde */
   async lerXml(arrayBuffer){ return extrairXml(arrayBuffer); },
+  async lerXmlComNome(arrayBuffer){ return extrairXml(arrayBuffer, true); },
 
   /* gera um .PJC a partir de um XML (molde ja alterado, ou identico) */
-  async gerar(xmlText, nomeArquivo){
+  async gerar(xmlText, nomeArquivo, op){
     if(typeof CompressionStream==='undefined' && typeof Blob==='undefined')
       throw new Error('este navegador nao consegue montar o arquivo .PJC.');
     var nome=nomeArquivo||('CALCULO_'+Date.now()+'.PJC');
     var bytes=paraLatin1(xmlText);
-    var zip=await montarZip(nome, bytes);
+    var zip=await montarZip(nome, bytes, op);
     return {bytes:zip, nome:nome};
+  },
+
+  /* caminho recomendado: molde + edicao por texto, mantendo o nome da entrada */
+  async gerarPorTexto(arrayBufferMolde, edicoes, op){
+    var r=await extrairXml(arrayBufferMolde, true);
+    var e=editarTexto(r.xml, edicoes||[]);
+    var saida=await this.gerar(e.xml, (op&&op.nome)||r.nome, op);
+    saida.alterados=e.mudou; saida.naoEncontrados=e.faltou; saida.nomeEntrada=(op&&op.nome)||r.nome;
+    return saida;
   },
 
   /* molde + alteracoes -> novo .PJC */
@@ -395,6 +562,6 @@ window.FazAIPJC={
     return saida;
   },
 
-  crc32, paraLatin1, montarZip, serializar, aplicarPatch
+  crc32, paraLatin1, montarZip, serializar, aplicarPatch, editarTexto, trocarTexto, dosDataHora
 };
 })();
