@@ -4,17 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FazAI · Análise de Processo</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+<script src="libs/pdf.min.js"></script>
+<script src="libs/pdf-lib.min.js"></script>
+<script src="libs/xlsx.full.min.js"></script>
+<script src="libs/exceljs.min.js"></script>
+<script src="libs/docx.min.js"></script>
 <script src="fazai_tabelas.js"></script>
 <script src="fazai_engine.js"></script>
 <script src="fazai_estilo.js"></script>
 <script src="pontes_extrator.js"></script>
 <script src="fazai_impugnacao.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fflate/0.8.2/umd/index.js"></script>
+<script src="fazai_docx_estilo.js"></script>
+<script src="libs/fflate.min.js"></script>
 <script src="fazai_hook.js"></script>
 <style>
   :root{
@@ -202,7 +203,7 @@
 </div>
 
 <script>
-try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){ console.warn('pdf.js worker não configurado:',e); }
+try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='libs/pdf.worker.min.js'; }catch(e){ console.warn('pdf.js worker não configurado:',e); }
 
 const PROMPT = `Você é um perito contábil que elabora cálculos para processos judiciais trabalhistas. Vou te enviar um processo trabalhista — pode ser UMA peça (só a sentença) ou VÁRIAS (sentença, embargos, acórdão do TRT, acórdão de embargos, decisão de recurso de revista, agravo de petição, agravo de instrumento e demais decisões modificativas). Analise TODAS as decisões e devolva: (1) o mapa consolidado de verbas e parâmetros para liquidação, e (2) a situação processual e o risco de alteração do crédito.
 
