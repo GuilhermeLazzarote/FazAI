@@ -304,10 +304,60 @@ async function gerarWordImpugnacao(){
   const st=document.getElementById('imp-status');
   const sel=impugnacoes.filter(im=>im.incluir);
   if(!sel.length){ st.innerHTML='<span style="color:#a11">Marque ao menos um ponto para incluir.</span>'; return; }
+  const ehConf = modoImp==='conferir';
+  const proc=(ultimoJson&&ultimoJson.processo)||{};
+  const nomeArq=(ehConf?'Conferencia_':'Impugnacao_')+((proc.numero||'caso').replace(/[^\w]/g,'_').slice(0,30))+'.docx';
+
+  // ---- CAMINHO NOVO: casca visual FazAI (esqueleto profissional) ----
+  if(window.FazAIDocx && window.docx){
+    try{
+      const F=window.FazAIDocx;
+      const tituloDoc = ehConf ? 'Laudo de Conferência do Cálculo' : 'Impugnação aos Cálculos de Liquidação';
+      const subtitulo = ehConf ? 'Conferência interna — pontos a revisar antes de protocolar' : 'Confronto do cálculo apresentado com os parâmetros deferidos';
+      const blocos=[];
+      // título + subtítulo (casca)
+      blocos.push(...F.titulo(tituloDoc, subtitulo));
+      // aviso de não-validação (só na conferência)
+      if(ehConf) blocos.push(F.par('Documento interno. NÃO é validação: itens não apontados não estão automaticamente corretos. Nenhuma aritmética foi verificada — apenas critérios e enquadramento das rubricas frente aos parâmetros deferidos.',{ital:true,color:F.MARCA.txtFraco,size:17}));
+      blocos.push(F.esp(60));
+      // 1. Identificação (tabela 2 colunas — pula linha sem valor)
+      blocos.push(F.secao(1,'Identificação'));
+      blocos.push(F.tabela2col([
+        ['Nº do processo', proc.numero],
+        ['Reclamante', proc.reclamante],
+        ['Reclamada(s)', (proc.reclamadas||[]).join(', ')],
+        ['Vara / Tribunal', proc.vara],
+        ['Objeto', ehConf?'Conferência interna do cálculo':'Impugnação ao cálculo da parte contrária']
+      ]));
+      blocos.push(F.esp(80));
+      // 2. Pontos (cada um como bloco numerado, no esqueleto)
+      blocos.push(F.secao(2, ehConf?'Pontos a revisar':'Pontos de impugnação'));
+      sel.forEach((im,idx)=>{
+        // título do ponto + badge de confiança embutido no texto
+        const conf = im.confianca==='certo'?'erro claro':(im.confianca==='provavel'?'provável':'conferir');
+        blocos.push(F.blocoNum(idx+1, im.titulo+'  ('+conf+')', ''));
+        if(F.temValor(im.deferido))  blocos.push(F.par((ehConf?'Parâmetro deferido: ':'Deferido: ')+im.deferido,{size:19}));
+        if(F.temValor(im.o_que_fez)) blocos.push(F.par((ehConf?'O que o cálculo fez: ':'O que fez: ')+im.o_que_fez,{size:19}));
+        if(F.temValor(im.prova))     blocos.push(F.par((ehConf?'Divergência / risco: ':'Prova: ')+im.prova,{size:19}));
+        if(F.temValor(im.conclusao)) blocos.push(F.par((ehConf?'Sugestão de correção: ':'Conclusão: ')+im.conclusao,{bold:true,size:19}));
+        if(F.temValor(im.fundamento))blocos.push(F.par('Fundamento: '+im.fundamento,{ital:true,color:F.MARCA.txtFraco,size:17}));
+        blocos.push(F.esp(60));
+      });
+      // 3. Conclusão (se houver)
+      if(window._impConclusao){
+        blocos.push(F.secao(3,'Conclusão'));
+        blocos.push(F.par(window._impConclusao,{size:19}));
+      }
+      const blob=await F.montarDoc(blocos);
+      F.baixar(blob, nomeArq);
+      st.innerHTML='<span class="okmsg">✓ '+(ehConf?'Laudo de conferência gerado':'Impugnação gerada')+' ('+sel.length+' pontos), no modelo FazAI. '+(ehConf?'Revise e corrija antes de protocolar.':'Confira e ajuste antes de protocolar.')+'</span>';
+      return;
+    }catch(e){ /* se a casca falhar, cai no gerador simples abaixo */ console.warn('casca falhou, usando gerador simples:',e); }
+  }
+
+  // ---- FALLBACK: gerador simples (caso a casca não carregue) ----
   try{
-    const D=window.docx; if(!D) throw new Error('Biblioteca de documento não carregada.');
-    const ehConf = modoImp==='conferir';
-    const proc=(ultimoJson&&ultimoJson.processo)||{};
+    const D=window.docx; if(!D) throw new Error('A biblioteca que gera o Word não carregou. Recarregue a página (Ctrl+Shift+R).');
     const paras=[];
     const P=(txt,o)=>new D.Paragraph(Object.assign({children:[new D.TextRun(txt)]},o||{}));
     const tituloDoc = ehConf ? 'LAUDO DE CONFERÊNCIA DO CÁLCULO' : 'IMPUGNAÇÃO AOS CÁLCULOS DE LIQUIDAÇÃO';
@@ -316,8 +366,6 @@ async function gerarWordImpugnacao(){
     if(ehConf) paras.push(P('Documento interno de conferência — pontos a revisar antes de protocolar. NÃO é validação: itens não apontados não estão automaticamente corretos.',{spacing:{after:160}}));
     if(proc.numero) paras.push(P('Processo nº '+proc.numero,{spacing:{after:120}}));
     if(proc.vara) paras.push(P(proc.vara,{spacing:{after:200}}));
-    // romanos
-    const rom=['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv'];
     sel.forEach((im,idx)=>{
       paras.push(new D.Paragraph({spacing:{before:200,after:80},children:[new D.TextRun({text:(idx+1)+'. '+im.titulo,bold:true})]}));
       if(im.deferido) paras.push(P(im.deferido,{spacing:{after:80},alignment:D.AlignmentType.JUSTIFIED}));
@@ -325,16 +373,14 @@ async function gerarWordImpugnacao(){
       if(im.prova) paras.push(P(im.prova,{spacing:{after:80},alignment:D.AlignmentType.JUSTIFIED}));
       if(im.conclusao) paras.push(new D.Paragraph({spacing:{after:120},alignment:D.AlignmentType.JUSTIFIED,children:[new D.TextRun({text:im.conclusao,bold:true})]}));
     });
-    // conclusão
     if(window._impConclusao){
       paras.push(new D.Paragraph({spacing:{before:200,after:80},children:[new D.TextRun({text:'CONCLUSÃO',bold:true})]}));
       paras.push(P(window._impConclusao,{alignment:D.AlignmentType.JUSTIFIED}));
     }
     const doc=new D.Document({sections:[{properties:{},children:paras}]});
     const blob=await D.Packer.toBlob(doc);
-    const nome=(ehConf?'Conferencia_':'Impugnacao_')+((proc.numero||'caso').replace(/[^\w]/g,'_').slice(0,30))+'.docx';
-    const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=nome; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000);
-    st.innerHTML='<span class="okmsg">✓ '+(ehConf?'Laudo de conferência gerado':'Impugnação gerada')+' ('+sel.length+' pontos). '+(ehConf?'Revise os pontos e corrija seu cálculo antes de protocolar.':'Confira e ajuste no Word antes de protocolar.')+'</span>';
+    const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=nomeArq; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000);
+    st.innerHTML='<span class="okmsg">✓ '+(ehConf?'Laudo de conferência gerado':'Impugnação gerada')+' ('+sel.length+' pontos).</span>';
   }catch(e){ st.innerHTML='<span style="color:#a11">Erro ao gerar Word: '+e.message+'</span>'; }
 }
 
