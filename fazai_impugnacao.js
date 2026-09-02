@@ -103,20 +103,22 @@ REGRAS ABSOLUTAS:
 // extrai rubricas estruturadas do XML do PJe-Calc (.PJC) — texto limpo pra IA casar
 function extrairRubricasPJC(xml){
   // Lê o XML do PJe-Calc como árvore (DOMParser nativo do navegador).
-  // REGRA DE OURO do PJe-Calc: rubrica com <ativo>true</ativo> está sendo APURADA;
-  // <ativo>false</ativo> é esqueleto desligado (não conta). Só as ativas vão pra IA.
-  // Captura também as incidências (FGTS/INSS/IRPF) — é assim que o FGTS aparece no PJC
-  // (não é rubrica com nome, é incidência marcada em cada verba).
-  const ativas=[]; const partes=[];
+  // O PJe-Calc guarda valores em DUAS famílias:
+  //  (A) RUBRICAS calculadas (<Calculada>/<Reflexo>): têm <nome> + <ativo> + incidências.
+  //      REGRA DE OURO: só <ativo>true</ativo> está apurada; false é esqueleto (ignora).
+  //  (B) VALORES ARBITRADOS (<Multa>/<Honorario>/<PensaoAlimenticia>): têm <descricao> + valor.
+  //      É AQUI que ficam DANO MORAL, multas 467/477 arbitradas, honorários, pensão.
+  //      Estes NÃO têm <ativo> — se existem com valor, estão apurados.
+  const ativas=[]; const arbitrados=[];
   try{
     const doc=new DOMParser().parseFromString(xml,'text/xml');
     if(doc.querySelector('parsererror')) throw new Error('xml inválido');
-    // varre todo elemento que tenha um filho <nome> direto
     const todos=doc.getElementsByTagName('*');
     const vistos={};
+
+    // (A) rubricas calculadas com <nome> + <ativo>
     for(let i=0;i<todos.length;i++){
       const el=todos[i];
-      // filho <nome> direto?
       let nomeEl=null, ativoEl=null;
       for(let j=0;j<el.children.length;j++){
         const c=el.children[j];
@@ -125,16 +127,10 @@ function extrairRubricasPJC(xml){
       }
       if(!nomeEl || !nomeEl.textContent) continue;
       const nome=nomeEl.textContent.trim();
-      if(nome.length<3 || vistos[nome]) continue;
-      // partes (reclamante/reclamada) não são rubricas — geralmente sem <ativo>
-      if(!ativoEl){ 
-        // pode ser nome de parte — guarda separado, não polui a lista de verbas
-        if(nome===nome.toUpperCase() && /LTDA|S\.?A\.?|EIRELI|ME$|LUCINDO|SILVA|SANTOS/.test(nome)) partes.push(nome);
-        continue;
-      }
-      vistos[nome]=1;
-      // SÓ conta se ativo=true (apurada)
-      if(ativoEl.textContent.trim()!=='true') continue;
+      if(nome.length<3 || vistos['R:'+nome]) continue;
+      if(!ativoEl) continue; // sem <ativo> não é rubrica calculada (parte, etc.)
+      vistos['R:'+nome]=1;
+      if(ativoEl.textContent.trim()!=='true') continue; // esqueleto desligado
       const inc=[];
       for(let j=0;j<el.children.length;j++){
         const c=el.children[j];
@@ -144,8 +140,30 @@ function extrairRubricasPJC(xml){
       }
       ativas.push(inc.length ? nome+' [incide: '+inc.join(', ')+']' : nome);
     }
+
+    // (B) valores arbitrados: Multa (dano moral, multas), Honorario, PensaoAlimenticia
+    const tiposArb=['Multa','Honorario','PensaoAlimenticia'];
+    tiposArb.forEach(tag=>{
+      const els=doc.getElementsByTagName(tag);
+      for(let i=0;i<els.length;i++){
+        const el=els[i];
+        let desc='', valor='';
+        for(let j=0;j<el.children.length;j++){
+          const c=el.children[j];
+          if(c.tagName==='descricao') desc=c.textContent.trim();
+          if(c.tagName==='valorMulta'||c.tagName==='valor') valor=c.textContent.trim();
+        }
+        if(!desc) continue;
+        // formata o valor (o PJC vem com muitas casas) — só pra IA saber que tem valor
+        let vnum=parseFloat(valor);
+        if(isNaN(vnum) || vnum===0) continue; // sem valor real, ignora
+        if(vistos['A:'+desc]) continue; vistos['A:'+desc]=1;
+        const rot = tag==='Honorario'?'honorários':(tag==='PensaoAlimenticia'?'pensão':'valor arbitrado/multa');
+        arbitrados.push(desc+' [R$ '+vnum.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' — '+rot+']');
+      }
+    });
   }catch(e){
-    // fallback: se o DOMParser falhar, usa o regex antigo (pega tudo, sem filtro de ativo)
+    // fallback regex se o DOMParser falhar
     const re=/<(?:nome|descricao)>([^<]{3,70})<\/(?:nome|descricao)>/g;
     let m, vistos={};
     while((m=re.exec(xml))){
@@ -153,7 +171,8 @@ function extrairRubricasPJC(xml){
       if(v===v.toUpperCase() && v.length>3 && !vistos[v]){ vistos[v]=1; ativas.push(v); }
     }
   }
-  return ativas;
+  // rubricas primeiro, depois valores arbitrados (dano moral, honorários, etc.)
+  return ativas.concat(arbitrados);
 }
 
 async function onCalcAdversario(input){
@@ -189,7 +208,7 @@ async function onCalcAdversario(input){
       }
       const rubricas=extrairRubricasPJC(xml);
       if(rubricas.length){
-        calcAdvTexto='CÁLCULO DO PJe-CALC — SOMENTE as rubricas EFETIVAMENTE APURADAS (ativo=true no XML; as zeradas/desligadas já foram excluídas). Estas são as verbas que o cálculo REALMENTE gerou:\n- '+rubricas.join('\n- ')+'\n\nOBSERVAÇÕES IMPORTANTES SOBRE ESTA LISTA (para não gerar falso positivo):\n1. Esta lista já contém APENAS o que está sendo apurado. Se uma rubrica/reflexo NÃO aparece aqui, é porque NÃO está sendo calculada — NÃO aponte como "reflexo indevido presente" algo que não está na lista.\n2. O FGTS no PJe-Calc NÃO é uma rubrica com nome próprio — ele é uma INCIDÊNCIA marcada em cada verba (aparece como "[incide: FGTS]" ao lado da rubrica). Se uma verba tem "[incide: FGTS]", o FGTS ESTÁ sendo apurado sobre ela. NUNCA aponte "falta FGTS" — verifique as incidências ao lado de cada rubrica.\n3. Os reflexos que aparecem na lista (13º SOBRE, FÉRIAS SOBRE, AVISO SOBRE, RSR SOBRE) são os que ESTÃO sendo apurados. Confira se cada um tem amparo na decisão. Reflexo que NÃO está na lista = não apurado = não é problema.';
+        calcAdvTexto='CÁLCULO DO PJe-CALC — SOMENTE as rubricas EFETIVAMENTE APURADAS (ativo=true no XML; as zeradas/desligadas já foram excluídas). Estas são as verbas que o cálculo REALMENTE gerou:\n- '+rubricas.join('\n- ')+'\n\nOBSERVAÇÕES IMPORTANTES SOBRE ESTA LISTA (para não gerar falso positivo):\n1. Esta lista já contém APENAS o que está sendo apurado. Se uma rubrica/reflexo NÃO aparece aqui, é porque NÃO está sendo calculada — NÃO aponte como "reflexo indevido presente" algo que não está na lista.\n2. O FGTS no PJe-Calc NÃO é uma rubrica com nome próprio — ele é uma INCIDÊNCIA marcada em cada verba (aparece como "[incide: FGTS]" ao lado da rubrica). Se uma verba tem "[incide: FGTS]", o FGTS ESTÁ sendo apurado sobre ela. NUNCA aponte "falta FGTS" — verifique as incidências ao lado de cada rubrica.\n3. Os reflexos que aparecem na lista (13º SOBRE, FÉRIAS SOBRE, AVISO SOBRE, RSR SOBRE) são os que ESTÃO sendo apurados. Confira se cada um tem amparo na decisão. Reflexo que NÃO está na lista = não apurado = não é problema.\n4. VALORES ARBITRADOS: dano moral, multas (467/477), honorários e pensão NÃO são rubricas calculadas — o PJe-Calc os guarda em estrutura própria. Eles aparecem na lista com o valor entre colchetes, ex.: "DANO MORAL [R$ 35.000,00 — valor arbitrado/multa]", "HONORÁRIOS ADVOCATÍCIOS [R$ 55.238,03 — honorários]". Se o dano moral/multa/honorário aparece assim, ELE ESTÁ sendo apurado. NUNCA aponte "dano moral não aparece" ou "falta honorário" se ele consta na lista com valor.';
         st.innerHTML='<span class="okmsg">✓ '+f.name+' lido (.PJC estruturado) — '+rubricas.length+' rubricas.</span> Clique no botão para gerar.';
         document.getElementById('imp-gerar').disabled=false;
         input.value=''; return;
