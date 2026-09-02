@@ -13,6 +13,7 @@
 <script src="fazai_engine.js"></script>
 <script src="fazai_estilo.js"></script>
 <script src="pontes_extrator.js"></script>
+<script src="fazai_impugnacao.js"></script>
 <script src="fazai_hook.js"></script>
 <style>
   :root{
@@ -98,12 +99,14 @@
   .prem-in input{width:88px;padding:7px;border:1px solid var(--line);border-radius:6px;font-size:14px}
   .prem-in span{font-size:12px;color:var(--muted)}
   .prem-row select{padding:7px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+.seg-btn{background:#eef1f6;color:var(--navy);transition:all .15s}
+.seg-btn.on{background:var(--navy,#1B365D);color:#fff}
 </style>
 </head>
 <body>
 <header>
   <div class="logo" ondblclick="var t=document.getElementById('tab-json'); if(t) t.style.display=t.style.display==='none'?'block':'none';" title="">Faz<b>AI</b></div>
-  <div class="sub">Análise de Processo · leitura de decisões <a href="extratores.html" style="color:#fff;text-decoration:none;margin-left:16px;background:var(--orange);padding:4px 12px;border-radius:6px;font-weight:600">🕐 Extratores</a><a href="impugnacao.html" style="color:#fff;text-decoration:none;margin-left:10px;background:var(--orange);padding:4px 12px;border-radius:6px;font-weight:600">⚖️ Impugnação</a></div>
+  <div class="sub">Análise de Processo · leitura de decisões <a href="extratores.html" style="color:#fff;text-decoration:none;margin-left:16px;background:var(--orange);padding:4px 12px;border-radius:6px;font-weight:600">🕐 Extratores</a></div>
 </header>
 
 <div class="wrap">
@@ -145,11 +148,48 @@
       <div class="tab on" data-p="resumo" onclick="tab('resumo')">Resumo para conferência</div>
       <div class="tab" data-p="dados" onclick="tab('dados')">Dados para o cálculo</div>
       <div class="tab" data-p="calculo" onclick="tab('calculo')">Estimativa</div>
+      <div class="tab" data-p="impugnacao" onclick="tab('impugnacao')">Impugnação</div>
       <div class="tab" data-p="json" onclick="tab('json')" style="display:none" id="tab-json">JSON (dados)</div>
     </div>
     <div class="pane on" id="pane-resumo"></div>
     <div class="pane" id="pane-dados"></div>
     <div class="pane" id="pane-calculo"></div>
+    <div class="pane" id="pane-impugnacao">
+      <div style="max-width:820px">
+        <h2 style="font-size:18px;color:var(--navy);margin:0 0 10px">Impugnação e conferência de cálculo</h2>
+
+        <div style="display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px">
+          <button id="imp-modo-impugnar" class="seg-btn on" onclick="setModo('impugnar')" style="border:0;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Impugnar cálculo adversário</button>
+          <button id="imp-modo-conferir" class="seg-btn" onclick="setModo('conferir')" style="border:0;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Conferir meu cálculo</button>
+        </div>
+
+        <p class="hint" id="imp-subtitulo" style="margin-bottom:16px">Suba o <b>PDF do cálculo da parte contrária</b>. O sistema confronta cada parâmetro deferido com o que ela fez, varre o catálogo de 44 teses, e sugere os pontos de impugnação — você escolhe, edita e gera o documento no seu estilo. <b>O sistema sugere; você decide.</b></p>
+
+        <div style="margin-bottom:14px">
+          <label id="imp-label-upload" style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:6px">1. Cálculo da parte contrária (PDF)</label>
+          <label id="imp-btn-upload" class="btn btn-ghost btn-sm" style="cursor:pointer">📄 Selecionar PDF do cálculo adversário<input type="file" accept=".pdf" style="display:none" onchange="onCalcAdversario(this)"></label>
+        </div>
+
+        <div id="imp-bloco-modelo" style="margin-bottom:14px">
+          <label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:6px">2. Modelo-base do seu estilo (opcional)</label>
+          <textarea id="imp-modelo" oninput="setModeloBase(this.value)" placeholder="Cole aqui uma impugnação sua antiga (ou um trecho) para o texto sair no seu estilo — seus jargões, fechamentos, estrutura. Opcional, mas melhora muito o resultado." style="width:100%;min-height:80px;padding:9px;border:1px solid var(--line);border-radius:6px;font-size:13px"></textarea>
+        </div>
+
+        <div class="row" style="margin-bottom:6px">
+          <button class="btn btn-primary" id="imp-gerar" onclick="gerarImpugnacao()" disabled>Gerar sugestões de impugnação</button>
+        </div>
+        <div class="status" id="imp-status"></div>
+
+        <div id="imp-lista" style="margin-top:16px"></div>
+
+        <div id="imp-acoes" style="display:none;margin-top:8px">
+          <div class="row">
+            <button class="btn btn-primary" style="background:var(--navy)" onclick="gerarWordImpugnacao()">Gerar documento (Word)</button>
+          </div>
+          <p class="hint" style="margin-top:8px">O documento sai com os pontos marcados, na estrutura de 4 movimentos. Confira e ajuste no Word antes de protocolar.</p>
+        </div>
+      </div>
+    </div>
     <div class="pane" id="pane-json">
       <div class="copybar"><button class="copybtn" onclick="copiarJson()">copiar JSON</button></div>
       <pre id="jsonout"></pre>
