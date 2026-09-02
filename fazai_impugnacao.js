@@ -37,32 +37,121 @@ REGRAS ABSOLUTAS:
 Responda SÓ JSON puro (começa { termina }), SEM markdown:
 {"impugnacoes":[{"id":"correcao_adc58","titulo":"Índice de correção incorreto — inobservância da ADC 58/59","deferido":"o que foi deferido, com citação","o_que_fez":"o desvio do adversário","prova":"o dado concreto (índice X vs Y deferido)","conclusao":"Resta impugnado...","confianca":"certo|provavel|conferir","fundamento":"ADC 58/59, coisa julgada"}],"conclusao":"síntese dos pontos (i, ii, iii...)"}`;
 
+// DICIONÁRIO DE NOMENCLATURA DO PJe-CALC (destilado de cálculos reais).
+// O PJe-Calc gera os nomes de rubrica sempre nos mesmos padrões — este bloco
+// ensina a IA a reconhecê-los ao ler QUALQUER cálculo (PJC ou PDF impresso),
+// pra casar rubrica↔verba deferida por natureza e não errar como "não apurada/sem deferimento".
+const DICIONARIO_PJECALC = `DICIONÁRIO DO PJe-CALC (como o PJe-Calc nomeia as rubricas — use pra casar com a verba deferida):
+
+VERBAS PRINCIPAIS → como a decisão chama vs como o cálculo nomeia:
+- Horas extras (excedentes 6ª/8ª/44ª, sobrejornada, turnos de revezamento) → "HORAS EXTRAS 50%/70%/100%/110%", quase sempre DESDOBRADAS em "... - DIURNAS", "... - NOTURNAS", "... - OJ 394". O NÚMERO (50/70/100/110%) é o ADICIONAL aplicado (legal ou da CCT) — NÃO é verba estranha, é a MESMA HE deferida. "HORAS REDUZIDAS" = hora noturna reduzida, ligada à HE noturna.
+- Intervalo intrajornada (art.71 §4º) → "INTERVALO INTRAJORNADA".
+- Adicional de periculosidade → "ADICIONAL DE PERICULOSIDADE 30%". Insalubridade → "ADICIONAL DE INSALUBRIDADE 40%/20%/10%".
+- Indenização em dobro / dispensa discriminatória (Lei 9.029) → "DISPENSA DISCRIMINATORIA - REM EM DOBRO".
+- Dano moral → "DANO MORAL". Verbas rescisórias → "SALDO DE SALÁRIO", "AVISO PRÉVIO", "FÉRIAS + 1/3", "13º SALÁRIO".
+- Multas → "MULTA DO ARTIGO 477 DA CLT", "MULTA DO ARTIGO 467 DA CLT". Honorários → "HONORÁRIOS ADVOCATÍCIOS".
+
+REFLEXOS (fórmula fixa: "<TIPO> SOBRE <VERBA-MÃE>") — são reflexos da verba-mãe citada após "SOBRE", NÃO verbas autônomas. TIPOS: "13º SALÁRIO SOBRE ...", "FÉRIAS + 1/3 SOBRE ...", "AVISO PRÉVIO SOBRE ...", "REPOUSO SEMANAL REMUNERADO E FERIADO SOBRE ..." (=DSR), "MULTA DO ARTIGO 477/467 SOBRE ...", "FGTS SOBRE ...". Se a verba-mãe foi deferida COM aquele reflexo, o reflexo está correto — NUNCA marque reflexo como "sem deferimento".
+
+DEDUÇÕES (sufixo "PAGO"/"PAGA"): "ADICIONAL DE PERICULOSIDADE PAGO", "ADICIONAL DE INSALUBRIDADE PAGO", "ADICIONAL NOTURNO PAGO", "ADICIONAL DE REVEZAMENTO" (quando pago) = valores que o cálculo está DEDUZINDO (abatimento sob mesmo título). Presença é CORRETA quando a decisão mandou deduzir — NÃO marque "sem deferimento".
+
+NÃO-VERBAS (aparecem como linha mas não são verba de valor a conferir): "BASE INSS", "SALARIO BASE"/"SALÁRIO BASE" (é base, não verba), nomes das PARTES (reclamante/reclamada aparecem como <nome>).`;
+
 let impugnacoes=[], calcAdvTexto='', calcAdvB64='', modeloBase='', modoImp='impugnar';
+
+
 
 // PROMPT de CONFERÊNCIA do próprio cálculo (mesma comparação, tom de correção)
 const PROMPT_CONFERENCIA = `Você é um assistente técnico de conferência de cálculos trabalhistas. Sua função é AUDITAR um cálculo de liquidação (feito pelo PRÓPRIO calculista, do NOSSO lado) contra os PARÂMETROS EXPRESSAMENTE DEFERIDOS na decisão, ANTES de protocolar. O objetivo é PEGAR ERROS antes que a outra parte pegue.
+
+════════════════════════════════════════════════════════════════
+PASSO 0 (OBRIGATÓRIO, ANTES DE QUALQUER JULGAMENTO) — CASAR VERBA DEFERIDA ↔ RUBRICA DO CÁLCULO POR NATUREZA, NÃO POR NOME.
+O cálculo é gerado no PJe-Calc, que usa NOMES DE RUBRICA DIFERENTES dos nomes que a decisão usa. NUNCA conclua "não apurada" ou "sem deferimento" por não achar o nome igual. Você DEVE mapear pela NATUREZA JURÍDICA. Regras de mapeamento (aplique TODAS):
+
+1) DESDOBRAMENTO: uma única verba deferida vira VÁRIAS rubricas no cálculo. Some/agrupe antes de julgar. Exemplos:
+   - "horas extras excedentes da 6ª/36ª" (decisão) = no cálculo aparece como "HORAS EXTRAS 70% - DIURNAS", "HORAS EXTRAS 70% - NOTURNAS", "HORAS EXTRAS 70% ... OJ 394", "HORAS EXTRAS 110%", "HORAS REDUZIDAS" etc. O percentual (70%, 110%) é o ADICIONAL DA CCT aplicado — é a MESMA verba de HE deferida, NÃO uma verba estranha. Diurna/noturna/OJ394 são recortes da mesma HE.
+   - "intervalo intrajornada" (decisão) = "INTERVALO INTRAJORNADA" e seus reflexos no cálculo.
+   - "indenização em dobro / dispensa discriminatória" (decisão) = "DISPENSA DISCRIMINATORIA - REM EM DOBRO" no cálculo.
+   - "adicional de periculosidade" = "ADICIONAL DE PERICULOSIDADE 30%"; "dano moral" = "DANO MORAL".
+
+2) REFLEXOS NÃO SÃO VERBAS ÓRFÃS. Rubricas que começam com "13º SALÁRIO SOBRE ...", "FÉRIAS + 1/3 SOBRE ...", "AVISO PRÉVIO SOBRE ...", "REPOUSO SEMANAL REMUNERADO E FERIADO SOBRE ...", "MULTA DO ARTIGO 477 SOBRE ...", "FGTS SOBRE ..." são REFLEXOS da verba-mãe citada depois do "SOBRE". Se a verba-mãe foi deferida com aquele reflexo, o reflexo ESTÁ CORRETO — jamais marque "sem deferimento". Só é problema se o reflexo existir SEM a verba-mãe ter reflexo deferido, ou faltar um reflexo que foi deferido.
+
+3) "PAGO" = DEDUÇÃO, não deferimento. Rubricas "ADICIONAL DE PERICULOSIDADE PAGO", "ADICIONAL NOTURNO PAGO", "ADICIONAL DE INSALUBRIDADE PAGO", "ADICIONAL DE REVEZAMENTO" (pago) são VALORES QUE O CÁLCULO ESTÁ DEDUZINDO (abatimento de valores pagos sob mesmo título). Presença delas é CORRETA quando a decisão mandou deduzir. NÃO as marque "sem deferimento".
+
+4) NEM TUDO QUE FOI DEFERIDO É LINHA DE VALOR. Obrigações de fazer (retificar PPP), declarações (nulidade de compensação, dispensa discriminatória em si), e comandos de dedução/parâmetro (dedução do adicional de turno, opção insalubridade×periculosidade) NÃO são "verbas a apurar". NÃO as marque "não apurada" — elas não geram rubrica de valor. Trate-as como parâmetro/comando, não como pendência de apuração.
+
+5) SÓ conclua "NÃO APURADA" se, DEPOIS de casar por natureza, desdobramento e reflexo, a verba deferida (que gera valor) realmente não tiver NENHUMA rubrica correspondente no cálculo. SÓ conclua "SEM DEFERIMENTO" se uma rubrica de valor não corresponder a NENHUMA verba deferida NEM for reflexo/dedução de uma. Antes de afirmar qualquer um dos dois, releia o mapeamento — esses dois erros normalmente são o MESMO item mal casado, contado dos dois lados.
+════════════════════════════════════════════════════════════════
 
 REGRAS ABSOLUTAS:
 - Você NÃO calcula e NÃO refaz a conta. Você CONFERE CRITÉRIOS: se o cálculo respeitou o índice de correção deferido, a base, o período, as deduções, a limitação, os reflexos — os PARÂMETROS da decisão. NÃO valida a aritmética (isso é do Excel).
 - Você APONTA possíveis problemas, NÃO garante que o cálculo está certo. Um item não apontado NÃO significa que está correto — significa que você não encontrou divergência de critério legível. Deixe isso claro.
 - Para cada possível problema encontrado, use esta estrutura:
   1) PARÂMETRO DEFERIDO — o que a decisão determinou (com fl./súmula/OJ).
-  2) O QUE O CÁLCULO FEZ — o que você observou no cálculo conferido.
+  2) O QUE O CÁLCULO FEZ — o que você observou no cálculo conferido (cite a rubrica do PJe-Calc pelo nome que ela tem no cálculo).
   3) DIVERGÊNCIA — em que ponto diverge, e o risco (a outra parte pode impugnar isto).
   4) SUGESTÃO — o que revisar/corrigir antes de protocolar.
 - Varra o cálculo contra o CATÁLOGO DE TESES (abaixo): se um gatilho estiver presente NO NOSSO cálculo, é um ponto que a parte contrária poderia impugnar — sinalize para o calculista blindar antes.
-- Confiança: "erro claro" (divergência nítida de critério), "provável" (indício, conferir), "conferir" (depende do processo, só lembrete).
-- NÃO invente problema. Se o cálculo parece respeitar o parâmetro, não force um alerta. Falso alarme faz o calculista perder confiança na ferramenta.
+- Confiança: "erro claro" (divergência nítida de critério, com verba corretamente casada), "provável" (indício, conferir), "conferir" (depende do processo, só lembrete).
+- NÃO invente problema. Se o cálculo parece respeitar o parâmetro, não force um alerta. Falso alarme faz o calculista perder confiança na ferramenta. ERRO DE CASAMENTO (marcar como divergência algo que é a mesma verba com outro nome) é o PIOR falso alarme — evite-o com o PASSO 0.
 
 `;
 
+
+
 // chamado quando o usuário sobe o PDF do cálculo adversário
+// extrai rubricas estruturadas do XML do PJe-Calc (.PJC) — texto limpo pra IA casar
+function extrairRubricasPJC(xml){
+  const nomes=[];
+  const re=/<(?:nome|descricao|nomeRubrica|descricaoRubrica)>([^<]{3,70})<\/(?:nome|descricao|nomeRubrica|descricaoRubrica)>/g;
+  let m, vistos={};
+  while((m=re.exec(xml))){
+    let v=m[1].trim();
+    // decodifica entidades comuns
+    v=v.replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n)).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    if(v===v.toUpperCase() && v.length>3 && !vistos[v]){ vistos[v]=1; nomes.push(v); }
+  }
+  return nomes;
+}
+
 async function onCalcAdversario(input){
   const f=input.files[0]; if(!f) return;
   const st=document.getElementById('imp-status');
-  st.innerHTML='Lendo o cálculo da parte contrária…';
+  st.innerHTML='Lendo o cálculo…';
   try{
     const ab=await f.arrayBuffer();
+    const nome=(f.name||'').toLowerCase();
+    calcAdvTexto=''; calcAdvB64='';
+
+    // --- É .PJC (formato nativo do PJe-Calc)? ---
+    if(nome.endsWith('.pjc') || nome.endsWith('.xml')){
+      const bytes=new Uint8Array(ab);
+      let xml='';
+      // zip (magic PK) → descompacta com fflate; senão é XML direto
+      if(bytes[0]===0x50 && bytes[1]===0x4B){
+        if(!window.fflate){ st.innerHTML='<span style="color:#a11">Este .PJC está compactado e a biblioteca de leitura não carregou. Recarregue a página e tente de novo.</span>'; return; }
+        try{
+          const files=window.fflate.unzipSync(bytes);
+          const chave=Object.keys(files)[0];
+          xml=window.fflate.strFromU8(files[chave]);
+        }catch(e){ st.innerHTML='<span style="color:#a11">Não consegui descompactar o .PJC: '+e.message+'</span>'; return; }
+      } else {
+        // XML direto — decodifica respeitando encoding (PJe-Calc às vezes usa ISO-8859-1)
+        const cab=new TextDecoder('utf-8').decode(bytes.slice(0,80));
+        const enc=/ISO-8859-1/i.test(cab)?'iso-8859-1':'utf-8';
+        xml=new TextDecoder(enc).decode(bytes);
+      }
+      const rubricas=extrairRubricasPJC(xml);
+      if(rubricas.length){
+        calcAdvTexto='CÁLCULO DO PJe-CALC (rubricas extraídas do arquivo .PJC estruturado, nomes exatos do PJe-Calc):\n- '+rubricas.join('\n- ');
+        st.innerHTML='<span class="okmsg">✓ '+f.name+' lido (.PJC estruturado) — '+rubricas.length+' rubricas.</span> Clique no botão para gerar.';
+        document.getElementById('imp-gerar').disabled=false;
+        input.value=''; return;
+      }
+      st.innerHTML='<span style="color:#a11">Li o .PJC mas não encontrei rubricas reconhecíveis. Tente subir o cálculo em PDF.</span>'; input.value=''; return;
+    }
+
+    // --- PDF (padrão, e único caminho pra cálculo do adversário) ---
     let texto='';
     try{
       const pdf=await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
@@ -72,7 +161,7 @@ async function onCalcAdversario(input){
     const bytes=new Uint8Array(ab); let bin=''; for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
     calcAdvB64=btoa(bin);
     const md = calcAdvTexto.length>200 ? 'texto' : 'imagem (escaneado)';
-    st.innerHTML='<span class="okmsg">✓ '+f.name+' carregado</span> — leitura por '+md+'. Clique em "Gerar impugnação".';
+    st.innerHTML='<span class="okmsg">✓ '+f.name+' carregado</span> — leitura por '+md+'. Clique no botão para gerar.';
     document.getElementById('imp-gerar').disabled=false;
   }catch(e){ st.innerHTML='<span style="color:#a11">Erro ao ler: '+e.message+'</span>'; }
   input.value='';
@@ -106,7 +195,7 @@ async function gerarImpugnacao(){
       partes.push({type:'document', source:{type:'base64',media_type:'application/pdf',data:calcAdvB64}});
       partes.push({type:'text', text:'\n\n(acima: PDF do '+rotuloCalc.toLowerCase()+')'});
     }
-    const PROMPT = ehConf ? (PROMPT_CONFERENCIA+CATALOGO+'\n\nResponda SÓ JSON puro (começa { termina }), SEM markdown:\n{"impugnacoes":[{"id":"correcao_adc58","titulo":"...","deferido":"parâmetro deferido","o_que_fez":"o que o cálculo fez","prova":"a divergência e o risco","conclusao":"sugestão de correção","confianca":"certo|provavel|conferir","fundamento":"..."}],"conclusao":"síntese dos pontos a revisar"}') : PROMPT_IMPUGNACAO;
+    const PROMPT = (ehConf ? (PROMPT_CONFERENCIA+CATALOGO+'\n\nResponda SÓ JSON puro (começa { termina }), SEM markdown:\n{"impugnacoes":[{"id":"correcao_adc58","titulo":"...","deferido":"parâmetro deferido","o_que_fez":"o que o cálculo fez","prova":"a divergência e o risco","conclusao":"sugestão de correção","confianca":"certo|provavel|conferir","fundamento":"..."}],"conclusao":"síntese dos pontos a revisar"}') : PROMPT_IMPUGNACAO) + '\n\n' + DICIONARIO_PJECALC;
     partes.push({type:'text', text:'\n\n---\n'+PROMPT});
 
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -212,7 +301,7 @@ function setModo(m){
   if(b1&&b2){ b1.className='seg-btn'+(ehConf?'':' on'); b2.className='seg-btn'+(ehConf?' on':''); }
   // rótulo do upload
   const lu=document.getElementById('imp-label-upload'); if(lu) lu.textContent = ehConf ? '1. Seu cálculo, o que você fez (PDF)' : '1. Cálculo da parte contrária (PDF)';
-  const bu=document.getElementById('imp-btn-upload'); if(bu) bu.innerHTML = (ehConf?'📄 Selecionar PDF do seu cálculo':'📄 Selecionar PDF do cálculo adversário')+bu.querySelector('input').outerHTML;
+  const bu=document.getElementById('imp-btn-upload'); if(bu) bu.innerHTML = (ehConf?'📄 Selecionar seu cálculo (.PJC ou PDF)':'📄 Selecionar cálculo adversário (PDF)')+bu.querySelector('input').outerHTML;
   // campo modelo-base só faz sentido na impugnação
   const bm=document.getElementById('imp-bloco-modelo'); if(bm) bm.style.display = ehConf ? 'none' : 'block';
   // texto do botão gerar e do subtítulo
