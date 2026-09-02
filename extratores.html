@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FazAI · Extratores</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="libs/pdf.min.js"></script>
+<script src="libs/pdf-lib.min.js"></script>
+<script src="libs/xlsx.full.min.js"></script>
 <style>
   :root{ --navy:#16213E; --navy2:#223056; --orange:#F15A22; --ink:#222;
     --line:#cfd8e6; --bg:#EEF1F6; --panel:#f7f9fc; --muted:#5A6472;
@@ -64,7 +64,6 @@
   <div class="logo">Faz<b>AI</b></div>
   <div class="sub">Extratores · ponto & holerite
     <a href="analise-processo.html">→ Análise & Cálculo</a>
-    <a href="impugnacao.html">⚖️ Impugnação</a>
   </div>
 </header>
 
@@ -130,7 +129,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
-try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){}
+try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='libs/pdf.worker.min.js'; }catch(e){}
 let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc', arquivoAB=null, numPaginas=0;
 let jornada=[];        // ponto
 let holerite=null;     // {caso,competencias,rubricas:[{codigo,descricao,tipo,valores:{comp:val}}],salarioFixo,avisos}
