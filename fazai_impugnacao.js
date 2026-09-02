@@ -127,8 +127,12 @@ async function onCalcAdversario(input){
     if(nome.endsWith('.pjc') || nome.endsWith('.xml')){
       const bytes=new Uint8Array(ab);
       let xml='';
-      // zip (magic PK) → descompacta com fflate; senão é XML direto
-      if(bytes[0]===0x50 && bytes[1]===0x4B){
+      // Detecção robusta: primeiro tenta ler como texto e ver se JÁ é XML (caso mais comum do PJe-Calc).
+      // Só usa a fflate se for REALMENTE um zip (magic PK) E o conteúdo não for XML legível.
+      const cab=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(0,200));
+      const pareceXml = /<\?xml|<Calculo|<calculo/i.test(cab);
+      const ehZip = (bytes[0]===0x50 && bytes[1]===0x4B) && !pareceXml;
+      if(ehZip){
         if(!window.fflate){ st.innerHTML='<span style="color:#a11">Este .PJC está compactado e a biblioteca de leitura não carregou. Recarregue a página e tente de novo.</span>'; return; }
         try{
           const files=window.fflate.unzipSync(bytes);
@@ -136,10 +140,10 @@ async function onCalcAdversario(input){
           xml=window.fflate.strFromU8(files[chave]);
         }catch(e){ st.innerHTML='<span style="color:#a11">Não consegui descompactar o .PJC: '+e.message+'</span>'; return; }
       } else {
-        // XML direto — decodifica respeitando encoding (PJe-Calc às vezes usa ISO-8859-1)
-        const cab=new TextDecoder('utf-8').decode(bytes.slice(0,80));
-        const enc=/ISO-8859-1/i.test(cab)?'iso-8859-1':'utf-8';
-        xml=new TextDecoder(enc).decode(bytes);
+        // XML direto (caso mais comum) — respeita o encoding declarado (PJe-Calc às vezes usa ISO-8859-1)
+        const enc=/ISO-8859-1|iso-8859-1|latin1/i.test(cab)?'iso-8859-1':'utf-8';
+        try{ xml=new TextDecoder(enc).decode(bytes); }
+        catch(e){ xml=new TextDecoder('utf-8').decode(bytes); }
       }
       const rubricas=extrairRubricasPJC(xml);
       if(rubricas.length){
