@@ -239,10 +239,36 @@ async function extrair(){
     if(textoServidor.trim().length < 30){
       throw new Error('O servidor leu o PDF mas nao extraiu texto (nem por OCR). O cartao pode estar ilegivel.');
     }
-    // 2) Manda o texto pra IA fazer o parsing (texto e leve, nao trava).
+    // 2) Parsing EM BLOCOS: OCR ja foi feito 1x no servidor; a IA interpreta em blocos de
+    //    paginas (jornada de anos nao cabe numa resposta so).
     $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
-    const obj=await chamarIA(textoServidor, null);
-    finalizar(obj, false);
+    const blocosTxt=fatiarTextoPorPaginas(textoServidor, 12);
+    let acumDias=[], caso='', periodos=[], avisos=[], acumRubricas={};
+    for(let i=0;i<blocosTxt.length;i++){
+      if(blocosTxt.length>1) $('loadmsg').innerHTML='Interpretando a jornada... bloco '+(i+1)+' de '+blocosTxt.length;
+      const obj=await chamarIA(blocosTxt[i], null);
+      if(!obj) continue;
+      if(obj.caso && !caso) caso=obj.caso;
+      if(obj.periodo) periodos.push(obj.periodo);
+      if(obj.avisos) avisos=avisos.concat(obj.avisos);
+      if(modo==='ponto' && obj.dias) acumDias=acumDias.concat(obj.dias);
+      if(modo==='holerite'){
+        (obj.rubricas||[]).forEach(r=>{
+          const k=(r.descricao||r.codigo||'?').toLowerCase().trim();
+          if(!acumRubricas[k]) acumRubricas[k]={codigo:r.codigo||'',descricao:r.descricao||r.codigo||'?',tipo:r.tipo||'provento',obs:r.obs||'',valores:{}};
+          Object.assign(acumRubricas[k].valores, r.valores||{});
+        });
+        if(obj.salarioFixo && obj.salarioFixo.valor) window._salFixo=obj.salarioFixo;
+      }
+    }
+    if(modo==='ponto'){
+      const vistos={}, dias=[];
+      acumDias.forEach(d=>{ if(d.data && !vistos[d.data]){ vistos[d.data]=1; dias.push(d); } });
+      dias.sort((a,b)=>_dataKey(a.data)-_dataKey(b.data));
+      finalizar({caso,periodo:periodos.join('; '),dias,avisos}, false);
+    } else {
+      finalizar({caso,rubricas:Object.values(acumRubricas),salarioFixo:window._salFixo||null,avisos}, false);
+    }
   }catch(e){
     $('loader').style.display='none'; $('card-input').style.display='block';
     $('fstatus').innerHTML='<span class="err">'+e.message+'</span>';
@@ -251,6 +277,13 @@ async function extrair(){
 
 function _b64ToU8(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
 function _dataKey(d){ const p=String(d||'').split('/'); return p.length===3 ? (+p[2]*10000 + +p[1]*100 + +p[0]) : 0; }
+function fatiarTextoPorPaginas(texto, pagsPorBloco){
+  const partes=String(texto).split(/(?=\n===== P)/);
+  if(partes.length<=1) return [texto];
+  const blocos=[];
+  for(let i=0;i<partes.length;i+=pagsPorBloco){ blocos.push(partes.slice(i, i+pagsPorBloco).join('')); }
+  return blocos.filter(b=>b.trim().length>20);
+}
 
 // chama a IA uma vez (texto se houver, senão o PDF em base64)
 async function chamarIA(texto, b64){
