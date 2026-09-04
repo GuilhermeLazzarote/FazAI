@@ -401,16 +401,25 @@ async function gerarWordImpugnacao(){
         ['Objeto', ehConf?'Conferência interna do cálculo':'Impugnação ao cálculo da parte contrária']
       ]));
       blocos.push(F.esp(80));
-      // 2. Pontos (cada um como bloco numerado, no esqueleto)
+      // 2. Pontos
       blocos.push(F.secao(2, ehConf?'Pontos a revisar':'Pontos de impugnação'));
       sel.forEach((im,idx)=>{
-        // título do ponto + badge de confiança embutido no texto
         const conf = im.confianca==='certo'?'erro claro':(im.confianca==='provavel'?'provável':'conferir');
-        blocos.push(F.blocoNum(idx+1, im.titulo+'  ('+conf+')', ''));
-        if(F.temValor(im.deferido))  blocos.push(F.par((ehConf?'Parâmetro deferido: ':'Deferido: ')+im.deferido,{size:19}));
-        if(F.temValor(im.o_que_fez)) blocos.push(F.par((ehConf?'O que o cálculo fez: ':'O que fez: ')+im.o_que_fez,{size:19}));
-        if(F.temValor(im.prova))     blocos.push(F.par((ehConf?'Divergência / risco: ':'Prova: ')+im.prova,{size:19}));
-        if(F.temValor(im.conclusao)) blocos.push(F.par((ehConf?'Sugestão de correção: ':'Conclusão: ')+im.conclusao,{bold:true,size:19}));
+        if(ehConf){
+          // CONFERÊNCIA (documento interno): rótulos ajudam a bater o olho
+          blocos.push(F.blocoNum(idx+1, im.titulo+'  ('+conf+')', ''));
+          if(F.temValor(im.deferido))  blocos.push(F.par('Parâmetro deferido: '+im.deferido,{size:19}));
+          if(F.temValor(im.o_que_fez)) blocos.push(F.par('O que o cálculo fez: '+im.o_que_fez,{size:19}));
+          if(F.temValor(im.prova))     blocos.push(F.par('Divergência / risco: '+im.prova,{size:19}));
+          if(F.temValor(im.conclusao)) blocos.push(F.par('Sugestão de correção: '+im.conclusao,{bold:true,size:19}));
+        } else {
+          // IMPUGNAÇÃO (peça jurídica): corpo corrido, sem rótulos, justificado
+          blocos.push(F.blocoNum(idx+1, im.titulo, ''));
+          if(F.temValor(im.deferido))  blocos.push(F.par(im.deferido,{size:20,justificado:true}));
+          if(F.temValor(im.o_que_fez)) blocos.push(F.par(im.o_que_fez,{size:20,justificado:true}));
+          if(F.temValor(im.prova))     blocos.push(F.par(im.prova,{size:20,justificado:true}));
+          if(F.temValor(im.conclusao)) blocos.push(F.par(im.conclusao,{bold:true,size:20,justificado:true}));
+        }
         if(F.temValor(im.fundamento))blocos.push(F.par('Fundamento: '+im.fundamento,{ital:true,color:F.MARCA.txtFraco,size:17}));
         blocos.push(F.esp(60));
       });
