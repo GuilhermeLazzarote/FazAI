@@ -11,12 +11,12 @@
 <meta property="og:description" content="Liquidação judicial, extração de ponto e cálculo de acordos com IA. 7 dias grátis."/>
 <meta property="og:url" content="https://faz-ai-one.vercel.app"/>
 <meta property="og:type" content="website"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="libs/pdf.min.js"></script>
+<script src="libs/pdf-lib.min.js"></script>
+<script src="libs/xlsx.full.min.js"></script>
+<script src="libs/jspdf.umd.min.js"></script>
+<script src="libs/jspdf.plugin.autotable.min.js"></script>
+<script src="libs/supabase.js"></script>
 <!-- Motor de cálculo determinístico (FazAI) -->
 <script src="fazai_base_dados.js"></script>
 <script src="fazai_motor.js"></script>
@@ -25,7 +25,7 @@
 <script src="fazai_tabelas.js"></script>
 <script src="fazai_engine.js"></script>
 <script src="fazai_hook.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="libs/exceljs-4.4.0.min.js"></script>
 <script src="fazai_estilo.js"></script>
 <script src="fazai_form.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -703,6 +703,7 @@ a{color:var(--or);text-decoration:none}
         <div class="sb-section">Ferramentas</div>
         <button class="nav-item" id="nav-liquida" onclick="showMod('liquida')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>LiquidaAI</button>
         <button class="nav-item" id="nav-analise" onclick="window.open('analise-processo.html','_blank')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Analisar Processo</button>
+        <button class="nav-item" id="nav-extratores" onclick="window.open('extratores.html','_blank')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Extratores</button>
         <button class="nav-item" id="nav-ponto" onclick="showMod('ponto')" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PontoAI</button>
         <button class="nav-item" id="nav-acordos" onclick="showMod('acordos')"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>AcordAI Brasil</button>
         <button class="nav-item" id="nav-pacto" onclick="showMod('pacto')" style="display:none"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>PactoAI Europa</button>
@@ -1566,7 +1567,7 @@ const ADMIN_EMAIL = 'g.lazzarote@hotmail.com';
 const PLAN_LIMITS={free:{liq:5,pt:2,ac:5},starter:{liq:10,pt:9999,ac:9999},pro:{liq:25,pt:9999,ac:9999},office:{liq:9999,pt:9999,ac:9999}};
 const PLAN_NAMES={free:'Gratuito',starter:'Starter',pro:'Profissional',office:'Escritório'};
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
 
 // ============================================================
 // STATE
