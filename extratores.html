@@ -335,7 +335,7 @@ async function chamarIA(texto, b64){
   for(let tent=1; tent<=3; tent++){
     try{
       res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-opus-4-8',max_tokens:32000,messages:[{role:'user',content}]})});
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,messages:[{role:'user',content}]})});
       break; // sucesso na conexão
     }catch(e){
       ultimoErro=e;
