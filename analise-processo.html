@@ -169,7 +169,7 @@
 
         <div style="margin-bottom:14px">
           <label id="imp-label-upload" style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:6px">1. Cálculo da parte contrária (PDF)</label>
-          <label id="imp-btn-upload" class="btn btn-ghost btn-sm" style="cursor:pointer">📄 Selecionar PDF do cálculo adversário<input type="file" accept=".pdf,.pjc,.xml" style="display:none" onchange="onCalcAdversario(this)"></label>
+          <label id="imp-btn-upload" class="btn btn-ghost btn-sm" style="cursor:pointer">📄 Selecionar cálculo (.PJC ou PDF)<input type="file" style="display:none" onchange="onCalcAdversario(this)"></label>
         </div>
 
         <div id="imp-bloco-modelo" style="margin-bottom:14px">
@@ -315,12 +315,23 @@ async function analisar(){
     } else {
       throw new Error('Não consegui ler o arquivo. Recarregue e tente de novo.');
     }
-    const res=await fetch('/api/claude',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:64000,messages:[{role:'user',content}]})
-    });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Erro na API');
+    // chamada com RETRY: rede oscila / provedor de IA "overloaded" (529) — tenta até 3x antes de desistir
+    let res=null, data=null, ultimoErro='';
+    for(let tent=1; tent<=3; tent++){
+      try{
+        res=await fetch('/api/claude',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-5',max_tokens:20000,messages:[{role:'user',content}]})
+        });
+        data=await res.json();
+        if(res.ok) break;
+        ultimoErro=(data&&data.error)||('HTTP '+res.status);
+        const sobrecarga = res.status===529 || res.status===503 || /overload|rate limit|capacity/i.test(String(ultimoErro));
+        if(!sobrecarga) break;
+      }catch(e){ ultimoErro=e.message; }
+      if(tent<3){ const lt=$('loadmsg'); if(lt) lt.textContent='Provedor de IA momentaneamente sobrecarregado — tentando de novo ('+(tent+1)+'/3)…'; await new Promise(r=>setTimeout(r,2500*tent)); }
+    }
+    if(!res || !res.ok) throw new Error('O provedor de IA está instável no momento ('+ultimoErro+'). Aguarde 1 minuto e tente de novo.');
     const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
     // detecta resposta cortada por limite de tokens
     const cortou = data.stop_reason==='max_tokens';
@@ -1046,6 +1057,82 @@ async function gerarParecer(){
   if(!ultimoJson){ alert('Faça a análise primeiro.'); return; }
   const j=ultimoJson;
   const d={dataAjuizamento:($('f_ajuiz')||{}).value,dataAdmissao:($('f_adm')||{}).value,dataDemissao:($('f_dem')||{}).value,funcao:($('f_func')||{}).value,salario:($('f_sal')||{}).value};
+
+  // ===== CAMINHO NOVO: casca visual FazAI (esqueleto do modelo: seções numeradas, tabelas, pula o que falta) =====
+  if(window.FazAIDocx){
+    try{
+      const F=window.FazAIDocx, pr=j.processo||{}, g=j.parametrosGlobais||{}, dc=j.dadosContratuais||{};
+      const fmtD=s=>{ if(!s) return ''; const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m? m[3]+'/'+m[2]+'/'+m[1] : String(s); };
+      const stMap={'DEFERIDA':'Deferida','EXCLUÍDA':'Excluída','INDEFERIDA':'Indeferida','INDEFINIDO':'A definir'};
+      const fillMap={'DEFERIDA':'EAF5EC','EXCLUÍDA':'FBECEC','INDEFERIDA':'FBECEC','INDEFINIDO':'FFF0D8'};
+      const verbas=Array.isArray(j.verbas)?j.verbas:[];
+      const deferidas=verbas.filter(v=>v.statusFinal==='DEFERIDA');
+      const B=[];
+      B.push(...F.titulo('Parecer técnico de cálculo','Crédito trabalhista — parâmetros para liquidação'));
+      B.push(F.par((pr.reclamante||'')+(pr.reclamadas&&pr.reclamadas.length?' × '+pr.reclamadas.join(', '):''),{color:F.MARCA.txtSuave,size:19}));
+      B.push(F.par([pr.vara, j.resultadoConsolidado].filter(F.temValor).join(' · '),{color:F.MARCA.txtFraco,size:17}));
+      B.push(F.esp(80));
+      // 01 Identificação
+      B.push(F.secao(1,'Identificação'));
+      const presc=g.prescricao||{};
+      B.push(F.tabela2col([
+        ['Nº do processo', pr.numero],
+        ['Credor (reclamante)', pr.reclamante],
+        ['Devedora (reclamada)', (pr.reclamadas||[]).join(', ')],
+        ['Vara / Tribunal', pr.vara],
+        ['Contrato', [dc.dataAdmissao||d.dataAdmissao?'Admissão '+fmtD(dc.dataAdmissao||d.dataAdmissao):'', dc.dataDemissao||d.dataDemissao?'demissão '+fmtD(dc.dataDemissao||d.dataDemissao):'', dc.funcao||d.funcao].filter(F.temValor).join(' · ')],
+        ['Prescrição', F.temValor(presc.marco)? 'Anterior a '+fmtD(presc.marco)+(presc.tipo&&presc.tipo!=='nao_consta'?' ('+presc.tipo+')':'')+(presc.suspensaoPandemia&&presc.suspensaoPandemia.aplicavel?' — observar +141 dias Lei 14.010/2020'+(presc.suspensaoPandemia.jaAplicadaNaDecisao?' (já aplicada na decisão)':''):'') : ''],
+        ['Situação', (j.situacaoProcessual&&j.situacaoProcessual.transitoEmJulgado)||''],
+        ['Núcleo do crédito', deferidas.slice(0,4).map(v=>v.descricao).filter(Boolean).join(' + ')]
+      ]));
+      B.push(F.esp(80));
+      // 02 Linha do tempo (só o que existe)
+      const lt=[];
+      if(F.temValor(presc.marco)) lt.push([fmtD(presc.marco),'Marco prescricional']);
+      if(F.temValor(dc.dataAdmissao||d.dataAdmissao)) lt.push([fmtD(dc.dataAdmissao||d.dataAdmissao),'Admissão']);
+      if(F.temValor(dc.dataDemissao||d.dataDemissao)) lt.push([fmtD(dc.dataDemissao||d.dataDemissao),'Demissão'+(dc.tipoRescisao?' ('+dc.tipoRescisao+')':'')]);
+      if(F.temValor(dc.dataAjuizamento||d.dataAjuizamento)) lt.push([fmtD(dc.dataAjuizamento||d.dataAjuizamento),'Ajuizamento da ação']);
+      (Array.isArray(j.cronologia)?j.cronologia:[]).forEach(c=>{ if(F.temValor(c.data)) lt.push([fmtD(c.data),[c.tipo,c.alterou].filter(F.temValor).join(' — ')]); });
+      if(lt.length){ lt.sort((x,y)=>{ const k=v=>{const m=String(v[0]).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m? m[3]+m[2]+m[1] : '99999999';}; return k(x)<k(y)?-1:1; }); B.push(F.secao(2,'Linha do tempo')); B.push(F.tabela2col(lt,[2200,6800])); B.push(F.esp(80)); }
+      // 03 Síntese do crédito (cadeia decisória)
+      if(verbas.length){
+        B.push(F.secao(3,'Síntese do crédito'));
+        B.push(F.tabelaCab(['Verba','Sentença','Acórdão','Consolidado','Fonte'],
+          verbas.map(v=>{ const cons=stMap[v.statusFinal]||v.statusFinal||'—'; const fonte=(v.definidaEm&&v.definidaEm.id)||'';
+            const ehAc=v.definidaEm&&/ac[óo]rd|embargo|tst|revista/i.test(v.definidaEm.tipo||'');
+            return [v.descricao||'—', ehAc?'—':cons, ehAc?cons:'—', [cons,{fill:fillMap[v.statusFinal]||'FFFFFF',bold:true}], fonte||'—']; }),
+          [3400,1400,1400,1600,1200]));
+        B.push(F.esp(80));
+      }
+      // 04 Parâmetros de cálculo (premissas numeradas)
+      B.push(F.secao(4,'Parâmetros para cálculo'));
+      let n=0;
+      deferidas.forEach(v=>{ const det=[]; if(v.percentual) det.push('adicional '+v.percentual); if(v.divisor) det.push('divisor '+v.divisor); if(v.baseCalculo) det.push('base: '+v.baseCalculo);
+        if(v.periodo&&(v.periodo.inicio||v.periodo.fim)) det.push('período '+[fmtD(v.periodo.inicio),fmtD(v.periodo.fim)].filter(Boolean).join(' a '));
+        const refl=Array.isArray(v.reflexos)?v.reflexos.join(', '):(v.reflexos||''); if(F.temValor(refl)) det.push('reflexos: '+refl);
+        if(v.abatimento) det.push('dedução: '+v.abatimento); if(v.valorFixado) det.push('valor fixado R$ '+Number(v.valorFixado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+        const obs=Array.isArray(v.observacoesTecnicas)?v.observacoesTecnicas.join('; '):(v.observacoesTecnicas||''); if(F.temValor(obs)) det.push(obs);
+        const b=F.blocoNum(++n, v.descricao||'Verba', det.join('. ')+(v.requerConferencia?' [conferir]':'')); if(b) B.push(b); });
+      if(g.correcaoJuros&&(g.correcaoJuros.transcricaoLiteral||g.correcaoJuros.indiceImplicado)){ const b=F.blocoNum(++n,'Correção monetária e juros',[g.correcaoJuros.transcricaoLiteral,g.correcaoJuros.indiceImplicado?'Índice aplicável: '+g.correcaoJuros.indiceImplicado:'',g.correcaoJuros.pontoControvertido?'PONTO CONTROVERTIDO — confirmar antes do cálculo':''].filter(F.temValor).join('. ')); if(b) B.push(b); }
+      if(g.honorariosSucumbenciais&&g.honorariosSucumbenciais.percentual){ const b=F.blocoNum(++n,'Honorários sucumbenciais',g.honorariosSucumbenciais.percentual+'% sobre '+(g.honorariosSucumbenciais.base||'o valor apurado')); if(b) B.push(b); }
+      if(g.honorariosPericiais&&g.honorariosPericiais.valor){ const b=F.blocoNum(++n,'Honorários periciais','R$ '+Number(g.honorariosPericiais.valor).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+(g.honorariosPericiais.aCargoDe?' — a cargo de '+g.honorariosPericiais.aCargoDe:'')); if(b) B.push(b); }
+      if(g.contribuicoes&&(g.contribuicoes.previdenciaria||g.contribuicoes.fiscal)){ const b=F.blocoNum(++n,'Contribuições',[g.contribuicoes.previdenciaria,g.contribuicoes.fiscal].filter(F.temValor).join(' · ')); if(b) B.push(b); }
+      if(g.limitacaoAoPedido){ const b=F.blocoNum(++n,'Limitação aos valores da inicial','Aplicável — observar os valores da exordial como teto.'); if(b) B.push(b); }
+      B.push(F.esp(80));
+      // 05 Pontos de atenção (só se houver)
+      const pts=Array.isArray(j.pontosDeAtencao)?j.pontosDeAtencao:(j.pontosDeAtencao?[j.pontosDeAtencao]:[]);
+      if(pts.length){ B.push(F.secao(5,'Pontos de atenção')); pts.forEach((p,i)=>{ const b=F.blocoNum(i+1,'',String(p)); if(b) B.push(b); }); B.push(F.esp(80)); }
+      // 06 Fontes
+      const fontes=[]; (Array.isArray(j.cronologia)?j.cronologia:[]).forEach(c=>{ if(F.temValor(c.tipo)) fontes.push([c.tipo,[c.id,fmtD(c.data)].filter(F.temValor).join(' · ')]); });
+      if(fontes.length){ B.push(F.secao(6,'Fontes')); B.push(F.tabela2col(fontes,[3400,5600])); B.push(F.esp(60)); }
+      B.push(F.par('Parecer elaborado a partir da leitura das decisões do processo. Os parâmetros devem ser conferidos por calculista antes da liquidação definitiva.',{ital:true,color:F.MARCA.txtFraco,size:17}));
+      const blob=await F.montarDoc(B);
+      F.baixar(blob,'Parecer_'+((pr.reclamante||'processo').replace(/[^a-zA-Z0-9]/g,'_'))+'.docx');
+      const st=$('f_status'); if(st) st.innerHTML='<span class="okmsg">✓ Parecer gerado no modelo FazAI.</span>';
+      return;
+    }catch(e){ console.warn('casca falhou no parecer, usando gerador simples:',e); }
+  }
+  // ===== FALLBACK: gerador simples (se a casca não carregar) =====
   const D=window.docx;
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,ShadingType,AlignmentType,BorderStyle}=D;
   const pr=j.processo||{}, g=j.parametrosGlobais||{};
@@ -1107,7 +1194,7 @@ async function gerarParecer(){
     if(v.divisor) det.push('divisor '+v.divisor);
     if(v.baseCalculo) det.push('base: '+v.baseCalculo);
     if(v.reflexos&&(Array.isArray(v.reflexos)?v.reflexos.length:String(v.reflexos).trim())) det.push('reflexos: '+(Array.isArray(v.reflexos)?v.reflexos.join(', '):v.reflexos));
-    if(v.valorFixado) det.push('valor fixado R$ '+v.valorFixado);
+    if(v.valorFixado) det.push('valor fixado R$ '+Number(v.valorFixado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
     if(det.length) linha+=' — '+det.join('; ');
     if(v.definidaEm&&v.definidaEm.id) linha+=' ['+v.definidaEm.id+']';
     kids.push(new Paragraph({bullet:{level:0},spacing:{after:80},children:[new TextRun({text:linha,size:19})]}));
