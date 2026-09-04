@@ -523,6 +523,8 @@ function montarResumo(j){
     pa.forEach(x=>h+='<li>'+x+'</li>');
     h+='</ul></div>';
   }
+  h+='<div class="row" style="margin-top:20px"><button class="btn btn-primary" style="background:#3a5a8a" onclick="gerarParecer()">Gerar parecer tecnico (Word)</button></div>';
+  h+='<div class="hint" style="margin-top:6px">O parecer traz os parametros da decisao (verbas, indices, prescricao, deducoes) prontos para o calculo.</div>';
   return h;
 }
 
