@@ -262,22 +262,21 @@ async function extrair(){
     // 2) Parsing EM BLOCOS: OCR ja foi feito 1x no servidor; a IA interpreta em blocos de
     //    paginas (jornada de anos nao cabe numa resposta so).
     $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
-    const blocosTxt=fatiarTextoPorPaginas(textoServidor, 6);
     let acumDias=[], caso='', periodos=[], avisos=[], acumRubricas={};
-    // PARALELO: dispara todos os blocos ao mesmo tempo (muito mais rapido que em serie).
-    // Limita a 4 simultaneos pra nao sobrecarregar. Mostra progresso conforme terminam.
-    let prontos=0;
-    async function processaBloco(txt){
-      const obj=await chamarIA(txt, null);
-      prontos++;
-      if(blocosTxt.length>1) $('loadmsg').innerHTML='Interpretando a jornada... '+prontos+' de '+blocosTxt.length+' blocos';
-      return obj;
-    }
-    const LIMITE=6; const resultados=[];
-    for(let i=0;i<blocosTxt.length;i+=LIMITE){
-      const lote=blocosTxt.slice(i,i+LIMITE).map(processaBloco);
-      const parciais=await Promise.all(lote);
-      parciais.forEach(o=>resultados.push(o));
+    let resultados=[];
+    // 1 PASSADA (como a skill): manda o texto INTEIRO pro Opus com tokens altos. Opus le tudo rapido.
+    // So fatia se REALMENTE cortar (fallback de seguranca).
+    let objUnico=null, cortou=false;
+    try{ const r=await chamarIAcompleto(textoServidor); objUnico=r.obj; cortou=r.cortou; }catch(e){ cortou=true; }
+    if(objUnico && !cortou){
+      resultados=[objUnico];
+    } else {
+      // fallback: cortou -> fatia e processa em paralelo
+      const blocosTxt=fatiarTextoPorPaginas(textoServidor, 8);
+      let prontos=0;
+      async function processaBloco(txt){ const obj=await chamarIA(txt,null); prontos++; if(blocosTxt.length>1)$('loadmsg').innerHTML='Documento grande - interpretando em partes... '+prontos+' de '+blocosTxt.length; return obj; }
+      const LIMITE=5;
+      for(let i=0;i<blocosTxt.length;i+=LIMITE){ const lote=blocosTxt.slice(i,i+LIMITE).map(processaBloco); (await Promise.all(lote)).forEach(o=>resultados.push(o)); }
     }
     resultados.forEach(obj=>{
       if(!obj) return;
@@ -335,7 +334,7 @@ async function chamarIA(texto, b64){
   for(let tent=1; tent<=3; tent++){
     try{
       res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,messages:[{role:'user',content}]})});
+        body:JSON.stringify({model:'claude-opus-4-8',max_tokens:64000,messages:[{role:'user',content}]})});
       break; // sucesso na conexão
     }catch(e){
       ultimoErro=e;
@@ -354,10 +353,7 @@ async function chamarIA(texto, b64){
     const amostra=txt.replace(/\s+/g,' ').slice(0,180);
     throw new Error('Não consegui montar a planilha. A IA respondeu: "'+amostra+'…". O documento pode não ser um '+(modo==='ponto'?'cartão de ponto':'holerite')+' legível.');
   }
-  return obj;
-}
 
-function finalizar(obj, cortou){
   if(modo==='ponto'){ if(!obj.dias||!obj.dias.length) throw new Error('Li o documento mas não encontrei jornada diária. Confirme que é um cartão/espelho de ponto (marcação por dia), não um holerite.'); jornada=obj.dias; renderPonto(obj); }
   else { if(!obj.rubricas||!obj.rubricas.length) throw new Error('Li o documento mas não encontrei rubricas. Confirme que é um holerite/demonstrativo (proventos e descontos), não um cartão de ponto.'); holerite=obj; renderHolerite(obj); }
 }
