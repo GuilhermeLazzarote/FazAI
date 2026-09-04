@@ -262,7 +262,7 @@ async function extrair(){
     // 2) Parsing EM BLOCOS: OCR ja foi feito 1x no servidor; a IA interpreta em blocos de
     //    paginas (jornada de anos nao cabe numa resposta so).
     $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
-    const blocosTxt=fatiarTextoPorPaginas(textoServidor, 12);
+    const blocosTxt=fatiarTextoPorPaginas(textoServidor, 5);
     let acumDias=[], caso='', periodos=[], avisos=[], acumRubricas={};
     // PARALELO: dispara todos os blocos ao mesmo tempo (muito mais rapido que em serie).
     // Limita a 4 simultaneos pra nao sobrecarregar. Mostra progresso conforme terminam.
