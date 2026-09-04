@@ -129,6 +129,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
+const EXTRATOR_URL='https://fazai-extrator.onrender.com/extrair';
 try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='libs/pdf.worker.min.js'; }catch(e){}
 let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc', arquivoAB=null, numPaginas=0;
 let jornada=[];        // ponto
@@ -217,70 +218,37 @@ async function selec(file){
 async function extrair(){
   $('card-input').style.display='none'; $('loader').style.display='block';
   try{
-    // decide se fatia: PDF grande (>=10 pág) processa em lotes; senão, uma vez só
-    const PAGS_POR_LOTE = 6;
-    if(numPaginas>=8 && arquivoAB){
-      await extrairEmLotes(PAGS_POR_LOTE);
-    } else {
-      const obj=await chamarIA(arquivoTexto, arquivoB64);
-      finalizar(obj, false);
+    // 1) Manda o PDF pro SERVIDOR (Render): pdftotext + OCR nos escaneados -> devolve o texto.
+    $('loadmsg').innerHTML='Enviando ao servidor de extracao... (OCR de escaneado pode levar 1-2 min)';
+    const fd=new FormData();
+    fd.append('arquivo', new Blob([arquivoAB], {type:'application/pdf'}), (nomeCaso||'documento')+'.pdf');
+    let resp=null, dados=null, ultimoErro='';
+    for(let tent=1; tent<=3; tent++){
+      try{
+        resp=await fetch(EXTRATOR_URL, {method:'POST', body:fd});
+        dados=await resp.json();
+        if(resp.ok && dados.ok) break;
+        ultimoErro=(dados&&dados.erro)||('HTTP '+resp.status);
+      }catch(e){ ultimoErro=e.message; }
+      if(tent<3){ $('loadmsg').innerHTML='Servidor demorou a responder - tentando de novo ('+(tent+1)+'/3)... <span class="small">(no 1o acesso o servidor acorda, pode levar ~1 min)</span>'; await new Promise(r=>setTimeout(r,4000*tent)); }
     }
+    if(!resp || !resp.ok || !dados || !dados.ok){
+      throw new Error('O servidor de extracao nao respondeu ('+ultimoErro+'). Verifique se ele esta no ar e tente de novo.');
+    }
+    const textoServidor=dados.texto||'';
+    if(textoServidor.trim().length < 30){
+      throw new Error('O servidor leu o PDF mas nao extraiu texto (nem por OCR). O cartao pode estar ilegivel.');
+    }
+    // 2) Manda o texto pra IA fazer o parsing (texto e leve, nao trava).
+    $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
+    const obj=await chamarIA(textoServidor, null);
+    finalizar(obj, false);
   }catch(e){
     $('loader').style.display='none'; $('card-input').style.display='block';
     $('fstatus').innerHTML='<span class="err">'+e.message+'</span>';
   }
 }
 
-// processa o PDF em blocos de páginas e junta os resultados
-async function extrairEmLotes(pagsPorLote){
-  const src=await PDFLib.PDFDocument.load(arquivoAB);
-  const total=src.getPageCount();
-  const nLotes=Math.ceil(total/pagsPorLote);
-  let acumDias=[], acumRubricas={}, caso='', periodos=[], avisos=[];
-  for(let l=0;l<nLotes;l++){
-    const ini=l*pagsPorLote, fim=Math.min(ini+pagsPorLote,total);
-    $('loadmsg').innerHTML='Lendo lote '+(l+1)+' de '+nLotes+' (páginas '+(ini+1)+'–'+fim+')…';
-    // monta um PDF só com as páginas do lote
-    const novo=await PDFLib.PDFDocument.create();
-    const idx=[]; for(let i=ini;i<fim;i++) idx.push(i);
-    const pgs=await novo.copyPages(src, idx);
-    pgs.forEach(p=>novo.addPage(p));
-    const b64=await novo.saveAsBase64();
-    // tenta texto do lote (pra PDFs de texto, mais barato/preciso)
-    let textoLote='';
-    try{
-      const pdfjs=await pdfjsLib.getDocument({data:_b64ToU8(b64)}).promise;
-      for(let i=1;i<=pdfjs.numPages;i++){ const pg=await pdfjs.getPage(i); const c=await pg.getTextContent(); textoLote+=c.items.map(x=>x.str).join(' ')+'\n'; }
-    }catch(e){ textoLote=''; }
-    const obj=await chamarIA(textoLote.trim(), b64);
-    if(obj){
-      if(obj.caso && !caso) caso=obj.caso;
-      if(obj.periodo) periodos.push(obj.periodo);
-      if(obj.avisos) avisos=avisos.concat(obj.avisos);
-      if(modo==='ponto' && obj.dias) acumDias=acumDias.concat(obj.dias);
-      if(modo==='holerite'){
-        if(obj.caso && !caso) caso=obj.caso;
-        (obj.rubricas||[]).forEach(r=>{
-          const k=(r.descricao||r.codigo||'?').toLowerCase().trim();
-          if(!acumRubricas[k]) acumRubricas[k]={codigo:r.codigo||'',descricao:r.descricao||r.codigo||'?',tipo:r.tipo||'provento',obs:r.obs||'',valores:{}};
-          Object.assign(acumRubricas[k].valores, r.valores||{});
-        });
-        if(obj.salarioFixo && obj.salarioFixo.valor){ window._salFixo=obj.salarioFixo; }
-      }
-    }
-  }
-  // monta o objeto final juntando todos os lotes
-  if(modo==='ponto'){
-    // ordena por data e remove duplicatas
-    const vistos={}; const dias=[];
-    acumDias.forEach(d=>{ if(d.data && !vistos[d.data]){ vistos[d.data]=1; dias.push(d); } });
-    dias.sort((a,b)=>_dataKey(a.data)-_dataKey(b.data));
-    finalizar({caso,periodo:periodos.join('; '),dias,avisos}, false);
-  } else {
-    const rubricas=Object.values(acumRubricas);
-    finalizar({caso,rubricas,salarioFixo:window._salFixo||null,avisos}, false);
-  }
-}
 function _b64ToU8(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
 function _dataKey(d){ const p=String(d||'').split('/'); return p.length===3 ? (+p[2]*10000 + +p[1]*100 + +p[0]) : 0; }
 
@@ -289,7 +257,7 @@ async function chamarIA(texto, b64){
   const PROMPT = modo==='ponto'?PROMPT_PONTO:PROMPT_HOLERITE;
   const rotulo = modo==='ponto'?'CARTÃO DE PONTO':'HOLERITES / FICHA FINANCEIRA';
   let content;
-  if(texto && texto.length>200){
+  if(texto && texto.length>30){
     content=[{type:'text',text:rotulo+' (texto extraído do PDF):\n\n'+texto+'\n\n---\n'+PROMPT}];
   } else if(b64){
     content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT}];
@@ -299,7 +267,7 @@ async function chamarIA(texto, b64){
   for(let tent=1; tent<=3; tent++){
     try{
       res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-5',max_tokens:16000,messages:[{role:'user',content}]})});
+        body:JSON.stringify({model:'claude-sonnet-5',max_tokens:32000,messages:[{role:'user',content}]})});
       break; // sucesso na conexão
     }catch(e){
       ultimoErro=e;
