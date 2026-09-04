@@ -80,6 +80,19 @@
       <div class="big" id="dropbig">Clique para selecionar o PDF do ponto</div>
       <div class="small" id="dropsmall">espelho, cartão ou folha de frequência · texto ou escaneado</div>
     </div>
+    <div id="obs-box" style="margin-top:14px;text-align:left">
+      <label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin-bottom:6px">Instruções para a leitura (opcional, mas recomendado)</label>
+      <div style="font-size:12px;color:#667;margin-bottom:8px">Diga o que a IA precisa saber que não está no cartão: intervalo pré-assinalado, jornada da inicial para períodos sem CP, escala, etc. Clique nos atalhos ou escreva livre.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Intervalo pré-assinalado de 1 hora em todos os dias com jornada > 6h.')">+ intervalo 1h</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Intervalo pré-assinalado de 15 minutos.')">+ intervalo 15min</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Onde só houver entrada e saída (sem intervalo marcado), aplicar intervalo pré-assinalado de 1 hora.')">+ só entrada/saída → 1h</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Nos períodos SEM cartão de ponto, usar a jornada da inicial: [DESCREVA AQUI, ex: 08:00 às 18:00, seg a sex].')">+ usar jornada da inicial</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Dias sem marcação: deixar em branco (não completar).')">+ dias vazios em branco</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addObs('Turno que cruza a meia-noite: saída no dia seguinte.')">+ turno noturno</button>
+      </div>
+      <textarea id="obs-ia" placeholder="Ex.: Este cartão só tem entrada e saída; aplicar intervalo pré-assinalado de 1 hora. No período de jan/2020 a mar/2020 não há cartão — usar jornada da inicial 08:00-18:00 seg-sex." style="width:100%;min-height:70px;padding:9px;border:1px solid var(--line,#cfd8e6);border-radius:6px;font-size:13px;box-sizing:border-box"></textarea>
+    </div>
     <div class="status" id="fstatus"></div>
     <div class="row">
       <button class="btn btn-primary" id="btn-go" onclick="extrair()" disabled>Extrair</button>
@@ -130,6 +143,13 @@
 <script>
 const $=id=>document.getElementById(id);
 const EXTRATOR_URL='https://fazai-extrator.onrender.com/extrair';
+function addObs(txt){
+  const ta=document.getElementById('obs-ia');
+  if(!ta) return;
+  ta.value = (ta.value.trim() ? ta.value.trim()+'\n' : '') + txt;
+  ta.focus();
+}
+
 try{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='libs/pdf.worker.min.js'; }catch(e){}
 let modo='ponto', arquivoB64=null, arquivoTexto='', nomeCaso='doc', arquivoAB=null, numPaginas=0;
 let jornada=[];        // ponto
@@ -244,10 +264,23 @@ async function extrair(){
     $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
     const blocosTxt=fatiarTextoPorPaginas(textoServidor, 12);
     let acumDias=[], caso='', periodos=[], avisos=[], acumRubricas={};
-    for(let i=0;i<blocosTxt.length;i++){
-      if(blocosTxt.length>1) $('loadmsg').innerHTML='Interpretando a jornada... bloco '+(i+1)+' de '+blocosTxt.length;
-      const obj=await chamarIA(blocosTxt[i], null);
-      if(!obj) continue;
+    // PARALELO: dispara todos os blocos ao mesmo tempo (muito mais rapido que em serie).
+    // Limita a 4 simultaneos pra nao sobrecarregar. Mostra progresso conforme terminam.
+    let prontos=0;
+    async function processaBloco(txt){
+      const obj=await chamarIA(txt, null);
+      prontos++;
+      if(blocosTxt.length>1) $('loadmsg').innerHTML='Interpretando a jornada... '+prontos+' de '+blocosTxt.length+' blocos';
+      return obj;
+    }
+    const LIMITE=4; const resultados=[];
+    for(let i=0;i<blocosTxt.length;i+=LIMITE){
+      const lote=blocosTxt.slice(i,i+LIMITE).map(processaBloco);
+      const parciais=await Promise.all(lote);
+      parciais.forEach(o=>resultados.push(o));
+    }
+    resultados.forEach(obj=>{
+      if(!obj) return;
       if(obj.caso && !caso) caso=obj.caso;
       if(obj.periodo) periodos.push(obj.periodo);
       if(obj.avisos) avisos=avisos.concat(obj.avisos);
@@ -260,7 +293,7 @@ async function extrair(){
         });
         if(obj.salarioFixo && obj.salarioFixo.valor) window._salFixo=obj.salarioFixo;
       }
-    }
+    });
     if(modo==='ponto'){
       const vistos={}, dias=[];
       acumDias.forEach(d=>{ if(d.data && !vistos[d.data]){ vistos[d.data]=1; dias.push(d); } });
@@ -291,7 +324,9 @@ async function chamarIA(texto, b64){
   const rotulo = modo==='ponto'?'CARTÃO DE PONTO':'HOLERITES / FICHA FINANCEIRA';
   let content;
   if(texto && texto.length>30){
-    content=[{type:'text',text:rotulo+' (texto extraído do PDF):\n\n'+texto+'\n\n---\n'+PROMPT}];
+    const obsUser=(document.getElementById('obs-ia')?document.getElementById('obs-ia').value.trim():'');
+    const blocoObs = obsUser ? ('\n\nINSTRUÇÕES DO CALCULISTA (siga à risca; valem sobre a leitura padrão):\n'+obsUser) : '';
+    content=[{type:'text',text:rotulo+' (texto extraído do PDF):\n\n'+texto+blocoObs+'\n\n---\n'+PROMPT}];
   } else if(b64){
     content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:PROMPT}];
   } else throw new Error('Arquivo não carregado. Recarregue.');
@@ -357,15 +392,36 @@ function renderPonto(obj){
   $('p-tab').innerHTML=h;
 }
 function updPonto(di,ti,pos,val){ if(!jornada[di].turnos)jornada[di].turnos=[]; while(jornada[di].turnos.length<=ti)jornada[di].turnos.push(['','']); jornada[di].turnos[ti][pos]=val.trim(); }
+// Só reporta problemas REAIS que o PJe-Calc rejeita. Dia totalmente vazio NÃO é problema (fica em branco).
 function validarPonto(){ const p=[]; jornada.forEach(d=>{ (d.turnos||[]).forEach((t,i)=>{ const e=(t[0]||'').trim(),s=(t[1]||'').trim();
-  if((e&&!s)||(!e&&s))p.push(d.data+': turno '+(i+1)+' sem par'); if(e&&s&&e===s)p.push(d.data+': turno '+(i+1)+' entrada=saída (PJe rejeita)'); }); }); return p; }
+  if((e&&!s)||(!e&&s))p.push(d.data+': turno '+(i+1)+' sem par (entrada ou saída faltando)'); if(e&&s&&e===s)p.push(d.data+': turno '+(i+1)+' entrada=saída (duração zero)'); }); }); return p; }
+
 function exportarCSVPonto(){
   const probs=validarPonto();
-  if(probs.length){ $('p-status').innerHTML='<span class="err">Corrija antes de exportar:</span><br>'+probs.slice(0,8).map(p=>'• '+p).join('<br>'); return; }
+  // AVISO DE ERRO ANTES DE EXPORTAR: se houver problemas, mostra e pede confirmação.
+  if(probs.length){
+    const amostra=probs.slice(0,12).map(p=>'• '+p).join('\n');
+    const resto=probs.length>12?('\n... e mais '+(probs.length-12)+' problema(s).'):'';
+    const ok=confirm('ATENÇÃO — '+probs.length+' problema(s) na jornada que o PJe-Calc rejeitaria:\n\n'+amostra+resto+'\n\nOs turnos com problema serão deixados EM BRANCO no CSV. Recomendo corrigir na tabela antes.\n\nExportar mesmo assim (deixando esses turnos em branco)?');
+    if(!ok){ $('p-status').innerHTML='<span class="hint">Exportação cancelada. Corrija os dias marcados e tente de novo.</span>'; return; }
+  }
+  let ajustes=0;
   let csv='Data;Entrada1;Saída1;Entrada2;Saída2;Entrada3;Saída3;Entrada4;Saída4;Entrada5;Saída5;Entrada6;Saída6\r\n';
-  jornada.forEach(d=>{ const row=[d.data||'']; for(let i=0;i<6;i++){const t=(d.turnos||[])[i]||['',''];row.push(t[0]||'',t[1]||'');} csv+=row.join(';')+'\r\n'; });
+  jornada.forEach(d=>{
+    const row=[d.data||''];
+    for(let i=0;i<6;i++){
+      let t=(d.turnos||[])[i]||['',''];
+      let e=(t[0]||'').trim(), sa=(t[1]||'').trim();
+      // turno incompleto (só entrada ou só saída) ou duração zero → limpa (deixa em branco, não trava o PJe)
+      if((e&&!sa)||(!e&&sa)||(e&&sa&&e===sa)){ e=''; sa=''; ajustes++; }
+      row.push(e, sa);
+    }
+    csv+=row.join(';')+'\r\n';
+  });
   baixar(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'Cartao_'+nomeCaso+'_PJeCalc.csv');
-  $('p-status').innerHTML='<span class="okmsg">✓ CSV gerado. Suba no PJe-Calc.</span>';
+  let msg='<span class="okmsg">✓ CSV gerado. Suba no PJe-Calc.</span>';
+  if(ajustes>0) msg+='<br><span class="hint">'+ajustes+' turno(s) incompleto(s)/inválido(s) foram deixados em branco (o PJe-Calc rejeitaria). Confira esses dias na tabela se precisar corrigir a marcação.</span>';
+  $('p-status').innerHTML=msg;
 }
 function exportarExcelPonto(){
   const dow=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
