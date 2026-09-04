@@ -90,12 +90,14 @@ function celula(txt,opts){
   });
 }
 
-// parágrafo simples
+// parágrafo simples (opts.justificado = alinhamento justificado para peças)
 function par(txt,opts){
   opts=opts||{}; const d=D();
   if(!temValor(txt)) return null;
-  return new d.Paragraph({spacing:{after:opts.after==null?100:opts.after},
-    children:[new d.TextRun({text:txt,bold:opts.bold,italics:opts.ital,color:opts.color||MARCA.txt,size:opts.size||20,font:'Calibri'})]});
+  var cfg={spacing:{after:opts.after==null?100:opts.after},
+    children:[new d.TextRun({text:txt,bold:opts.bold,italics:opts.ital,color:opts.color||MARCA.txt,size:opts.size||20,font:'Calibri'})]};
+  if(opts.justificado){ cfg.alignment=d.AlignmentType.JUSTIFIED; cfg.spacing.line=276; }
+  return new d.Paragraph(cfg);
 }
 
 // bloco numerado (para "Premissas de cálculo": 01 título + corpo)
