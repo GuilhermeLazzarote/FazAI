@@ -58,6 +58,7 @@
   .legend span{display:inline-block;margin-right:14px}
   .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
 </style>
+<script src="fazai_parser_ponto.js"></script>
 </head>
 <body>
 <header>
@@ -259,6 +260,21 @@ async function extrair(){
     if(textoServidor.trim().length < 30){
       throw new Error('O servidor leu o PDF mas nao extraiu texto (nem por OCR). O cartao pode estar ilegivel.');
     }
+
+    // ===== PLANO A (GRATIS): parser em codigo tenta ler o cartao SEM IA =====
+    if(modo==='ponto' && window.FazAIParserPonto){
+      try{
+        $('loadmsg').innerHTML='Lendo a jornada (sem custo de IA)...';
+        const regras=montarRegrasDoObs();
+        const pr=window.FazAIParserPonto.parsear(textoServidor, {regras});
+        if(pr.reconhecido){
+          finalizar({caso:(nomeCaso||''), periodo:'', dias:pr.dias, avisos:['Lido pelo parser (sem custo de IA). Confira a jornada.']}, false);
+          return; // pronto, custo ZERO
+        }
+        // nao reconheceu -> cai pra IA (plano B) abaixo
+      }catch(e){ /* qualquer erro no parser: cai pra IA */ }
+    }
+
     // 2) Parsing EM BLOCOS: OCR ja foi feito 1x no servidor; a IA interpreta em blocos de
     //    paginas (jornada de anos nao cabe numa resposta so).
     $('loadmsg').innerHTML='Texto extraido ('+(dados.paginas_ocr||0)+' pags por OCR). Interpretando a jornada...';
@@ -310,6 +326,17 @@ async function extrair(){
 
 function _b64ToU8(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
 function _dataKey(d){ const p=String(d||'').split('/'); return p.length===3 ? (+p[2]*10000 + +p[1]*100 + +p[0]) : 0; }
+// Le o campo de observacoes e converte as instrucoes conhecidas em regras pro parser (codigo).
+function montarRegrasDoObs(){
+  const t=($('obs-ia')?$('obs-ia').value.toLowerCase():'');
+  const regras={};
+  // intervalo pre-assinalado
+  const mInt=t.match(/intervalo[^0-9]*(\d+)\s*(min|h|hora)/);
+  if(mInt){ let v=parseInt(mInt[1]); if(/h|hora/.test(mInt[2])) v*=60; regras.intervalo=v; }
+  else if(/1\s*h|uma hora|pr[eé]-?assinalad/.test(t)) regras.intervalo=60;
+  return regras;
+}
+
 function fatiarTextoPorPaginas(texto, pagsPorBloco){
   const partes=String(texto).split(/(?=\n===== P)/);
   if(partes.length<=1) return [texto];
